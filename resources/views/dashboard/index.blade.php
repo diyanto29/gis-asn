@@ -131,10 +131,10 @@
         <div class="px-5 py-3 bg-white border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs">
             <div class="flex items-center gap-4 text-slate-600">
                 <span class="font-semibold text-slate-800">Legenda:</span>
-                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-600"></span> Unit Kerja / Kantor</span>
-                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Domisili Dekat (&lt;5 km)</span>
-                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Domisili Sedang (5-20 km)</span>
-                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-600"></span> Domisili Jauh (&gt;20 km)</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-5 h-5 rounded-lg bg-blue-700 text-white flex items-center justify-center text-[10px] shadow-xs"><i data-lucide="building-2" class="w-3 h-3"></i></span> Kantor / Unit</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] shadow-xs"><i data-lucide="home" class="w-3 h-3"></i></span> Rumah Dekat (&lt;5 km)</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] shadow-xs"><i data-lucide="home" class="w-3 h-3"></i></span> Rumah Sedang (5-20 km)</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] shadow-xs"><i data-lucide="home" class="w-3 h-3"></i></span> Rumah Jauh (&gt;20 km)</span>
             </div>
             <div class="text-slate-500 text-[11px] flex items-center gap-2">
                 <span class="inline-block w-4 h-1 bg-rose-600 rounded"></span>
@@ -239,17 +239,29 @@
 
         let isRoadMode = true;
 
-        // 1. Render Unit Kerja (Kantor)
+        // Helper SVG Icons
+        const iconBuildingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
+        const iconHomeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+
+        // 1. Render Unit Kerja (Kantor) dengan Icon Gedung & Efek Ripple Biru
         units.forEach(u => {
             if (u.kantor_lat && u.kantor_lng) {
-                const marker = L.circleMarker([u.kantor_lat, u.kantor_lng], {
-                    radius: 9,
-                    fillColor: '#1d4ed8',
-                    color: '#ffffff',
-                    weight: 2.5,
-                    opacity: 1,
-                    fillOpacity: 0.95
+                const officeIcon = L.divIcon({
+                    className: 'custom-office-marker',
+                    html: `
+                        <div class="relative flex items-center justify-center w-8 h-8 cursor-pointer group">
+                            <span class="marker-ripple bg-blue-500/35"></span>
+                            <div class="relative z-10 w-7 h-7 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-115 transition-transform">
+                                ${iconBuildingSvg}
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -16]
                 });
+
+                const marker = L.marker([u.kantor_lat, u.kantor_lng], { icon: officeIcon });
 
                 const badgeFormasi = u.kuota_formasi_kosong > 0 
                     ? `<span style="background:#ecfdf5;color:#047857;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:11px;">Tersedia Kuota: ${u.kuota_formasi_kosong}</span>`
@@ -268,21 +280,40 @@
             }
         });
 
-        // 2. Render ASN Domisili
+        // 2. Render ASN Domisili dengan Icon Rumah & Efek Ripple Sesuai Zona
         asns.forEach(asn => {
             if (asn.domisili_lat && asn.domisili_lng) {
-                let color = '#059669'; // dekat
-                if (asn.zona_jarak === 'sedang') color = '#d97706';
-                if (asn.zona_jarak === 'jauh') color = '#dc2626';
+                let bgColor = 'bg-emerald-600';
+                let rippleColor = 'bg-emerald-500/35';
+                let hexColor = '#059669';
 
-                const marker = L.circleMarker([asn.domisili_lat, asn.domisili_lng], {
-                    radius: 6,
-                    fillColor: color,
-                    color: '#ffffff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.9
+                if (asn.zona_jarak === 'sedang') {
+                    bgColor = 'bg-amber-500';
+                    rippleColor = 'bg-amber-400/35';
+                    hexColor = '#d97706';
+                }
+                if (asn.zona_jarak === 'jauh') {
+                    bgColor = 'bg-rose-600';
+                    rippleColor = 'bg-rose-500/40';
+                    hexColor = '#dc2626';
+                }
+
+                const homeIcon = L.divIcon({
+                    className: 'custom-home-marker',
+                    html: `
+                        <div class="relative flex items-center justify-center w-7 h-7 cursor-pointer group">
+                            <span class="marker-ripple ${rippleColor}"></span>
+                            <div class="relative z-10 w-6 h-6 rounded-full ${bgColor} text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-115 transition-transform">
+                                ${iconHomeSvg}
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14],
+                    popupAnchor: [0, -14]
                 });
+
+                const marker = L.marker([asn.domisili_lat, asn.domisili_lng], { icon: homeIcon });
 
                 marker.bindPopup(`
                     <div style="font-size:12px;line-height:1.4;">

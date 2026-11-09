@@ -40,6 +40,29 @@
     <style>
         body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12); }
+
+        /* Custom Marker Ripple Animation */
+        @keyframes mapRipple {
+            0% {
+                transform: scale(0.85);
+                opacity: 0.85;
+            }
+            100% {
+                transform: scale(2.6);
+                opacity: 0;
+            }
+        }
+        .marker-ripple {
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            animation: mapRipple 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+            pointer-events: none;
+        }
+        .custom-office-marker, .custom-home-marker {
+            background: transparent !important;
+            border: none !important;
+        }
     </style>
     @stack('styles')
 </head>

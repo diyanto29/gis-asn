@@ -174,25 +174,53 @@
             attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        // Marker Rumah
-        const homeMarker = L.circleMarker([homeLat, homeLng], {
-            radius: 8,
-            fillColor: '{{ $asn->zona_jarak === "jauh" ? "#dc2626" : ($asn->zona_jarak === "sedang" ? "#d97706" : "#059669") }}',
-            color: '#ffffff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.95
-        }).addTo(map).bindPopup("<strong>Rumah: {{ $asn->nama }}</strong><br/>{{ $asn->kelurahan_desa }}, Kec. {{ $asn->kecamatan }}");
+        const iconBuildingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
+        const iconHomeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
 
-        // Marker Kantor
-        const officeMarker = L.circleMarker([officeLat, officeLng], {
-            radius: 9,
-            fillColor: '#1d4ed8',
-            color: '#ffffff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.95
-        }).addTo(map).bindPopup("<strong>Kantor: {{ $asn->unitSaatIni->nama_unit ?? '' }}</strong>");
+        let homeBg = 'bg-emerald-600';
+        let homeRipple = 'bg-emerald-500/35';
+        if ('{{ $asn->zona_jarak }}' === 'sedang') { homeBg = 'bg-amber-500'; homeRipple = 'bg-amber-400/35'; }
+        if ('{{ $asn->zona_jarak }}' === 'jauh') { homeBg = 'bg-rose-600'; homeRipple = 'bg-rose-500/40'; }
+
+        // Marker Rumah Custom Icon
+        const homeIcon = L.divIcon({
+            className: 'custom-home-marker',
+            html: `
+                <div class="relative flex items-center justify-center w-8 h-8">
+                    <span class="marker-ripple ${homeRipple}"></span>
+                    <div class="relative z-10 w-7 h-7 rounded-full ${homeBg} text-white flex items-center justify-center shadow-md border-2 border-white">
+                        ${iconHomeSvg}
+                    </div>
+                </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -16]
+        });
+
+        const homeMarker = L.marker([homeLat, homeLng], { icon: homeIcon })
+            .addTo(map)
+            .bindPopup("<strong>Rumah: {{ $asn->nama }}</strong><br/>{{ $asn->kelurahan_desa }}, Kec. {{ $asn->kecamatan }}");
+
+        // Marker Kantor Custom Icon
+        const officeIcon = L.divIcon({
+            className: 'custom-office-marker',
+            html: `
+                <div class="relative flex items-center justify-center w-8 h-8">
+                    <span class="marker-ripple bg-blue-500/35"></span>
+                    <div class="relative z-10 w-7 h-7 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md border-2 border-white">
+                        ${iconBuildingSvg}
+                    </div>
+                </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -16]
+        });
+
+        const officeMarker = L.marker([officeLat, officeLng], { icon: officeIcon })
+            .addTo(map)
+            .bindPopup("<strong>Kantor: {{ $asn->unitSaatIni->nama_unit ?? '' }}</strong>");
 
         // Rute Jalan Asli OSRM
         const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${homeLng},${homeLat};${officeLng},${officeLat}?overview=full&geometries=geojson`;
