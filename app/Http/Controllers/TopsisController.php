@@ -35,18 +35,35 @@ class TopsisController extends Controller
     public function updateBobot(Request $request): RedirectResponse
     {
         $bobotInput = $request->input('bobot', []);
-        $total = array_sum($bobotInput);
-
-        // Validasi total bobot mendekati 1.00 (toleransi desimal 0.99 - 1.01)
-        if ($total < 0.95 || $total > 1.05) {
-            return back()->with('error', "Total bobot harus berjumlah 1.00 (100%). Total input saat ini: {$total}");
+        
+        if (empty($bobotInput)) {
+            return back()->with('error', 'Tidak ada data bobot kriteria yang dikirimkan.');
         }
 
+        // Konversi jika user menginput dalam format persentase bulat (misal 35, 25, 25, 15 => total 100)
+        $rawSum = array_sum($bobotInput);
+        $isPercentageMode = ($rawSum > 2.0);
+
+        $processed = [];
         foreach ($bobotInput as $id => $val) {
-            TopsisKriteria::where('id', $id)->update(['bobot' => (float)$val]);
+            $num = (float)$val;
+            $processed[$id] = $isPercentageMode ? ($num / 100.0) : $num;
         }
 
-        return back()->with('success', 'Bobot kriteria TOPSIS berhasil diperbarui secara dinamis.');
+        $total = array_sum($processed);
+
+        // Validasi ketat total bobot harus tepat 1.00 (toleransi desimal 0.99 s/d 1.01)
+        if ($total < 0.99 || $total > 1.01) {
+            $persenDisplay = round($total * 100, 1);
+            return back()->with('error', "Validasi Gagal: Akumulasi total bobot seluruh kriteria wajib tepat 100% (1.00). Total yang Anda masukkan saat ini: {$persenDisplay}% ({$total}). Silakan sesuaikan atau gunakan tombol 'Auto-Normalize'.");
+        }
+
+        // Simpan bobot baru
+        foreach ($processed as $id => $val) {
+            TopsisKriteria::where('id', $id)->update(['bobot' => round($val, 4)]);
+        }
+
+        return back()->with('success', 'Bobot kriteria TOPSIS berhasil diperbarui (Total: 100%). Perhitungan peringkat selanjutnya akan menggunakan proporsi bobot baru ini.');
     }
 
     public function proses(Request $request): View

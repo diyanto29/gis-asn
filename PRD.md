@@ -70,7 +70,7 @@ TOPSIS (*Technique for Order Preference by Similarity to Ideal Solution*) menent
 1. **Matriks Keputusan Ternormalisasi ($R$):**
    $$r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{k=1}^m x_{kj}^2}}$$
 2. **Matriks Keputusan Ternormalisasi Terbobot ($Y$):**
-   $$y_{ij} = w_j \cdot r_{ij}, \quad \text{dimana } \sum_{j=1}^n w_j = 1.00$$
+   $$y_{ij} = w_j \cdot r_{ij}, \quad \text{dimana } \sum_{j=1}^n w_j = 1.00 \quad (100\%)$$
 3. **Solusi Ideal Positif ($A^+$) dan Negatif ($A^-$):**
    $$A^+ = \{y_1^+, y_2^+, \dots, y_n^+\}, \quad A^- = \{y_1^-, y_2^-, \dots, y_n^-\}$$
    * Jika kriteria bersifat *Benefit*: $y_j^+ = \max_i(y_{ij})$ dan $y_j^- = \min_i(y_{ij})$.
@@ -80,6 +80,27 @@ TOPSIS (*Technique for Order Preference by Similarity to Ideal Solution*) menent
 5. **Nilai Preferensi Akhir ($V_i$):**
    $$V_i = \frac{D_i^-}{D_i^+ + D_i^-}, \quad 0 \le V_i \le 1$$
    *Alternatif dengan nilai $V_i$ mendekati 1 menempati peringkat (*ranking*) prioritas tertinggi.*
+
+---
+
+### 3.3.1 Kaidah & Justifikasi Akademik Pembobotan Dinamis (*Dynamic Weighting*)
+
+> [!IMPORTANT]
+> **Pedoman Ujian Sidang Skripsi: Pertanyaan Kerap Muncul Seputar Pembobotan Kriteria**
+> 
+> * **Pertanyaan Penguji:** *"Mengapa total pembobotan kriteria wajib divalidasi tepat $100\%$ ($1.00$)? Apakah boleh kurang atau lebih?"*
+> * **Jawaban Ilmiah:** **Wajib tepat $100\%$ ($1.00$).** Dalam teori *Multi-Criteria Decision Making* (MCDM), bobot $w_j$ merepresentasikan derajat kepentingan relatif (*relative importance ratio*) dari masing-masing dimensi kriteria dalam ruang vektor Euclidean $n$-dimensi. Jika total bobot tidak dibatasi pada $\sum w_j = 1.00$, maka:
+>   1. Perhitungan jarak pemisah Euclidean ($D_i^+$ dan $D_i^-$) akan mengalami distorsi magnitudo skala.
+>   2. Nilai kedekatan relatif ($V_i$) kehilangan komparabilitasnya saat dilakukan analisis sensitivitas (*sensitivity analysis*).
+>   3. Dengan normalisasi $\sum w_j = 1.00$, setiap penambahan bobot pada suatu kriteria secara adil mengurangi porsi bobot kriteria lainnya (*zero-sum trade-off*), menjamin objektivitas matematis tanpa bias subjektif.
+>
+> * **Pertanyaan Penguji:** *"Apakah pembobotan boleh diubah-ubah oleh Admin BKPSDM?"*
+> * **Jawaban Ilmiah:** **Boleh dan sangat dianjurkan (*Dynamic Weighting*).** Kebijakan kepegawaian daerah bersifat dinamis bergantung pada periode prioritas kerja Pemda. Sistem menyediakan 3 skenario kebijakan (*preset*) yang dapat disimulasikan secara instan:
+>   1. **Skenario Standar Seimbang (*Balanced Policy*):** $C_1 = 35\%$, $C_4 = 25\%$, $C_2 = 25\%$, $C_3 = 15\%$. Menyeimbangkan aspek kedekatan jarak fisik dengan rekam jejak loyalitas pegawai.
+>   2. **Skenario Prioritas Mobilitas Hijau (*Green GovTech Mobility*):** $C_1 = 45\%$, $C_4 = 35\%$, $C_2 = 10\%$, $C_3 = 10\%$. Dipilih saat Pemkab memfokuskan efisiensi anggaran transportasi dan pengurangan beban emisi BBM ASN.
+>   3. **Skenario Meritokrasi & Senioritas (*Merit-Based Seniority*):** $C_2 = 40\%$, $C_3 = 30\%$, $C_1 = 15\%$, $C_4 = 15\%$. Dipilih saat formasi jabatan mensyaratkan kematangan masa kerja dan kesesuaian eselon golongan.
+>   
+> Sistem mengimplementasikan **Dual-Layer Validation** (validasi real-time di antarmuka pengguna via JavaScript dan verifikasi ketat di backend `TopsisController`) sehingga formulir ditolak jika $\sum w_j \neq 1.00$. Dilengkapi pula fitur **Auto-Normalize** matematis $w_j' = \frac{w_j}{\sum w_k}$.
 
 ---
 

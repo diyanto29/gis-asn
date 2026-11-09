@@ -87,42 +87,123 @@
                     <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700">Dynamic Weight</span>
                 </div>
 
-                <p class="text-xs text-slate-500">
-                    Pimpinan/Admin BKPSDM dapat menyesuaikan porsi bobot kriteria sesuai arah kebijakan rotasi daerah.
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Bobot preferensi dapat ditambah atau dikurangi sesuai arah kebijakan BKPSDM. Secara kaidah ilmiah TOPSIS, <strong>total bobot seluruh kriteria wajib tepat 100% (1.00)</strong>.
                 </p>
 
-                <form method="POST" action="{{ route('topsis.update-bobot') }}" class="space-y-3.5">
+                <!-- Quick Policy Presets -->
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Preset Kebijakan Cepat:</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button type="button" onclick="applyPreset('balanced')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg text-center transition">
+                            ⚖️ Seimbang
+                        </button>
+                        <button type="button" onclick="applyPreset('mobility')" class="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-lg text-center transition">
+                            🍃 Efisiensi Jarak
+                        </button>
+                        <button type="button" onclick="applyPreset('seniority')" class="px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-semibold rounded-lg text-center transition">
+                            🎖️ Senioritas
+                        </button>
+                    </div>
+                </div>
+
+                <form id="weightForm" method="POST" action="{{ route('topsis.update-bobot') }}" class="space-y-3.5">
                     @csrf
 
                     @foreach ($kriteria as $k)
-                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-1.5">
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
                             <div class="flex items-center justify-between text-xs">
-                                <span class="font-bold text-slate-800">
-                                    [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}
-                                </span>
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $k->atribut === 'cost' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                <div>
+                                    <span class="font-extrabold text-slate-900">
+                                        [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}
+                                    </span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $k->atribut === 'cost' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
                                     {{ strtoupper($k->atribut) }}
                                 </span>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <input type="number" step="0.01" min="0" max="1" name="bobot[{{ $k->id }}]" value="{{ $k->bobot }}" class="weight-input w-24 text-sm font-bold font-mono border border-slate-300 rounded p-1.5 text-center focus:ring-indigo-500">
-                                <span class="text-xs text-slate-500">{{ $k->keterangan }}</span>
+                            
+                            <p class="text-[11px] text-slate-500 line-clamp-1">{{ $k->keterangan }}</p>
+
+                            <div class="flex items-center gap-2 pt-1">
+                                <!-- Stepper Minus Button -->
+                                <button type="button" onclick="stepWeight('weight_{{ $k->id }}', -0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
+                                    -
+                                </button>
+
+                                <!-- Number Input -->
+                                <div class="relative flex-1">
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        min="0" 
+                                        max="1" 
+                                        id="weight_{{ $k->id }}"
+                                        data-kode="{{ $k->kode_kriteria }}"
+                                        name="bobot[{{ $k->id }}]" 
+                                        value="{{ $k->bobot }}" 
+                                        class="weight-input w-full text-sm font-extrabold font-mono border border-slate-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-indigo-500 bg-white"
+                                    >
+                                </div>
+
+                                <!-- Stepper Plus Button -->
+                                <button type="button" onclick="stepWeight('weight_{{ $k->id }}', 0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
+                                    +
+                                </button>
+
+                                <!-- Percent Display Tag -->
+                                <span id="percent_{{ $k->id }}" class="w-14 text-right font-mono font-bold text-xs text-slate-700">
+                                    {{ round($k->bobot * 100) }}%
+                                </span>
                             </div>
                         </div>
                     @endforeach
 
-                    <!-- Live Total Weight Indicator -->
-                    <div class="p-3 rounded-lg border flex items-center justify-between text-xs bg-slate-50 border-slate-200">
-                        <span class="font-semibold text-slate-700">Total Bobot:</span>
-                        <span id="totalWeightBadge" class="font-extrabold text-sm text-emerald-600">
-                            {{ number_format($totalBobot * 100, 0) }}% ({{ number_format($totalBobot, 2) }})
-                        </span>
+                    <!-- Live Total Weight Meter -->
+                    <div class="p-3.5 rounded-xl border bg-slate-50 border-slate-200 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-slate-700 flex items-center gap-1.5">
+                                <i data-lucide="calculator" class="w-4 h-4 text-slate-400"></i>
+                                Akumulasi Total Bobot:
+                            </span>
+                            <span id="totalWeightBadge" class="font-extrabold text-sm text-emerald-600">
+                                {{ number_format($totalBobot * 100, 0) }}% ({{ number_format($totalBobot, 2) }})
+                            </span>
+                        </div>
+
+                        <!-- Progress Bar Visualizer -->
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div id="totalWeightBar" class="h-full bg-emerald-500 transition-all duration-300 rounded-full" style="width: {{ min(100, $totalBobot * 100) }}%;"></div>
+                        </div>
+
+                        <div id="validationMessage" class="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Total tepat 100%. Kaidah matematis TOPSIS terpenuhi.
+                        </div>
                     </div>
 
-                    <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-lg transition">
-                        Simpan Perubahan Bobot
-                    </button>
+                    <!-- Action Buttons: Auto-Normalize & Submit -->
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="button" onclick="autoNormalize()" class="px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shrink-0" title="Ratakan proporsional agar total tepat 100%">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Auto-Normalize 100%
+                        </button>
+                        
+                        <button type="submit" id="submitWeightBtn" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Bobot
+                        </button>
+                    </div>
                 </form>
+            </div>
+
+            <!-- Thesis Defense Academic Guide Card -->
+            <div class="bg-gradient-to-br from-indigo-50/60 to-blue-50/60 rounded-xl border border-indigo-100 p-4 text-xs space-y-2.5">
+                <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-600"></i>
+                    <span>Kaidah Akademik Skripsi: Bobot TOPSIS</span>
+                </div>
+                <p class="text-slate-600 leading-relaxed text-[11px]">
+                    <strong>Mengapa total bobot wajib 100% ($1.00$)?</strong><br>
+                    Dalam ruang vektor Euclidean, bobot $w_j$ menentukan panjang proyeksi sumbu kriteria. Jika $\sum w_j \neq 1.00$, terjadi <em>scale distortion</em> pada jarak solusi ideal ($D_i^+$ dan $D_i^-$) yang mendistorsi pemeringkatan kedekatan relatif ($V_i$).
+                </p>
             </div>
         </div>
 
@@ -136,22 +217,108 @@
     document.addEventListener("DOMContentLoaded", function () {
         const inputs = document.querySelectorAll('.weight-input');
         const badge = document.getElementById('totalWeightBadge');
+        const bar = document.getElementById('totalWeightBar');
+        const msg = document.getElementById('validationMessage');
+        const submitBtn = document.getElementById('submitWeightBtn');
 
         function updateTotal() {
             let sum = 0;
-            inputs.forEach(i => sum += parseFloat(i.value) || 0);
-            sum = Math.round(sum * 100) / 100;
+            inputs.forEach(input => {
+                const val = parseFloat(input.value) || 0;
+                sum += val;
+                
+                // Update percent badge next to input
+                const id = input.id.replace('weight_', '');
+                const percentLabel = document.getElementById('percent_' + id);
+                if (percentLabel) {
+                    percentLabel.innerText = Math.round(val * 100) + '%';
+                }
+            });
 
-            badge.innerText = Math.round(sum * 100) + '% (' + sum.toFixed(2) + ')';
+            sum = Math.round(sum * 100) / 100;
+            const percent = Math.round(sum * 100);
+
+            badge.innerText = percent + '% (' + sum.toFixed(2) + ')';
+            bar.style.width = Math.min(100, Math.max(0, percent)) + '%';
 
             if (sum >= 0.99 && sum <= 1.01) {
                 badge.className = 'font-extrabold text-sm text-emerald-600';
+                bar.className = 'h-full bg-emerald-500 transition-all duration-300 rounded-full';
+                msg.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span class="text-emerald-700 font-semibold">Total tepat 100%. Sesuai kaidah ilmiah TOPSIS.</span>';
+                submitBtn.disabled = false;
             } else {
                 badge.className = 'font-extrabold text-sm text-rose-600 animate-pulse';
+                bar.className = 'h-full bg-rose-500 transition-all duration-300 rounded-full';
+                const selisih = Math.round((1 - sum) * 100);
+                const ket = selisih > 0 ? `Kurang ${selisih}%` : `Kelebihan ${Math.abs(selisih)}%`;
+                msg.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> <span class="text-rose-600 font-bold">${ket}! Total wajib 100%. Klik 'Auto-Normalize'.</span>`;
+                submitBtn.disabled = true;
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
             }
         }
 
+        window.stepWeight = function (inputId, delta) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            let current = parseFloat(input.value) || 0;
+            current = Math.max(0, Math.min(1, Math.round((current + delta) * 100) / 100));
+            input.value = current.toFixed(2);
+            updateTotal();
+        };
+
+        window.applyPreset = function (type) {
+            const presets = {
+                balanced: { C1: 0.35, C4: 0.25, C2: 0.25, C3: 0.15 },
+                mobility: { C1: 0.45, C4: 0.35, C2: 0.10, C3: 0.10 },
+                seniority: { C1: 0.15, C4: 0.15, C2: 0.40, C3: 0.30 }
+            };
+
+            const selected = presets[type];
+            if (!selected) return;
+
+            inputs.forEach(input => {
+                const kode = input.getAttribute('data-kode');
+                if (selected[kode] !== undefined) {
+                    input.value = selected[kode].toFixed(2);
+                }
+            });
+
+            updateTotal();
+        };
+
+        window.autoNormalize = function () {
+            let sum = 0;
+            inputs.forEach(i => sum += (parseFloat(i.value) || 0));
+
+            if (sum <= 0) {
+                // Beri bobot merata jika 0
+                const even = (1.0 / inputs.length);
+                inputs.forEach(i => i.value = even.toFixed(2));
+            } else {
+                let accumulated = 0;
+                const count = inputs.length;
+                inputs.forEach((input, index) => {
+                    const current = parseFloat(input.value) || 0;
+                    if (index === count - 1) {
+                        // Sisa desimal untuk elemen terakhir agar jumlah persis 1.00
+                        const remaining = Math.round((1.0 - accumulated) * 100) / 100;
+                        input.value = Math.max(0, remaining).toFixed(2);
+                    } else {
+                        const normalized = Math.round((current / sum) * 100) / 100;
+                        accumulated += normalized;
+                        input.value = normalized.toFixed(2);
+                    }
+                });
+            }
+
+            updateTotal();
+        };
+
         inputs.forEach(i => i.addEventListener('input', updateTotal));
+        updateTotal(); // Initial run
     });
 </script>
 @endpush
