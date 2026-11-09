@@ -30,9 +30,10 @@
         }
     </script>
 
-    <!-- Leaflet GIS CSS & JS -->
+    <!-- Leaflet GIS CSS & JS + Heatmap Plugin -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -217,6 +218,12 @@
                         <i data-lucide="calculator" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.index', 'topsis.proses') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span class="flex-1">SPK TOPSIS</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700">Dinamis</span>
+                    </a>
+
+                    <a href="{{ route('swap-match.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('swap-match.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="repeat" class="w-4 h-4 shrink-0 {{ request()->routeIs('swap-match.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Smart Swap Match</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Zero-ABK</span>
                     </a>
 
                     <a href="{{ route('topsis.riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.riwayat') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">

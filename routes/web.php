@@ -3,6 +3,7 @@
 use App\Http\Controllers\AsnController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SsoController;
+use App\Http\Controllers\SwapMatchController;
 use App\Http\Controllers\TopsisController;
 use App\Http\Controllers\UnitKerjaController;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,9 @@ Route::get('/auth/sso', [SsoController::class, 'handleSso'])->name('auth.sso');
 
 // Dashboard Peta GIS & Statistik
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+// Smart Swap Match (Tukar Guling Simetris Zero-ABK)
+Route::get('/swap-match', [SwapMatchController::class, 'index'])->name('swap-match.index');
 
 // Modul ASN & Pembaruan Domisili Spasial
 Route::prefix('asn')->name('asn.')->group(function () {

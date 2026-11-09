@@ -124,6 +124,11 @@
                     <input type="checkbox" id="toggleLines" checked class="rounded border-slate-300 text-slate-700 focus:ring-blue-500">
                     <span>Tampilkan Rute</span>
                 </label>
+
+                <label class="inline-flex items-center gap-1.5 cursor-pointer bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-amber-900 font-bold">
+                    <input type="checkbox" id="toggleHeatmap" class="rounded border-amber-400 text-amber-600 focus:ring-amber-500">
+                    <span>🔥 Heatmap Kepadatan</span>
+                </label>
             </div>
         </div>
 
@@ -146,7 +151,28 @@
         </div>
     </div>
 
-    <!-- Quick Table: ASN yang Paling Membutuhkan Mutasi (Zona Jauh) -->
+    <!-- Green GovTech & Swap Match Quick Impact Banner -->
+    <div class="interactive-card bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <i data-lucide="leaf" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-base tracking-tight text-white">Smart Swap Match & Green GovTech Analytics</h3>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-400 text-slate-950">Baru</span>
+                </div>
+                <p class="text-xs text-slate-300 mt-0.5">
+                    Tersedia rekomendasi pertukaran simetris antar-pegawai tanpa mengubah kuota formasi (Zero-ABK) sekaligus mereduksi beban emisi karbon.
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+            <a href="{{ route('swap-match.index') }}" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5">
+                <i data-lucide="repeat" class="w-4 h-4"></i> Buka Smart Swap Match &rarr;
+            </a>
+        </div>
+    </div>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -239,6 +265,22 @@
         const asnLayer = L.layerGroup().addTo(map);
         const roadRouteLayer = L.layerGroup().addTo(map); // Default active (OSRM road curve)
         const straightLineLayer = L.layerGroup();         // Standby (Haversine straight)
+
+        // Heatmap Layer (Kepadatan Sebaran Domisili ASN)
+        const heatPoints = asns
+            .filter(a => a.domisili_lat && a.domisili_lng)
+            .map(a => [
+                a.domisili_lat, 
+                a.domisili_lng, 
+                a.zona_jarak === 'jauh' ? 1.0 : (a.zona_jarak === 'sedang' ? 0.7 : 0.4)
+            ]);
+
+        const heatLayer = (typeof L.heatLayer === 'function') ? L.heatLayer(heatPoints, {
+            radius: 35,
+            blur: 22,
+            maxZoom: 14,
+            gradient: { 0.2: '#3b82f6', 0.5: '#10b981', 0.75: '#f59e0b', 1.0: '#ef4444' }
+        }) : null;
 
         let isRoadMode = true;
 
@@ -507,6 +549,16 @@
             } else {
                 map.removeLayer(roadRouteLayer);
                 map.removeLayer(straightLineLayer);
+            }
+        });
+
+        // Heatmap Toggle Listener
+        document.getElementById('toggleHeatmap').addEventListener('change', function (e) {
+            if (!heatLayer) return;
+            if (e.target.checked) {
+                map.addLayer(heatLayer);
+            } else {
+                map.removeLayer(heatLayer);
             }
         });
     });
