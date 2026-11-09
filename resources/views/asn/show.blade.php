@@ -97,6 +97,15 @@
                     <div>Koordinat Rumah: <span class="font-mono text-slate-700">{{ $asn->domisili_lat }}, {{ $asn->domisili_lng }}</span></div>
                     <div>Alamat: <span class="text-slate-700">{{ $asn->alamat_detail ?? '-' }}, {{ $asn->kelurahan_desa }}, Kec. {{ $asn->kecamatan }}</span></div>
                 </div>
+
+                @if ($asn->domisili_lat && $asn->domisili_lng && $asn->unitSaatIni)
+                    <div class="pt-2">
+                        <a href="https://www.google.com/maps/dir/?api=1&origin={{ $asn->domisili_lat }},{{ $asn->domisili_lng }}&destination={{ $asn->unitSaatIni->kantor_lat }},{{ $asn->unitSaatIni->kantor_lng }}&travelmode=driving" target="_blank" rel="noopener noreferrer" class="w-full py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-lg shadow-xs flex items-center justify-center gap-1.5 transition">
+                            <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+                            Buka Navigasi Rute di Google Maps ↗
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -240,12 +249,19 @@
                         opacity: 0.85
                     }).addTo(map);
 
+                    const gmapsDirectUrl = `https://www.google.com/maps/dir/?api=1&origin=${homeLat},${homeLng}&destination=${officeLat},${officeLng}&travelmode=driving`;
+
                     roadLine.bindPopup(`
-                        <div style="font-size:12px;line-height:1.4;">
-                            <strong style="color:#0f172a;">Rute Perjalanan Darat (OSRM)</strong><br/>
-                            🚗 Jarak Rute Jalan: <strong>${roadDistanceKm} km</strong><br/>
-                            ⏱ Estimasi Waktu: <strong>~${durationMinutes} menit</strong> berkendara<br/>
-                            📐 Jarak Garis Lurus: <strong>{{ number_format($asn->jarak_ke_kantor_km, 2) }} km</strong>
+                        <div style="font-size:12px;line-height:1.45;min-width:240px;">
+                            <strong style="color:#0f172a;font-size:13px;">Rute Perjalanan Darat (OSRM)</strong><br/>
+                            <div style="margin:6px 0;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+                                <div>🚗 Jarak Rute Jalan: <strong>${roadDistanceKm} km</strong></div>
+                                <div>⏱ Estimasi Waktu: <strong>~${durationMinutes} menit</strong></div>
+                                <div>📐 Jarak Garis Lurus: <strong>{{ number_format($asn->jarak_ke_kantor_km, 2) }} km</strong></div>
+                            </div>
+                            <a href="${gmapsDirectUrl}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;padding:5px 8px;background:#15803d;color:#ffffff;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+                                🚗 Buka Navigasi Google Maps ↗
+                            </a>
                         </div>
                     `).openPopup();
 

@@ -267,12 +267,26 @@
                     ? `<span style="background:#ecfdf5;color:#047857;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:11px;">Tersedia Kuota: ${u.kuota_formasi_kosong}</span>`
                     : `<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:11px;">Kuota Penuh</span>`;
 
+                const gmapsOfficeUrl = `https://www.google.com/maps/search/?api=1&query=${u.kantor_lat},${u.kantor_lng}`;
+                const gmapsDirections = `https://www.google.com/maps/dir/?api=1&destination=${u.kantor_lat},${u.kantor_lng}`;
+
                 marker.bindPopup(`
-                    <div style="font-size:13px;line-height:1.4;">
-                        <strong style="color:#0f172a;font-size:14px;">${u.nama_unit}</strong><br/>
-                        <span style="color:#64748b;font-size:11px;">Kode: ${u.kode_unit} &bull; ${u.kategori}</span><br/>
-                        <p style="margin:6px 0 8px;color:#334155;font-size:12px;">${u.alamat_kantor || '-'}</p>
-                        ${badgeFormasi}
+                    <div style="font-size:13px;line-height:1.45;min-width:240px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                            <span style="color:#64748b;font-size:11px;font-weight:600;">Kode: ${u.kode_unit} &bull; ${u.kategori}</span>
+                            ${badgeFormasi}
+                        </div>
+                        <strong style="color:#0f172a;font-size:14px;display:block;margin-bottom:2px;">${u.nama_unit}</strong>
+                        <p style="margin:4px 0 8px;color:#475569;font-size:12px;">${u.alamat_kantor || '-'}</p>
+                        
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;">
+                            <a href="${gmapsOfficeUrl}" target="_blank" rel="noopener noreferrer" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:5px 8px;background:#f8fafc;border:1px solid #cbd5e1;color:#1e293b;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
+                                📍 Titik Google Maps
+                            </a>
+                            <a href="${gmapsDirections}" target="_blank" rel="noopener noreferrer" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:5px 8px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+                                🚗 Petunjuk Arah
+                            </a>
+                        </div>
                     </div>
                 `);
 
@@ -315,17 +329,29 @@
 
                 const marker = L.marker([asn.domisili_lat, asn.domisili_lng], { icon: homeIcon });
 
+                const gmapsHomeUrl = `https://www.google.com/maps/search/?api=1&query=${asn.domisili_lat},${asn.domisili_lng}`;
+                const gmapsRouteUrl = (asn.unit_saat_ini && asn.unit_saat_ini.kantor_lat && asn.unit_saat_ini.kantor_lng)
+                    ? `https://www.google.com/maps/dir/?api=1&origin=${asn.domisili_lat},${asn.domisili_lng}&destination=${asn.unit_saat_ini.kantor_lat},${asn.unit_saat_ini.kantor_lng}&travelmode=driving`
+                    : gmapsHomeUrl;
+
                 marker.bindPopup(`
-                    <div style="font-size:12px;line-height:1.4;">
+                    <div style="font-size:12px;line-height:1.45;min-width:260px;">
                         <strong style="color:#0f172a;font-size:13px;">${asn.nama}</strong><br/>
                         <span style="color:#64748b;font-size:11px;">NIP: ${asn.nip}</span><br/>
-                        <div style="margin:6px 0;padding:6px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;">
+                        <div style="margin:6px 0;padding:7px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;">
                             <div>Kantor: <strong>${asn.unit_saat_ini ? asn.unit_saat_ini.nama_unit : '-'}</strong></div>
-                            <div>Jarak Haversine: <strong style="color:${color};font-size:13px;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong> (${asn.zona_jarak.toUpperCase()})</div>
-                            <div id="osrmInfo_${asn.id}" style="color:#2563eb;font-size:11px;margin-top:2px;">Menghitung rute jalan riil...</div>
+                            <div>Jarak Lurus: <strong style="color:${color};font-size:13px;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong> (${asn.zona_jarak.toUpperCase()})</div>
+                            <div id="osrmInfo_${asn.id}" style="color:#2563eb;font-size:11px;margin-top:2px;">🚗 Menghitung rute jalan riil...</div>
                             <div style="color:#64748b;font-size:11px;margin-top:2px;">Domisili: ${asn.kelurahan_desa || ''}, Kec. ${asn.kecamatan || ''}</div>
                         </div>
-                        <a href="/asn/${asn.id}" style="color:#2563eb;text-decoration:underline;font-weight:600;">Lihat Profil Lengkap &rarr;</a>
+                        <div style="margin-top:8px;padding-top:7px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                            <a href="/asn/${asn.id}" style="color:#1d4ed8;font-weight:700;font-size:11px;text-decoration:none;">
+                                Detail Profil &rarr;
+                            </a>
+                            <a href="${gmapsRouteUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+                                🚗 Rute Google Maps ↗
+                            </a>
+                        </div>
                     </div>
                 `);
 
@@ -381,11 +407,21 @@
                                 opacity: 0.85
                             });
 
-                            roadLine.bindTooltip(`
-                                <strong>${asn.nama}</strong><br/>
-                                🚗 Jarak Rute Jalan: <strong>${roadDistanceKm} km</strong> (~${durationMinutes} mnt)<br/>
-                                📐 Jarak Lurus: <strong>${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong>
-                            `, { sticky: true });
+                            const gmapsRoadUrl = `https://www.google.com/maps/dir/?api=1&origin=${asn.domisili_lat},${asn.domisili_lng}&destination=${asn.unit_saat_ini.kantor_lat},${asn.unit_saat_ini.kantor_lng}&travelmode=driving`;
+
+                            roadLine.bindPopup(`
+                                <div style="font-size:12px;line-height:1.45;min-width:240px;">
+                                    <strong style="color:#0f172a;font-size:13px;">Rute Perjalanan Harian ASN</strong><br/>
+                                    <span style="color:#334155;">${asn.nama} (${asn.nip})</span>
+                                    <div style="margin:6px 0;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+                                        <div>🚗 Jarak Rute Jalan (OSRM): <strong style="color:#0f172a;">${roadDistanceKm} km</strong> (~${durationMinutes} mnt)</div>
+                                        <div>📐 Jarak Garis Lurus: <strong style="color:#64748b;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong></div>
+                                    </div>
+                                    <a href="${gmapsRoadUrl}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;padding:5px 8px;background:#1d4ed8;color:#ffffff;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+                                        🚗 Buka Navigasi Rute di Google Maps ↗
+                                    </a>
+                                </div>
+                            `);
 
                             roadRouteLayer.addLayer(roadLine);
 
