@@ -285,17 +285,17 @@
             if (asn.domisili_lat && asn.domisili_lng) {
                 let bgColor = 'bg-emerald-600';
                 let rippleColor = 'bg-emerald-500/35';
-                let hexColor = '#059669';
+                let color = '#059669';
 
                 if (asn.zona_jarak === 'sedang') {
                     bgColor = 'bg-amber-500';
                     rippleColor = 'bg-amber-400/35';
-                    hexColor = '#d97706';
+                    color = '#d97706';
                 }
                 if (asn.zona_jarak === 'jauh') {
                     bgColor = 'bg-rose-600';
                     rippleColor = 'bg-rose-500/40';
-                    hexColor = '#dc2626';
+                    color = '#dc2626';
                 }
 
                 const homeIcon = L.divIcon({
