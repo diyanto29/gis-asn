@@ -1,0 +1,318 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard Pemetaan Spasial ASN')
+
+@section('content')
+<div class="space-y-6">
+
+    <!-- Header Page -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Dashboard Pemetaan Geospasial ASN</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Visualisasi titik domisili pegawai, unit kerja, radius jarak tempuh, dan potensi rotasi mendekatkan rumah.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('topsis.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+                <i data-lucide="play" class="w-4 h-4"></i> Jalankan SPK Mutasi
+            </a>
+        </div>
+    </div>
+
+    <!-- Stat Cards Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Total Pegawai -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total ASN</div>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-extrabold text-slate-900">{{ $totalAsn }}</span>
+                <span class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="users" class="w-4 h-4"></i></span>
+            </div>
+            <div class="mt-1 text-[11px] text-slate-400">Terdaftar di master</div>
+        </div>
+
+        <!-- Total Unit Kerja -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Unit Kerja</div>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-extrabold text-slate-900">{{ $totalUnit }}</span>
+                <span class="p-2 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="building" class="w-4 h-4"></i></span>
+            </div>
+            <div class="mt-1 text-[11px] text-slate-400">Dinas, Camat, Puskesmas</div>
+        </div>
+
+        <!-- Formasi Lowong (ABK) -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Kuota Formasi</div>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-extrabold text-indigo-600">{{ $totalFormasi }}</span>
+                <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="user-plus" class="w-4 h-4"></i></span>
+            </div>
+            <div class="mt-1 text-[11px] text-indigo-500 font-medium">Bisa diisi mutasi</div>
+        </div>
+
+        <!-- Zona Dekat -->
+        <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+            <div class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Dekat (&lt; 5 Km)</div>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-extrabold text-emerald-600">{{ $zonaDekat }}</span>
+                <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="check" class="w-4 h-4"></i></span>
+            </div>
+            <div class="mt-1 text-[11px] text-emerald-600">Efisiensi optimal</div>
+        </div>
+
+        <!-- Zona Sedang -->
+        <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between">
+            <div class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sedang (5-20 Km)</div>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-extrabold text-amber-600">{{ $zonaSedang }}</span>
+                <span class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="navigation" class="w-4 h-4"></i></span>
+            </div>
+            <div class="mt-1 text-[11px] text-amber-600">Beban perjalanan wajar</div>
+        </div>
+
+        <!-- Zona Jauh (Prioritas Mutasi) -->
+        <div class="bg-white p-4 rounded-xl border border-rose-200 shadow-sm flex flex-col justify-between">
+            <div class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Jauh (&gt; 20 Km)</div>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-extrabold text-rose-600">{{ $zonaJauh }}</span>
+                <span class="p-2 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="alert-octagon" class="w-4 h-4"></i></span>
+            </div>
+            <div class="mt-1 text-[11px] text-rose-600 font-semibold">Prioritas rotasi BKPSDM</div>
+        </div>
+    </div>
+
+    <!-- Interactive GIS Map Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <!-- Map Control Bar -->
+        <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <i data-lucide="map" class="w-4 h-4 text-blue-600"></i>
+                <span class="text-sm font-semibold text-slate-800">Peta Sebaran Spasial Pegawai & Unit Kerja</span>
+            </div>
+
+            <!-- Map Controls / Filters -->
+            <div class="flex items-center gap-4 text-xs font-medium">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="toggleOffices" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Kantor ({{ $units->count() }})</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="toggleAsn" checked class="rounded border-slate-300 text-slate-700 focus:ring-blue-500">
+                    <span>Rumah ASN ({{ $asns->count() }})</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="toggleLines" checked class="rounded border-slate-300 text-slate-700 focus:ring-blue-500">
+                    <span>Garis Penghubung Jarak</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Leaflet Map Container -->
+        <div id="map" style="height: 520px;" class="w-full relative z-0"></div>
+
+        <!-- Map Footer Legend -->
+        <div class="px-5 py-3 bg-white border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs">
+            <div class="flex items-center gap-4 text-slate-600">
+                <span class="font-semibold text-slate-800">Legenda Marker:</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-600"></span> Unit Kerja / Kantor</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Domisili Dekat (&lt;5 km)</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Domisili Sedang (5-20 km)</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-600"></span> Domisili Jauh (&gt;20 km)</span>
+            </div>
+            <div class="text-slate-400">
+                *Garis putus-putus merah menandakan jarak tempuh perjalanan harian &gt; 20 km.
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Table: ASN yang Paling Membutuhkan Mutasi (Zona Jauh) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i>
+                <h3 class="font-bold text-slate-800 text-sm">Daftar ASN dengan Jarak Domisili Terjauh (Prioritas Rekomendasi Mutasi)</h3>
+            </div>
+            <a href="{{ route('asn.index', ['zona' => 'jauh']) }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                Lihat Semua ASN &rarr;
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                    <tr>
+                        <th class="px-5 py-3">Nama Pegawai / NIP</th>
+                        <th class="px-5 py-3">Jabatan & Pangkat</th>
+                        <th class="px-5 py-3">Unit Kerja Saat Ini</th>
+                        <th class="px-5 py-3">Lokasi Domisili (Rumah)</th>
+                        <th class="px-5 py-3 text-right">Jarak Tempuh</th>
+                        <th class="px-5 py-3 text-center">Status</th>
+                        <th class="px-5 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($asns->sortByDesc('jarak_ke_kantor_km')->take(5) as $asn)
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-5 py-3.5">
+                                <div class="font-bold text-slate-900">{{ $asn->nama_lengkap }}</div>
+                                <div class="text-xs text-slate-400 font-mono">{{ $asn->nip }}</div>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <div>{{ $asn->jabatan }}</div>
+                                <span class="inline-block mt-0.5 px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-semibold rounded">{{ $asn->pangkat_golongan }}</span>
+                            </td>
+                            <td class="px-5 py-3.5 font-medium text-slate-800">
+                                {{ $asn->unitSaatIni->nama_unit ?? '-' }}
+                            </td>
+                            <td class="px-5 py-3.5 text-xs text-slate-500">
+                                {{ $asn->kecamatan ?? '-' }}, {{ $asn->kabupaten_kota ?? '-' }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-bold text-base {{ $asn->zona_jarak === 'jauh' ? 'text-rose-600' : ($asn->zona_jarak === 'sedang' ? 'text-amber-600' : 'text-emerald-600') }}">
+                                {{ number_format($asn->jarak_ke_kantor_km, 2) }} km
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
+                                @if ($asn->zona_jarak === 'jauh')
+                                    <span class="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-xs rounded-full font-semibold">Prioritas</span>
+                                @elseif ($asn->zona_jarak === 'sedang')
+                                    <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs rounded-full font-semibold">Sedang</span>
+                                @else
+                                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs rounded-full font-semibold">Dekat</span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
+                                <a href="{{ route('asn.show', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg inline-block transition" title="Lihat Profil">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-5 py-6 text-center text-slate-400">Belum ada data ASN dengan titik koordinat domisili.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+@endsection
+
+@push('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Data dari Controller
+        const units = @json($units);
+        const asns = @json($asns);
+
+        // Center peta di Kabupaten Indramayu (-6.326350, 108.320420)
+        const map = L.map('map').setView([-6.38, 108.25], 11);
+
+        // Base Map OSM
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors | BKPSDM GIS'
+        }).addTo(map);
+
+        // Layer Groups
+        const officeLayer = L.layerGroup().addTo(map);
+        const asnLayer = L.layerGroup().addTo(map);
+        const lineLayer = L.layerGroup().addTo(map);
+
+        // 1. Render Unit Kerja (Kantor)
+        units.forEach(u => {
+            if (u.kantor_lat && u.kantor_lng) {
+                const marker = L.circleMarker([u.kantor_lat, u.kantor_lng], {
+                    radius: 9,
+                    fillColor: '#1d4ed8',
+                    color: '#ffffff',
+                    weight: 2.5,
+                    opacity: 1,
+                    fillOpacity: 0.95
+                });
+
+                const badgeFormasi = u.kuota_formasi_kosong > 0 
+                    ? `<span style="background:#ecfdf5;color:#047857;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:11px;">Tersedia Kuota: ${u.kuota_formasi_kosong}</span>`
+                    : `<span style="background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;font-size:11px;">Kuota Penuh</span>`;
+
+                marker.bindPopup(`
+                    <div style="font-size:13px;line-height:1.4;">
+                        <strong style="color:#0f172a;font-size:14px;">${u.nama_unit}</strong><br/>
+                        <span style="color:#64748b;font-size:11px;">Kode: ${u.kode_unit} &bull; ${u.kategori}</span><br/>
+                        <p style="margin:6px 0 8px;color:#334155;font-size:12px;">${u.alamat_kantor || '-'}</p>
+                        ${badgeFormasi}
+                    </div>
+                `);
+
+                officeLayer.addLayer(marker);
+            }
+        });
+
+        // 2. Render ASN Domisili & Garis Penghubung ke Kantor
+        asns.forEach(asn => {
+            if (asn.domisili_lat && asn.domisili_lng) {
+                // Warna marker domisili
+                let color = '#059669'; // dekat
+                if (asn.zona_jarak === 'sedang') color = '#d97706';
+                if (asn.zona_jarak === 'jauh') color = '#dc2626';
+
+                const marker = L.circleMarker([asn.domisili_lat, asn.domisili_lng], {
+                    radius: 6,
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                });
+
+                marker.bindPopup(`
+                    <div style="font-size:12px;line-height:1.4;">
+                        <strong style="color:#0f172a;font-size:13px;">${asn.nama}</strong><br/>
+                        <span style="color:#64748b;font-size:11px;">NIP: ${asn.nip}</span><br/>
+                        <div style="margin:6px 0;padding:6px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;">
+                            <div>Kantor: <strong>${asn.unit_saat_ini ? asn.unit_saat_ini.nama_unit : '-'}</strong></div>
+                            <div>Jarak: <strong style="color:${color};font-size:13px;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong> (${asn.zona_jarak.toUpperCase()})</div>
+                            <div style="color:#64748b;font-size:11px;">Domisili: ${asn.kelurahan_desa || ''}, Kec. ${asn.kecamatan || ''}</div>
+                        </div>
+                        <a href="/asn/${asn.id}" style="color:#2563eb;text-decoration:underline;font-weight:600;">Lihat Profil Lengkap &rarr;</a>
+                    </div>
+                `);
+
+                asnLayer.addLayer(marker);
+
+                // Buat Garis Polyline ke Unit Kerja
+                if (asn.unit_saat_ini && asn.unit_saat_ini.kantor_lat && asn.unit_saat_ini.kantor_lng) {
+                    const line = L.polyline([
+                        [asn.domisili_lat, asn.domisili_lng],
+                        [asn.unit_saat_ini.kantor_lat, asn.unit_saat_ini.kantor_lng]
+                    ], {
+                        color: color,
+                        weight: asn.zona_jarak === 'jauh' ? 2 : 1.2,
+                        opacity: 0.6,
+                        dashArray: asn.zona_jarak === 'jauh' ? '5, 8' : null
+                    });
+
+                    lineLayer.addLayer(line);
+                }
+            }
+        });
+
+        // Event Toggles
+        document.getElementById('toggleOffices').addEventListener('change', function (e) {
+            if (e.target.checked) map.addLayer(officeLayer);
+            else map.removeLayer(officeLayer);
+        });
+
+        document.getElementById('toggleAsn').addEventListener('change', function (e) {
+            if (e.target.checked) map.addLayer(asnLayer);
+            else map.removeLayer(asnLayer);
+        });
+
+        document.getElementById('toggleLines').addEventListener('change', function (e) {
+            if (e.target.checked) map.addLayer(lineLayer);
+            else map.removeLayer(lineLayer);
+        });
+    });
+</script>
+@endpush
