@@ -62,9 +62,9 @@
                                 $alt = $item['alternative'];
                                 $isWithinQuota = ($item['rank'] <= $unitTujuan->kuota_formasi_kosong);
                             @endphp
-                            <tr class="hover:bg-slate-50/80 transition {{ $isWithinQuota ? 'bg-emerald-50/30' : '' }}">
+                            <tr class="table-row-standard group {{ $isWithinQuota ? 'bg-emerald-50/30' : '' }}">
                                 <td class="px-5 py-3.5 text-center font-extrabold text-base">
-                                    <span class="w-7 h-7 rounded-full inline-flex items-center justify-center {{ $isWithinQuota ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }}">
+                                    <span class="w-7 h-7 rounded-full inline-flex items-center justify-center {{ $isWithinQuota ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }} group-hover:scale-110 transition-transform">
                                         {{ $item['rank'] }}
                                     </span>
                                 </td>

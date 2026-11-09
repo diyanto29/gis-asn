@@ -41,6 +41,92 @@
         body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12); }
 
+        /* =========================================================================
+           INTERACTIVE MICRO-ANIMATIONS & TRANSITION SYSTEM (Adopsi dari crm_worrie)
+        ========================================================================== */
+        @keyframes cardSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(16px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes modalPopIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.92) translateY(20px);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.015) translateY(-3px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(225, 29, 72, 0);
+            }
+        }
+
+        @keyframes floatGentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .animate-card-slide {
+            animation: cardSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .animate-modal-pop {
+            animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-pulse-glow {
+            animation: pulseGlow 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        .animate-float {
+            animation: floatGentle 3s ease-in-out infinite;
+        }
+
+        /* Interactive Card Hover & Lift Physics */
+        .interactive-card {
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.22s ease,
+                        background-color 0.22s ease;
+        }
+
+        .interactive-card:hover {
+            transform: translateY(-3px) scale(1.008);
+            box-shadow: 0 12px 28px -6px rgba(0, 74, 135, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        .interactive-card:active {
+            transform: translateY(-1px) scale(0.995);
+        }
+
+        /* Standardized List / Table Row Nudge Animation */
+        .table-row-standard {
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .table-row-standard:hover {
+            background-color: rgba(239, 246, 255, 0.65) !important;
+            transform: translateX(4px);
+        }
+
         /* Custom Marker Ripple Animation */
         @keyframes mapRipple {
             0% {

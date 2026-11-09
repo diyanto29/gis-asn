@@ -70,10 +70,10 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($asns as $index => $asn)
-                        <tr class="hover:bg-slate-50/80 transition">
+                        <tr class="table-row-standard group">
                             <td class="px-5 py-3.5 text-xs text-slate-400 font-mono">{{ $asns->firstItem() + $index }}</td>
                             <td class="px-5 py-3.5">
-                                <a href="{{ route('asn.show', $asn->id) }}" class="font-bold text-slate-900 hover:text-blue-600 transition">
+                                <a href="{{ route('asn.show', $asn->id) }}" class="font-bold text-slate-900 group-hover:text-blue-700 transition">
                                     {{ $asn->nama_lengkap }}
                                 </a>
                                 <div class="text-xs text-slate-400 font-mono">{{ $asn->nip }}</div>

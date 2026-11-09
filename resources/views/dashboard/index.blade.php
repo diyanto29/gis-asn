@@ -20,31 +20,31 @@
         </div>
     </div>
 
-    <!-- Stat Cards Grid -->
+    <!-- Stat Cards Grid with Staggered Entrance & Interactive Hover Physics -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <!-- Total Pegawai -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total ASN</div>
+        <div class="interactive-card animate-card-slide bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between" style="animation-delay: 0.05s;">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total ASN</div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-slate-900">{{ $totalAsn }}</span>
-                <span class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="users" class="w-4 h-4"></i></span>
+                <span class="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="users" class="w-4 h-4"></i></span>
             </div>
             <div class="mt-1 text-[11px] text-slate-400">Terdaftar di master</div>
         </div>
 
         <!-- Total Unit Kerja -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Unit Kerja</div>
+        <div class="interactive-card animate-card-slide bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between" style="animation-delay: 0.1s;">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Kerja</div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-slate-900">{{ $totalUnit }}</span>
                 <span class="p-2 bg-slate-100 text-slate-600 rounded-lg"><i data-lucide="building" class="w-4 h-4"></i></span>
             </div>
-            <div class="mt-1 text-[11px] text-slate-400">Dinas, Camat, Puskesmas</div>
+            <div class="mt-1 text-[11px] text-slate-400">Dinas, Camat, RS</div>
         </div>
 
         <!-- Formasi Lowong (ABK) -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Kuota Formasi</div>
+        <div class="interactive-card animate-card-slide bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between" style="animation-delay: 0.15s;">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Kuota Formasi</div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-indigo-600">{{ $totalFormasi }}</span>
                 <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="user-plus" class="w-4 h-4"></i></span>
@@ -53,7 +53,7 @@
         </div>
 
         <!-- Zona Dekat -->
-        <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+        <div class="interactive-card animate-card-slide bg-white p-4 rounded-xl border border-emerald-200 shadow-xs flex flex-col justify-between" style="animation-delay: 0.2s;">
             <div class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Dekat (&lt; 5 Km)</div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-emerald-600">{{ $zonaDekat }}</span>
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Zona Sedang -->
-        <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between">
+        <div class="interactive-card animate-card-slide bg-white p-4 rounded-xl border border-amber-200 shadow-xs flex flex-col justify-between" style="animation-delay: 0.25s;">
             <div class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sedang (5-20 Km)</div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-amber-600">{{ $zonaSedang }}</span>
@@ -73,13 +73,16 @@
         </div>
 
         <!-- Zona Jauh (Prioritas Mutasi) -->
-        <div class="bg-white p-4 rounded-xl border border-rose-200 shadow-sm flex flex-col justify-between">
-            <div class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Jauh (&gt; 20 Km)</div>
+        <div class="interactive-card animate-card-slide animate-pulse-glow bg-white p-4 rounded-xl border border-rose-300 shadow-xs flex flex-col justify-between" style="animation-delay: 0.3s;">
+            <div class="text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center justify-between">
+                <span>Jauh (&gt; 20 Km)</span>
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+            </div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-rose-600">{{ $zonaJauh }}</span>
                 <span class="p-2 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="alert-octagon" class="w-4 h-4"></i></span>
             </div>
-            <div class="mt-1 text-[11px] text-rose-600 font-semibold">Prioritas rotasi BKPSDM</div>
+            <div class="mt-1 text-[11px] text-rose-600 font-bold">Prioritas rotasi BKPSDM</div>
         </div>
     </div>
 
@@ -169,9 +172,9 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($asns->sortByDesc('jarak_ke_kantor_km')->take(5) as $asn)
-                        <tr class="hover:bg-slate-50/80 transition">
+                        <tr class="table-row-standard group">
                             <td class="px-5 py-3.5">
-                                <div class="font-bold text-slate-900">{{ $asn->nama_lengkap }}</div>
+                                <div class="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{{ $asn->nama_lengkap }}</div>
                                 <div class="text-xs text-slate-400 font-mono">{{ $asn->nip }}</div>
                             </td>
                             <td class="px-5 py-3.5">

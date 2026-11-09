@@ -47,9 +47,9 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($units as $unit)
-                        <tr class="hover:bg-slate-50/80 transition">
+                        <tr class="table-row-standard group">
                             <td class="px-5 py-3.5">
-                                <div class="font-bold text-slate-900">{{ $unit->nama_unit }}</div>
+                                <div class="font-bold text-slate-900 group-hover:text-blue-700 transition">{{ $unit->nama_unit }}</div>
                                 <div class="text-xs text-slate-400 font-mono">{{ $unit->kode_unit }}</div>
                                 <div class="text-[11px] text-slate-500 mt-0.5">{{ $unit->alamat_kantor ?? '-' }}</div>
                             </td>
