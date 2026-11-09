@@ -194,15 +194,49 @@
             fillOpacity: 0.95
         }).addTo(map).bindPopup("<strong>Kantor: {{ $asn->unitSaatIni->nama_unit ?? '' }}</strong>");
 
-        // Garis Polyline
-        const line = L.polyline([[homeLat, homeLng], [officeLat, officeLng]], {
-            color: '{{ $asn->zona_jarak === "jauh" ? "#dc2626" : "#0284c7" }}',
-            weight: 2.5,
-            dashArray: '6, 8'
-        }).addTo(map);
+        // Rute Jalan Asli OSRM
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${homeLng},${homeLat};${officeLng},${officeLat}?overview=full&geometries=geojson`;
 
-        // Fit bounds agar kedua marker terlihat pas
-        map.fitBounds(line.getBounds(), { padding: [40, 40] });
+        fetch(osrmUrl)
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    const roadDistanceKm = (route.distance / 1000).toFixed(2);
+                    const durationMinutes = Math.round(route.duration / 60);
+                    const latLngs = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+
+                    const roadLine = L.polyline(latLngs, {
+                        color: '{{ $asn->zona_jarak === "jauh" ? "#dc2626" : ($asn->zona_jarak === "sedang" ? "#d97706" : "#059669") }}',
+                        weight: 4,
+                        opacity: 0.85
+                    }).addTo(map);
+
+                    roadLine.bindPopup(`
+                        <div style="font-size:12px;line-height:1.4;">
+                            <strong style="color:#0f172a;">Rute Perjalanan Darat (OSRM)</strong><br/>
+                            🚗 Jarak Rute Jalan: <strong>${roadDistanceKm} km</strong><br/>
+                            ⏱ Estimasi Waktu: <strong>~${durationMinutes} menit</strong> berkendara<br/>
+                            📐 Jarak Garis Lurus: <strong>{{ number_format($asn->jarak_ke_kantor_km, 2) }} km</strong>
+                        </div>
+                    `).openPopup();
+
+                    map.fitBounds(roadLine.getBounds(), { padding: [40, 40] });
+                } else {
+                    fallbackLine();
+                }
+            })
+            .catch(() => fallbackLine());
+
+        function fallbackLine() {
+            const line = L.polyline([[homeLat, homeLng], [officeLat, officeLng]], {
+                color: '{{ $asn->zona_jarak === "jauh" ? "#dc2626" : "#0284c7" }}',
+                weight: 2.5,
+                dashArray: '6, 8'
+            }).addTo(map);
+            map.fitBounds(line.getBounds(), { padding: [40, 40] });
+        }
     });
 </script>
 @endpush
+
