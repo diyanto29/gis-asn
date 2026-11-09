@@ -45,15 +45,20 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
                         <tr>
-                            <th class="px-5 py-3.5 text-center">Rank</th>
-                            <th class="px-5 py-3.5">Pegawai / NIP</th>
-                            <th class="px-5 py-3.5">Unit Kerja Asal</th>
-                            <th class="px-5 py-3.5 text-right">Jarak Lama</th>
-                            <th class="px-5 py-3.5 text-right">Jarak Baru (C1)</th>
-                            <th class="px-5 py-3.5 text-right">Hemat Jarak (C4)</th>
-                            <th class="px-5 py-3.5 text-center">Masa Kerja (C2)</th>
-                            <th class="px-5 py-3.5 text-right">Nilai Preferensi (Vi)</th>
-                            <th class="px-5 py-3.5 text-center">Status Kuota</th>
+                            <th class="px-4 py-3.5 text-center">Rank</th>
+                            <th class="px-4 py-3.5">Pegawai / NIP</th>
+                            <th class="px-4 py-3.5">Unit Kerja Asal</th>
+                            <th class="px-4 py-3.5 text-right">Jarak Asal</th>
+                            @foreach ($kriteria as $code => $crit)
+                                <th class="px-4 py-3.5 text-right">
+                                    <span class="text-slate-900 font-bold">[{{ $code }}]</span> {{ $crit['nama'] }}
+                                    <span class="block text-[10px] font-normal uppercase text-slate-400">
+                                        {{ $crit['atribut'] }} &bull; {{ round($crit['bobot'] * 100) }}%
+                                    </span>
+                                </th>
+                            @endforeach
+                            <th class="px-4 py-3.5 text-right">Nilai Preferensi (Vi)</th>
+                            <th class="px-4 py-3.5 text-center">Status Kuota</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -63,42 +68,45 @@
                                 $isWithinQuota = ($item['rank'] <= $unitTujuan->kuota_formasi_kosong);
                             @endphp
                             <tr class="table-row-standard group {{ $isWithinQuota ? 'bg-emerald-50/30' : '' }}">
-                                <td class="px-5 py-3.5 text-center font-extrabold text-base">
+                                <td class="px-4 py-3.5 text-center font-extrabold text-base">
                                     <span class="w-7 h-7 rounded-full inline-flex items-center justify-center {{ $isWithinQuota ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }} group-hover:scale-110 transition-transform">
                                         {{ $item['rank'] }}
                                     </span>
                                 </td>
-                                <td class="px-5 py-3.5">
+                                <td class="px-4 py-3.5">
                                     <input type="hidden" name="ranks[{{ $loop->index }}][id_asn]" value="{{ $alt['id'] }}">
                                     <input type="hidden" name="ranks[{{ $loop->index }}][id_unit_asal]" value="{{ $alt['asn_model']->id_unit_saat_ini }}">
                                     <input type="hidden" name="ranks[{{ $loop->index }}][jarak_asal_km]" value="{{ $alt['jarak_lama'] }}">
-                                    <input type="hidden" name="ranks[{{ $loop->index }}][jarak_baru_km]" value="{{ $alt['C1'] }}">
-                                    <input type="hidden" name="ranks[{{ $loop->index }}][selisih_hemat_jarak_km]" value="{{ $alt['C4'] }}">
+                                    <input type="hidden" name="ranks[{{ $loop->index }}][jarak_baru_km]" value="{{ $alt['jarak_baru'] }}">
+                                    <input type="hidden" name="ranks[{{ $loop->index }}][selisih_hemat_jarak_km]" value="{{ $alt['hemat_jarak'] }}">
                                     <input type="hidden" name="ranks[{{ $loop->index }}][nilai_preferensi_v]" value="{{ $item['v_value'] }}">
                                     <input type="hidden" name="ranks[{{ $loop->index }}][ranking]" value="{{ $item['rank'] }}">
 
                                     <div class="font-bold text-slate-900">{{ $alt['nama'] }}</div>
                                     <div class="text-xs text-slate-400 font-mono">{{ $alt['nip'] }}</div>
                                 </td>
-                                <td class="px-5 py-3.5 font-medium text-slate-700">
+                                <td class="px-4 py-3.5 font-medium text-slate-700">
                                     {{ $alt['unit_asal'] }}
                                 </td>
-                                <td class="px-5 py-3.5 text-right font-medium text-slate-500">
+                                <td class="px-4 py-3.5 text-right font-medium text-slate-500">
                                     {{ number_format($alt['jarak_lama'], 2) }} km
                                 </td>
-                                <td class="px-5 py-3.5 text-right font-bold text-emerald-600">
-                                    {{ number_format($alt['C1'], 2) }} km
-                                </td>
-                                <td class="px-5 py-3.5 text-right font-extrabold text-indigo-600">
-                                    +{{ number_format($alt['C4'], 2) }} km
-                                </td>
-                                <td class="px-5 py-3.5 text-center">
-                                    {{ $alt['C2'] }} Tahun
-                                </td>
-                                <td class="px-5 py-3.5 text-right font-mono font-extrabold text-base text-blue-700">
+                                @foreach ($kriteria as $code => $crit)
+                                    <td class="px-4 py-3.5 text-right font-semibold text-slate-800">
+                                        @php
+                                            $val = $alt[$code] ?? null;
+                                        @endphp
+                                        @if (is_numeric($val))
+                                            {{ number_format($val, 2) }}
+                                        @else
+                                            {{ $val ?? '-' }}
+                                        @endif
+                                    </td>
+                                @endforeach
+                                <td class="px-4 py-3.5 text-right font-mono font-extrabold text-base text-blue-700">
                                     {{ number_format($item['v_value'], 6) }}
                                 </td>
-                                <td class="px-5 py-3.5 text-center">
+                                <td class="px-4 py-3.5 text-center">
                                     @if ($isWithinQuota)
                                         <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full">
                                             Prioritas Kuota (Lolos)
@@ -112,7 +120,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-5 py-8 text-center text-slate-400">Tidak ada alternatif kandidat yang memenuhi syarat.</td>
+                                <td colspan="{{ 6 + count($kriteria) }}" class="px-5 py-8 text-center text-slate-400">Tidak ada alternatif kandidat yang memenuhi syarat.</td>
                             </tr>
                         @endforelse
                     </tbody>

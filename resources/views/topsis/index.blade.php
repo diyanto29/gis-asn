@@ -76,33 +76,35 @@
             </div>
         </div>
 
-        <!-- Column 2: Pengaturan Bobot Kriteria Dinamis (Dynamic Weighting) -->
+        <!-- Column 2: Pengaturan Bobot Kriteria Dinamis (Dynamic Weighting & Flexible 3-5 Criteria) -->
         <div class="space-y-6">
             <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div class="flex items-center gap-2">
                         <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i>
-                        <h3 class="font-bold text-slate-900 text-sm">Pembobotan Kriteria Dinamis</h3>
+                        <h3 class="font-bold text-slate-900 text-sm">Komponen Kriteria Dinamis</h3>
                     </div>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700">Dynamic Weight</span>
+                    <button type="button" onclick="openAddCriteriaModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Kriteria
+                    </button>
                 </div>
 
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    Bobot preferensi dapat ditambah atau dikurangi sesuai arah kebijakan BKPSDM. Secara kaidah ilmiah TOPSIS, <strong>total bobot seluruh kriteria wajib tepat 100% (1.00)</strong>.
+                    Komponen kriteria dapat <strong>ditambah, dikurangi, atau dinonaktifkan (3, 4, 5, atau lebih kriteria)</strong> sesuai instrumen kebijakan BKPSDM. Total bobot kriteria aktif <strong>wajib tepat 100% (1.00)</strong>.
                 </p>
 
-                <!-- Quick Policy Presets -->
+                <!-- Quick Policy Presets (3 Kriteria, 4 Kriteria, 5 Kriteria) -->
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Preset Kebijakan Cepat:</label>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Preset Simulasi Komponen:</label>
                     <div class="grid grid-cols-3 gap-1.5">
-                        <button type="button" onclick="applyPreset('balanced')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg text-center transition">
-                            ⚖️ Seimbang
+                        <button type="button" onclick="applyPreset('three')" class="px-2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded-lg text-center transition border border-slate-200">
+                            3 Kriteria <span class="block text-[9px] font-normal text-slate-500">(Jarak, Hemat, Masa)</span>
                         </button>
-                        <button type="button" onclick="applyPreset('mobility')" class="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-lg text-center transition">
-                            🍃 Efisiensi Jarak
+                        <button type="button" onclick="applyPreset('four')" class="px-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold rounded-lg text-center transition border border-blue-200">
+                            4 Kriteria <span class="block text-[9px] font-normal text-blue-600">(Standar BKPSDM)</span>
                         </button>
-                        <button type="button" onclick="applyPreset('seniority')" class="px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-semibold rounded-lg text-center transition">
-                            🎖️ Senioritas
+                        <button type="button" onclick="applyPreset('five')" class="px-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-lg text-center transition border border-emerald-200">
+                            5 Kriteria <span class="block text-[9px] font-normal text-emerald-600">(+ SKP Kinerja)</span>
                         </button>
                     </div>
                 </div>
@@ -110,61 +112,102 @@
                 <form id="weightForm" method="POST" action="{{ route('topsis.update-bobot') }}" class="space-y-3.5">
                     @csrf
 
-                    @foreach ($kriteria as $k)
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
-                            <div class="flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-extrabold text-slate-900">
-                                        [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}
+                    <div class="space-y-2.5">
+                        @foreach ($kriteria as $k)
+                            <div class="p-3 rounded-xl border transition {{ $k->is_active ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60' }}">
+                                <div class="flex items-center justify-between text-xs mb-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-extrabold text-slate-900">
+                                            [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold {{ $k->atribut === 'cost' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                            {{ strtoupper($k->atribut) }}
+                                        </span>
+                                        @if ($k->is_active)
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Aktif</span>
+                                        @else
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-600">Nonaktif</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between text-[11px] text-slate-500 mb-2">
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="database" class="w-3 h-3 text-slate-400"></i>
+                                        Param: <code class="font-mono text-slate-700 bg-white px-1 py-0.5 rounded border border-slate-200">{{ $k->parameter_key }}</code>
                                     </span>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $k->atribut === 'cost' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                    {{ strtoupper($k->atribut) }}
-                                </span>
-                            </div>
-                            
-                            <p class="text-[11px] text-slate-500 line-clamp-1">{{ $k->keterangan }}</p>
-
-                            <div class="flex items-center gap-2 pt-1">
-                                <!-- Stepper Minus Button -->
-                                <button type="button" onclick="stepWeight('weight_{{ $k->id }}', -0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
-                                    -
-                                </button>
-
-                                <!-- Number Input -->
-                                <div class="relative flex-1">
-                                    <input 
-                                        type="number" 
-                                        step="0.01" 
-                                        min="0" 
-                                        max="1" 
-                                        id="weight_{{ $k->id }}"
-                                        data-kode="{{ $k->kode_kriteria }}"
-                                        name="bobot[{{ $k->id }}]" 
-                                        value="{{ $k->bobot }}" 
-                                        class="weight-input w-full text-sm font-extrabold font-mono border border-slate-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-indigo-500 bg-white"
-                                    >
+                                    
+                                    <!-- Toggle & Delete Actions -->
+                                    <div class="flex items-center gap-2">
+                                        <button 
+                                            type="button" 
+                                            onclick="event.preventDefault(); document.getElementById('toggle_form_{{ $k->id }}').submit();" 
+                                            class="text-[10px] font-bold {{ $k->is_active ? 'text-amber-700 hover:text-amber-900' : 'text-blue-700 hover:text-blue-900' }} hover:underline"
+                                        >
+                                            {{ $k->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                        @if ($k->kode_kriteria !== 'C1')
+                                            <span class="text-slate-300">&bull;</span>
+                                            <button 
+                                                type="button" 
+                                                onclick="if(confirm('Hapus kriteria [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}?')) { document.getElementById('delete_form_{{ $k->id }}').submit(); }" 
+                                                class="text-[10px] font-semibold text-rose-600 hover:text-rose-800 hover:underline"
+                                            >
+                                                Hapus
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
 
-                                <!-- Stepper Plus Button -->
-                                <button type="button" onclick="stepWeight('weight_{{ $k->id }}', 0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
-                                    +
-                                </button>
+                                @if ($k->is_active)
+                                    <div class="flex items-center gap-2 pt-1">
+                                        <!-- Stepper Minus -->
+                                        <button type="button" onclick="stepWeight('weight_{{ $k->id }}', -0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
+                                            -
+                                        </button>
 
-                                <!-- Percent Display Tag -->
-                                <span id="percent_{{ $k->id }}" class="w-14 text-right font-mono font-bold text-xs text-slate-700">
-                                    {{ round($k->bobot * 100) }}%
-                                </span>
+                                        <!-- Number Input -->
+                                        <div class="relative flex-1">
+                                            <input 
+                                                type="number" 
+                                                step="0.01" 
+                                                min="0" 
+                                                max="1" 
+                                                id="weight_{{ $k->id }}"
+                                                data-kode="{{ $k->kode_kriteria }}"
+                                                name="bobot[{{ $k->id }}]" 
+                                                value="{{ $k->bobot }}" 
+                                                class="weight-input w-full text-sm font-extrabold font-mono border border-slate-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-indigo-500 bg-white"
+                                            >
+                                        </div>
+
+                                        <!-- Stepper Plus -->
+                                        <button type="button" onclick="stepWeight('weight_{{ $k->id }}', 0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
+                                            +
+                                        </button>
+
+                                        <!-- Percent Tag -->
+                                        <span id="percent_{{ $k->id }}" class="w-14 text-right font-mono font-bold text-xs text-slate-700">
+                                            {{ round($k->bobot * 100) }}%
+                                        </span>
+                                    </div>
+                                @else
+                                    <div class="p-2 bg-slate-200/50 rounded-lg text-center text-[11px] text-slate-500 italic">
+                                        Kriteria ini dinonaktifkan (diabaikan dalam perhitungan matriks TOPSIS).
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
 
-                    <!-- Live Total Weight Meter -->
+                    <!-- Live Total Weight Meter (Active Criteria Only) -->
                     <div class="p-3.5 rounded-xl border bg-slate-50 border-slate-200 space-y-2">
                         <div class="flex items-center justify-between text-xs">
                             <span class="font-bold text-slate-700 flex items-center gap-1.5">
                                 <i data-lucide="calculator" class="w-4 h-4 text-slate-400"></i>
-                                Akumulasi Total Bobot:
+                                Akumulasi Bobot Kriteria Aktif:
                             </span>
                             <span id="totalWeightBadge" class="font-extrabold text-sm text-emerald-600">
                                 {{ number_format($totalBobot * 100, 0) }}% ({{ number_format($totalBobot, 2) }})
@@ -188,7 +231,7 @@
                         </button>
                         
                         <button type="submit" id="submitWeightBtn" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Bobot
+                            <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Bobot Aktif
                         </button>
                     </div>
                 </form>
@@ -198,17 +241,98 @@
             <div class="bg-gradient-to-br from-indigo-50/60 to-blue-50/60 rounded-xl border border-indigo-100 p-4 text-xs space-y-2.5">
                 <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs">
                     <i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-600"></i>
-                    <span>Kaidah Akademik Skripsi: Bobot TOPSIS</span>
+                    <span>Kaidah Akademik Skripsi: Fleksibilitas 3-5 Kriteria</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed text-[11px]">
-                    <strong>Mengapa total bobot wajib 100% ($1.00$)?</strong><br>
-                    Dalam ruang vektor Euclidean, bobot $w_j$ menentukan panjang proyeksi sumbu kriteria. Jika $\sum w_j \neq 1.00$, terjadi <em>scale distortion</em> pada jarak solusi ideal ($D_i^+$ dan $D_i^-$) yang mendistorsi pemeringkatan kedekatan relatif ($V_i$).
+                    <strong>Fleksibilitas Jumlah Kriteria ($n$ Dimensi):</strong><br>
+                    Algoritma TOPSIS bekerja pada ruang vektor berdimensi-$n$ ($m$ alternatif $\times$ $n$ kriteria). Berapapun jumlah kriteria yang diaktifkan (3, 4, atau 5 kriteria), perhitungan normalisasi matriks $R$, solusi ideal $A^+/A^-$, dan separasi Euclidean $D^+/D^-$ tetap valid dan konsisten, asalkan total bobot $\sum_{j=1}^n w_j = 1.00$.
                 </p>
             </div>
         </div>
 
     </div>
 
+</div>
+
+<!-- Hidden Standalone Forms for Toggle and Delete Criteria -->
+@foreach ($kriteria as $k)
+    <form id="toggle_form_{{ $k->id }}" action="{{ route('topsis.kriteria.toggle', $k->id) }}" method="POST" class="hidden">
+        @csrf
+    </form>
+    @if ($k->kode_kriteria !== 'C1')
+        <form id="delete_form_{{ $k->id }}" action="{{ route('topsis.kriteria.destroy', $k->id) }}" method="POST" class="hidden">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endif
+@endforeach
+
+<!-- Modal Tambah Kriteria Baru -->
+<div id="addCriteriaModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-card-slide space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base">Tambah Kriteria TOPSIS Baru</h3>
+            </div>
+            <button type="button" onclick="closeAddCriteriaModal()" class="text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ route('topsis.kriteria.store') }}" class="space-y-4">
+            @csrf
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nama Kriteria</label>
+                <input type="text" name="nama_kriteria" required placeholder="Contoh: Nilai Capaian Kinerja (SKP ASN)" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Sumber Data Parameter</label>
+                <select name="parameter_key" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+                    <option value="nilai_skp">📋 Nilai Capaian Kinerja Pegawai (SKP ASN)</option>
+                    <option value="usia_pegawai">🎂 Usia Pegawai (Tahun - Dihitung dari NIP)</option>
+                    <option value="tanggungan_keluarga">👥 Jumlah Tanggungan Keluarga</option>
+                    <option value="masa_kerja">⏳ Masa Kerja Pegawai (Tahun)</option>
+                    <option value="pangkat_golongan">🎖️ Pangkat / Golongan Ruang</option>
+                    <option value="jarak_baru">📍 Jarak Domisili ke Unit Baru (Km)</option>
+                    <option value="hemat_jarak">📐 Selisih Penghematan Jarak (Km)</option>
+                </select>
+                <p class="text-[10px] text-slate-500 mt-1">Data numerik alternatif akan ditarik otomatis dari master pegawai.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Sifat Atribut</label>
+                    <select name="atribut" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+                        <option value="benefit">BENEFIT (Makin tinggi makin baik)</option>
+                        <option value="cost">COST (Makin rendah makin baik)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Bobot Awal</label>
+                    <input type="number" step="0.01" min="0" max="1" name="bobot" value="0.15" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 text-center font-bold focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Keterangan Singkat</label>
+                <textarea name="keterangan" rows="2" placeholder="Deskripsi pertimbangan kriteria..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-2">
+                <button type="button" onclick="closeAddCriteriaModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i> Tambahkan Kriteria
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection
 
@@ -220,6 +344,14 @@
         const bar = document.getElementById('totalWeightBar');
         const msg = document.getElementById('validationMessage');
         const submitBtn = document.getElementById('submitWeightBtn');
+
+        window.openAddCriteriaModal = function() {
+            document.getElementById('addCriteriaModal').classList.remove('hidden');
+        };
+
+        window.closeAddCriteriaModal = function() {
+            document.getElementById('addCriteriaModal').classList.add('hidden');
+        };
 
         function updateTotal() {
             let sum = 0;
@@ -244,14 +376,14 @@
             if (sum >= 0.99 && sum <= 1.01) {
                 badge.className = 'font-extrabold text-sm text-emerald-600';
                 bar.className = 'h-full bg-emerald-500 transition-all duration-300 rounded-full';
-                msg.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span class="text-emerald-700 font-semibold">Total tepat 100%. Sesuai kaidah ilmiah TOPSIS.</span>';
+                msg.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span class="text-emerald-700 font-semibold">Total kriteria aktif tepat 100%. Sesuai kaidah ilmiah TOPSIS.</span>';
                 submitBtn.disabled = false;
             } else {
                 badge.className = 'font-extrabold text-sm text-rose-600 animate-pulse';
                 bar.className = 'h-full bg-rose-500 transition-all duration-300 rounded-full';
                 const selisih = Math.round((1 - sum) * 100);
                 const ket = selisih > 0 ? `Kurang ${selisih}%` : `Kelebihan ${Math.abs(selisih)}%`;
-                msg.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> <span class="text-rose-600 font-bold">${ket}! Total wajib 100%. Klik 'Auto-Normalize'.</span>`;
+                msg.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> <span class="text-rose-600 font-bold">${ket}! Total kriteria aktif wajib 100%. Klik 'Auto-Normalize'.</span>`;
                 submitBtn.disabled = true;
             }
 
@@ -271,9 +403,9 @@
 
         window.applyPreset = function (type) {
             const presets = {
-                balanced: { C1: 0.35, C4: 0.25, C2: 0.25, C3: 0.15 },
-                mobility: { C1: 0.45, C4: 0.35, C2: 0.10, C3: 0.10 },
-                seniority: { C1: 0.15, C4: 0.15, C2: 0.40, C3: 0.30 }
+                three: { C1: 0.50, C4: 0.30, C2: 0.20, C3: 0.00, C5: 0.00 },
+                four:  { C1: 0.35, C4: 0.25, C2: 0.25, C3: 0.15, C5: 0.00 },
+                five:  { C1: 0.30, C4: 0.20, C2: 0.20, C3: 0.15, C5: 0.15 }
             };
 
             const selected = presets[type];
@@ -294,7 +426,6 @@
             inputs.forEach(i => sum += (parseFloat(i.value) || 0));
 
             if (sum <= 0) {
-                // Beri bobot merata jika 0
                 const even = (1.0 / inputs.length);
                 inputs.forEach(i => i.value = even.toFixed(2));
             } else {
@@ -303,7 +434,6 @@
                 inputs.forEach((input, index) => {
                     const current = parseFloat(input.value) || 0;
                     if (index === count - 1) {
-                        // Sisa desimal untuk elemen terakhir agar jumlah persis 1.00
                         const remaining = Math.round((1.0 - accumulated) * 100) / 100;
                         input.value = Math.max(0, remaining).toFixed(2);
                     } else {

@@ -18,6 +18,8 @@ class AsnMaster extends Model
         'jabatan',
         'pangkat_golongan',
         'masa_kerja_tahun',
+        'nilai_skp',
+        'tanggungan_keluarga',
         'tmt_kerja_unit',
         'id_unit_saat_ini',
         'domisili_lat',

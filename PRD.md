@@ -161,20 +161,21 @@ Kalkulasi dampak ekonomi dan lingkungan per pegawai atau per pasangan tukar guli
 * **FR-14:** Pengelolaan data unit kerja mencakup titik kantor absensi, bezetting riil, kebutuhan ABK, dan kuota formasi lowong.
 * **FR-15:** *ABK Guard Rule*: Unit kerja dengan kuota $\le 0$ otomatis diblokir dari daftar tujuan mutasi masuk biasa guna mencegah *overstaffing*.
 
-### Modul 5: Sistem Pendukung Keputusan (Engine TOPSIS)
-* **FR-16:** Pengaturan pembobotan dinamis (*Dynamic Weighting*) pada kriteria $C_1 \dots C_4$ dengan validasi total bobot $1.00$ ($100\%$).
-* **FR-17:** Kalkulasi transparan mencakup matriks normalisasi $R$, matriks terbobot $Y$, solusi ideal $A^+$ dan $A^-$, jarak separasi $D^+$ dan $D^-$, serta nilai preferensi akhir $V_i$.
-* **FR-18:** Pemeringkatan kandidat pegawai dari nilai $V_i$ tertinggi ke terendah dengan penandaan batas kuota lowong.
-* **FR-19:** Matriks audit matematis dapat dibuka-tutup (*accordion*) untuk kebutuhan sidang skripsi/pertanggungjawaban ilmiah.
+### Modul 5: Sistem Pendukung Keputusan (Engine TOPSIS Fleksibel)
+* **FR-16 (Dynamic Component Criteria):** Mendukung penambahan (*Add*), penghapusan (*Delete*), dan pengaktifan/penonaktifan (*Toggle Active/Inactive*) komponen kriteria secara modular (dapat berjalan fleksibel dengan 3 kriteria, 4 kriteria standar, maupun 5 kriteria komprehensif yang mencakup Nilai SKP Kinerja ASN, Usia, dsb.).
+* **FR-17 (Strict 100% Validation & Auto-Normalize):** Pengaturan pembobotan dinamis (*Dynamic Weighting*) pada seluruh kriteria aktif dengan validasi ketat total bobot wajib tepat $1.00$ ($100\%$), dilengkapi tombol stepper ($\pm 5\%$) serta fitur matematis *Auto-Normalize* $w_j' = \frac{w_j}{\sum w_k}$.
+* **FR-18:** Kalkulasi transparan mencakup matriks normalisasi $R$, matriks terbobot $Y$, solusi ideal $A^+$ dan $A^-$, jarak separasi $D^+$ dan $D^-$, serta nilai preferensi akhir $V_i$ pada ruang vektor Euclidean $n$-dimensi.
+* **FR-19:** Pemeringkatan kandidat pegawai dari nilai $V_i$ tertinggi ke terendah dengan penandaan batas kuota lowong.
+* **FR-20:** Matriks audit matematis dapat dibuka-tutup (*accordion*) untuk kebutuhan sidang skripsi/pertanggungjawaban ilmiah.
 
 ### Modul 6: Smart Swap Match (Tukar Guling Simetris Zero-ABK)
-* **FR-20:** Algoritma otomatis memindai seluruh kombinasi pegawai lintas instansi dan mendeteksi pasangan simetris yang keduanya sama-sama hemat jarak ($\text{Save}_A > 0$ dan $\text{Save}_B > 0$).
-* **FR-21:** Menampilkan visualisasi diagram pertukaran posisi kantor A $\leftrightarrow$ B, penghematan kilometer harian bersama, dan persentase skor kompatibilitas.
-* **FR-22:** Menyediakan tombol komitmen *"Ajukan Paket Tukar Guling"* ke agenda sidang Baperjakat.
+* **FR-21:** Algoritma otomatis memindai seluruh kombinasi pegawai lintas instansi dan mendeteksi pasangan simetris yang keduanya sama-sama hemat jarak ($\text{Save}_A > 0$ dan $\text{Save}_B > 0$).
+* **FR-22:** Menampilkan visualisasi diagram pertukaran posisi kantor A $\leftrightarrow$ B, penghematan kilometer harian bersama, dan persentase skor kompatibilitas.
+* **FR-23:** Menyediakan tombol komitmen *"Ajukan Paket Tukar Guling"* ke agenda sidang Baperjakat.
 
 ### Modul 7: Analitik Green GovTech & Pelaporan
-* **FR-23:** Dashboard analitik menghitung estimasi penghematan pengeluaran BBM pegawai (Rupiah/tahun) dan tonase reduksi emisi $CO_2$.
-* **FR-24:** Fitur cetak laporan resmi rekomendasi mutasi dan berita acara sidang Baperjakat (*print-optimized view*).
+* **FR-24:** Dashboard analitik menghitung estimasi penghematan pengeluaran BBM pegawai (Rupiah/tahun) dan tonase reduksi emisi $CO_2$.
+* **FR-25:** Fitur cetak laporan resmi rekomendasi mutasi dan berita acara sidang Baperjakat (*print-optimized view*).
 
 ---
 

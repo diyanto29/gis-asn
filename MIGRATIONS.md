@@ -12,3 +12,4 @@ Dokumentasi riwayat perubahan skema database untuk proyek **SIMUTASI-GIS** pada 
 | 06 | `2026_11_09_095949_create_asn_master_table.php` | Data induk ASN, titik koordinat domisili spasial, zona jarak, dan profil kerja | Selesai |
 | 07 | `2026_11_09_095950_create_topsis_kriteria_table.php` | Master kriteria TOPSIS dengan dynamic weighting (C1..Cn, bobot, cost/benefit) | Selesai |
 | 08 | `2026_11_09_095951_create_rekomendasi_mutasi_table.php` | Hasil kalkulasi perangkingan preferensi mutasi ($V_i$), penghematan jarak, status Baperjakat | Selesai |
+| 09 | `2026_11_09_110808_add_parameter_key_and_is_active_to_topsis_kriteria_and_asn_master.php` | Penambahan fleksibilitas kriteria dinamis (`parameter_key`, `is_active` toggle 3-5 kriteria) & data pendukung ASN (`nilai_skp`, `tanggungan_keluarga`) | Selesai |

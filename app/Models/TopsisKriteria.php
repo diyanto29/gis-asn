@@ -10,13 +10,16 @@ class TopsisKriteria extends Model
 
     protected $fillable = [
         'kode_kriteria',
+        'parameter_key',
         'nama_kriteria',
         'bobot',
         'atribut',
+        'is_active',
         'keterangan',
     ];
 
     protected $casts = [
         'bobot' => 'float',
+        'is_active' => 'boolean',
     ];
 }
