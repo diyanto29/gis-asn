@@ -73,6 +73,79 @@
                 @endif
             </div>
 
+            <!-- Card Analisis Regulasi BKN & Kepatuhan Spasial -->
+            @php
+                $komitmen = $asn->status_komitmen_10_tahun;
+                $spasial = $asn->status_spasial_regional;
+            @endphp
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i>
+                        <h3 class="font-bold text-slate-900 text-sm">Status Regulasi Kepegawaian (BKN)</h3>
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $komitmen['badge_color'] }}">
+                        {{ $komitmen['pill_short'] }}
+                    </span>
+                </div>
+
+                <!-- 1. Aturan Komitmen 10 Tahun (PermenPAN-RB 27/2021) -->
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-500 font-medium">Tahun Pengangkatan CPNS:</span>
+                        <span class="font-bold text-slate-800 font-mono">{{ $komitmen['tahun_cpns'] }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-500 font-medium">Masa Pengabdian Riil:</span>
+                        <span class="font-bold text-slate-800">{{ $komitmen['masa_pengabdian'] }} Tahun</span>
+                    </div>
+
+                    <!-- Hak Mutasi Indicators -->
+                    <div class="pt-2 grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="p-2.5 rounded-lg border {{ $komitmen['hak_rotasi_internal'] ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' }}">
+                            <div class="font-bold flex items-center gap-1">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Rotasi Internal
+                            </div>
+                            <span class="text-[10px] text-slate-600 mt-0.5 block">Antar-SKPD Indramayu Sah</span>
+                        </div>
+                        <div class="p-2.5 rounded-lg border {{ $komitmen['hak_mutasi_keluar'] ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' : 'bg-amber-50/80 border-amber-200 text-amber-900' }}">
+                            <div class="font-bold flex items-center gap-1">
+                                @if ($komitmen['hak_mutasi_keluar'])
+                                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Mutasi Keluar
+                                @else
+                                    <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-700"></i> Mutasi Keluar
+                                @endif
+                            </div>
+                            <span class="text-[10px] text-slate-600 mt-0.5 block">
+                                {{ $komitmen['hak_mutasi_keluar'] ? 'Memenuhi Syarat 10 Th' : 'Terkunci (Sisa ' . $komitmen['sisa_tahun'] . ' Th)' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+                        <strong class="text-slate-800 block mb-0.5">Dasar Hukum: {{ $komitmen['dasar_hukum'] }}</strong>
+                        {{ $komitmen['notice'] }}
+                    </div>
+                </div>
+
+                <!-- 2. Analisis Spasial Regional (Cirebon / Riau / Indramayu) -->
+                <div class="pt-3 border-t border-slate-100 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-900 flex items-center gap-1">
+                            <i data-lucide="map" class="w-3.5 h-3.5 text-blue-600"></i> Status Wilayah Domisili:
+                        </span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $spasial['badge_color'] }}">
+                            {{ $spasial['pill_short'] }}
+                        </span>
+                    </div>
+
+                    <div class="p-3 rounded-xl border text-[11px] leading-relaxed {{ $spasial['is_alert'] ? 'bg-rose-50/70 border-rose-200 text-rose-900' : ($spasial['type'] === 'perbatasan_komuter' ? 'bg-purple-50/70 border-purple-200 text-purple-900' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900') }}">
+                        <strong class="block font-bold mb-1">{{ $spasial['notice_title'] }}</strong>
+                        {{ $spasial['notice'] }}
+                    </div>
+                </div>
+            </div>
+
             <!-- Jarak Spasial Card -->
             <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3">
                 <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">

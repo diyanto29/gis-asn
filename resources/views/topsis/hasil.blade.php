@@ -25,6 +25,21 @@
         </div>
     </div>
 
+    <!-- Notice Banner Regulasi BKN & Komuter Spasial -->
+    <div class="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 rounded-xl border border-blue-200/80 flex items-start gap-3 text-xs leading-relaxed">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 font-bold mt-0.5">
+            <i data-lucide="scale" class="w-4 h-4"></i>
+        </div>
+        <div>
+            <strong class="text-blue-950 font-bold block mb-0.5">Catatan Regulasi BKN & Kepatuhan Spasial Kepegawaian:</strong>
+            <ul class="list-disc list-inside text-slate-600 space-y-0.5 text-[11px]">
+                <li><strong>Aturan Komitmen 10 Tahun (PermenPAN-RB 27/2021):</strong> ASN dengan TMT CPNS &ge; 2019 yang belum 10 tahun masa kerja berstatus <em>Rotasi Internal Sah</em>. Sistem memindahkan ke unit kerja Indramayu terdekat tanpa melanggar larangan pindah instansi keluar daerah.</li>
+                <li><strong>Komuter Perbatasan (Cirebon / Sekitar):</strong> Sistem memprioritaskan penempatan koridor terdekat perbatasan guna menekan waktu tempuh harian.</li>
+                <li><strong>Domisili Ekstra-Teritorial (&gt;100 km):</strong> Rekomendasi internal Indramayu berjarak tinggi; ditandai untuk atensi khusus sidang Baperjakat.</li>
+            </ul>
+        </div>
+    </div>
+
     <!-- Ranked Result Table Form -->
     <form method="POST" action="{{ route('topsis.simpan') }}">
         @csrf
@@ -84,6 +99,14 @@
 
                                     <div class="font-bold text-slate-900">{{ $alt['nama'] }}</div>
                                     <div class="text-xs text-slate-400 font-mono">{{ $alt['nip'] }}</div>
+                                    <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $alt['asn_model']->status_komitmen_10_tahun['badge_color'] }}">
+                                            {{ $alt['asn_model']->status_komitmen_10_tahun['pill_short'] }}
+                                        </span>
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $alt['asn_model']->status_spasial_regional['badge_color'] }}">
+                                            {{ $alt['asn_model']->status_spasial_regional['pill_short'] }}
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3.5 font-medium text-slate-700">
                                     {{ $alt['unit_asal'] }}

@@ -126,6 +126,31 @@ Kalkulasi dampak ekonomi dan lingkungan per pegawai atau per pasangan tukar guli
 
 ---
 
+### 3.6 Model Regulasi Kepegawaian & Kepatuhan Spasial Regional
+
+Untuk menjamin kepatuhan sistem terhadap peraturan perundang-undangan ASN nasional dan batas kewenangan otonomi daerah, sistem menerapkan model logika kepatuhan terintegrasi:
+
+#### 1. Aturan Ikatan Pengabdian 10 Tahun (PermenPAN-RB No. 27 Tahun 2021 Pasal 52)
+Bagi ASN dengan tahun pengangkatan CPNS $\ge 2019$, berlaku komitmen tidak mengajukan pindah instansi keluar daerah selama 10 tahun sejak TMT CPNS.
+$$\text{Tahun CPNS} = \text{Substring}(\text{NIP}, 9, 4)$$
+$$\text{Masa Pengabdian} = \text{Tahun Berjalan} - \text{Tahun CPNS}$$
+* **Logika Sistem:**
+  * **Mutasi Internal (Antar-SKPD Indramayu):** **DIIZINKAN & DIREKOMENDASIKAN** sebagai instrumen mitigasi agar pegawai tidak mengalami kelelahan (*burnout*) atau mengundurkan diri akibat jarak tempuh jauh.
+  * **Mutasi Eksternal (Keluar Daerah):** **TERKUNCI (*Locked Rule*)** jika $\text{Masa Pengabdian} < 10\text{ Tahun}$, disertai notifikasi sisa tahun komitmen.
+
+#### 2. Model Optimalisasi Komuter Wilayah Perbatasan (Cirebon, Majalengka, Subang)
+Kasus ASN berdomisili di luar perbatasan kabupaten (misalnya tinggal di Kabupaten/Kota Cirebon namun berstatus ASN Pemkab Indramayu):
+* **Batas Kewenangan Instansi:** Sistem **TIDAK MEREKOMENDASIKAN** kantor di luar Pemkab Indramayu (karena perbedaan entitas APBD dan formasi BKN).
+* **Solusi Geospasial Spasial:** Algoritma TOPSIS dan OSRM memindai seluruh unit kerja di Kabupaten Indramayu dan merekomendasikan **kantor Indramayu di zona koridor terdekat dari perbatasan Cirebon** (seperti Kecamatan Krangkeng, Kertasmaya, Sukagumiwang, Kedokan Bunder) untuk memangkas waktu tempuh komuter harian.
+
+#### 3. Penanganan Kasus Ekstra-Teritorial (> 100 Km / Luar Pulau / Riau)
+Jika koordinat domisili ASN berada di luar radius komuter harian ($d > 100\text{ km}$ atau luar provinsi):
+* Sistem memicu **Notice Spasial Ekstra-Teritorial**.
+* Pada kalkulasi TOPSIS, nilai kriteria Cost Jarak Baru ($C_1$) bernilai sangat tinggi sehingga secara matematis terdegradasi ke urutan bawah untuk rotasi internal harian.
+* Sistem menandai status pegawai untuk diajukan ke sidang khusus Tim Baperjakat dengan opsi rekomendasi: *"Usulan Pindah Instansi Luar Daerah (Lolos Butuh BKN)"* jika masa kerja telah memenuhi syarat regulasi.
+
+---
+
 ## 4. PERSONA & HAK AKSES PENGGUNA
 
 | Persona | Deskripsi Peran | Hak Akses Utama |
@@ -176,6 +201,11 @@ Kalkulasi dampak ekonomi dan lingkungan per pegawai atau per pasangan tukar guli
 ### Modul 7: Analitik Green GovTech & Pelaporan
 * **FR-24:** Dashboard analitik menghitung estimasi penghematan pengeluaran BBM pegawai (Rupiah/tahun) dan tonase reduksi emisi $CO_2$.
 * **FR-25:** Fitur cetak laporan resmi rekomendasi mutasi dan berita acara sidang Baperjakat (*print-optimized view*).
+
+### Modul 8: Kepatuhan Regulasi Kepegawaian & Kategori Spasial Regional
+* **FR-26 (BKN 10-Year Commitment Guard):** Ekstraksi otomatis tahun TMT CPNS dari 18 digit NIP. Bagi NIP $\ge 2019$ dengan masa kerja $< 10$ tahun, sistem menandai izin rotasi internal Indramayu sah, namun mengunci hak usulan mutasi keluar daerah sesuai PermenPAN-RB No. 27/2021.
+* **FR-27 (Border Commuter Optimization):** Deteksi spasial ASN berdomisili perbatasan (Cirebon, Majalengka, Subang) dengan prioritas rekomendasi unit kerja Indramayu di zona koridor terdekat perbatasan.
+* **FR-28 (Extra-Territorial Anomaly Notice):** Deteksi otomatis ASN dengan jarak domisili $> 100\text{ km}$ atau luar provinsi (seperti Riau, Medan) dengan penandaan notice khusus usulan pindah instansi luar daerah untuk sidang Baperjakat.
 
 ---
 

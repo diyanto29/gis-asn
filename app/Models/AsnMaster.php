@@ -61,4 +61,131 @@ class AsnMaster extends Model
         $belakang = $this->gelar_belakang ? ', ' . $this->gelar_belakang : '';
         return $depan . $this->nama . $belakang;
     }
+
+    /**
+     * Parsing tahun pengangkatan CPNS dari NIP (digit 9-12).
+     */
+    public function getTahunCpnsAttribute(): int
+    {
+        if (strlen($this->nip) >= 12) {
+            $year = (int)substr($this->nip, 8, 4);
+            if ($year >= 1970 && $year <= 2030) {
+                return $year;
+            }
+        }
+        return now()->year - ($this->masa_kerja_tahun ?? 5);
+    }
+
+    /**
+     * Hitung masa pengabdian riil sejak SK CPNS.
+     */
+    public function getMasaPengabdianTahunAttribute(): int
+    {
+        return max(0, (int)now()->year - $this->tahun_cpns);
+    }
+
+    /**
+     * Status Regulasi Komitmen 10 Tahun (PermenPAN-RB No. 27/2021).
+     */
+    public function getStatusKomitmen10TahunAttribute(): array
+    {
+        $tahun = $this->tahun_cpns;
+        $masaPengabdian = $this->masa_pengabdian_tahun;
+
+        if ($tahun >= 2019) {
+            if ($masaPengabdian < 10) {
+                $sisa = 10 - $masaPengabdian;
+                return [
+                    'is_bound' => true,
+                    'is_locked_external' => true,
+                    'tahun_cpns' => $tahun,
+                    'masa_pengabdian' => $masaPengabdian,
+                    'sisa_tahun' => $sisa,
+                    'status_label' => "Ikatan Dinas {$tahun} (Sisa {$sisa} Th)",
+                    'badge_color' => 'bg-amber-100 text-amber-800 border-amber-300',
+                    'pill_short' => "Ikatan {$sisa} Th",
+                    'hak_rotasi_internal' => true,
+                    'hak_mutasi_keluar' => false,
+                    'dasar_hukum' => 'PermenPAN-RB No. 27/2021 Pasal 52 (Komitmen 10 Tahun)',
+                    'notice' => "Wajib mengabdi minimal 10 tahun (TMT CPNS {$tahun}). Rotasi internal antar-SKPD Indramayu DIIZINKAN, namun permohonan mutasi keluar Pemkab Indramayu TERKUNCI (Sisa {$sisa} tahun)."
+                ];
+            } else {
+                return [
+                    'is_bound' => true,
+                    'is_locked_external' => false,
+                    'tahun_cpns' => $tahun,
+                    'masa_pengabdian' => $masaPengabdian,
+                    'sisa_tahun' => 0,
+                    'status_label' => "Komitmen 10 Th Terpenuhi",
+                    'badge_color' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                    'pill_short' => 'Komitmen Terpenuhi',
+                    'hak_rotasi_internal' => true,
+                    'hak_mutasi_keluar' => true,
+                    'dasar_hukum' => 'PermenPAN-RB No. 27/2021',
+                    'notice' => "Masa pengabdian telah melampaui 10 tahun ({$masaPengabdian} tahun). Berhak mengajukan rotasi internal maupun usulan mutasi keluar instansi daerah."
+                ];
+            }
+        }
+
+        return [
+            'is_bound' => false,
+            'is_locked_external' => false,
+            'tahun_cpns' => $tahun,
+            'masa_pengabdian' => $masaPengabdian,
+            'sisa_tahun' => 0,
+            'status_label' => "Regulasi Pra-2019 (Senior)",
+            'badge_color' => 'bg-blue-100 text-blue-800 border-blue-300',
+            'pill_short' => 'Pra-2019',
+            'hak_rotasi_internal' => true,
+            'hak_mutasi_keluar' => true,
+            'dasar_hukum' => 'PP No. 11/2017 tentang Manajemen PNS',
+            'notice' => "Pengangkatan CPNS {$tahun} (sebelum aturan komitmen 10 tahun 2019 diberlakukan). Memenuhi syarat regulasi mutasi."
+        ];
+    }
+
+    /**
+     * Analisis Kategori Spasial Domisili (Indramayu Internal / Perbatasan Cirebon / Ekstra-Teritorial).
+     */
+    public function getStatusSpasialRegionalAttribute(): array
+    {
+        $jarak = (float)$this->jarak_ke_kantor_km;
+        $kab = strtolower($this->kabupaten_kota ?? '');
+
+        // Kasus 1: Ekstra-Teritorial (Luar Pulau / Luar Jangkauan Komuter > 100 km)
+        if ($jarak > 100.0 || (str_contains($kab, 'riau') || str_contains($kab, 'medan') || str_contains($kab, 'surabaya') || str_contains($kab, 'pekanbaru'))) {
+            return [
+                'type' => 'ekstra_teritorial',
+                'badge_label' => 'Domisili Ekstra-Teritorial (>100 km)',
+                'badge_color' => 'bg-rose-100 text-rose-800 border-rose-300',
+                'pill_short' => 'Luar Daerah (>100 km)',
+                'is_alert' => true,
+                'notice_title' => 'Peringatan Anomali Domisili (Luar Jangkauan Komuter Harian)',
+                'notice' => "Domisili ASN terdeteksi di luar radius komuter harian ({$this->kabupaten_kota}, jarak ~" . number_format($jarak, 1) . " km). Rotasi internal antar-kantor di Indramayu tidak lagi efektif memangkas jarak perjalanan harian. Direkomendasikan penelaahan status khusus Baperjakat untuk 'Usulan Pindah Instansi Luar Daerah (Lolos Butuh BKN)'."
+            ];
+        }
+
+        // Kasus 2: Komuter Wilayah Perbatasan (Cirebon, Majalengka, Subang 20-100 km)
+        if (str_contains($kab, 'cirebon') || str_contains($kab, 'majalengka') || str_contains($kab, 'subang') || $jarak >= 25.0) {
+            return [
+                'type' => 'perbatasan_komuter',
+                'badge_label' => 'Komuter Lintas Batas (Perbatasan Antar-Kabupaten)',
+                'badge_color' => 'bg-purple-100 text-purple-800 border-purple-300',
+                'pill_short' => 'Komuter Cirebon/Batas',
+                'is_alert' => false,
+                'notice_title' => 'Optimalisasi Komuter Wilayah Perbatasan',
+                'notice' => "ASN berdomisili di wilayah perbatasan ({$this->kabupaten_kota}). Sistem SPK TOPSIS memprioritaskan rekomendasi unit kerja Indramayu di zona koridor terdekat (seperti Krangkeng, Kertasmaya, Sukagumiwang) guna memangkas durasi perjalanan tanpa melanggar yurisdiksi Pemkab Indramayu."
+            ];
+        }
+
+        // Kasus 3: Wilayah Internal Indramayu Biasa
+        return [
+            'type' => 'internal_indramayu',
+            'badge_label' => 'Domisili Internal Indramayu',
+            'badge_color' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+            'pill_short' => 'Lokal Indramayu',
+            'is_alert' => false,
+            'notice_title' => 'Mobilitas Internal Daerah',
+            'notice' => "Domisili berada di dalam lingkup Kabupaten Indramayu. Pemetaan rute mengemudi OSRM dioptimalkan mengikuti jaringan jalan aspal lokal."
+        ];
+    }
 }

@@ -77,6 +77,14 @@
                                     {{ $asn->nama_lengkap }}
                                 </a>
                                 <div class="text-xs text-slate-400 font-mono">{{ $asn->nip }}</div>
+                                <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $asn->status_komitmen_10_tahun['badge_color'] }}">
+                                        {{ $asn->status_komitmen_10_tahun['pill_short'] }}
+                                    </span>
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $asn->status_spasial_regional['badge_color'] }}">
+                                        {{ $asn->status_spasial_regional['pill_short'] }}
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-5 py-3.5">
                                 <div>{{ $asn->jabatan }}</div>
