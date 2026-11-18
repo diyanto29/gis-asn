@@ -100,14 +100,10 @@
 
             <!-- Map Controls / Filters -->
             <div class="flex flex-wrap items-center gap-4 text-xs font-medium">
-                <!-- Mode Garis: Rute Jalan vs Garis Lurus -->
-                <div class="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-xs">
-                    <button type="button" id="btnModeRoad" class="px-2.5 py-1 rounded text-xs font-bold bg-blue-700 text-white flex items-center gap-1 transition">
-                        <i data-lucide="car" class="w-3.5 h-3.5"></i> Rute Jalan Asli (OSRM)
-                    </button>
-                    <button type="button" id="btnModeStraight" class="px-2.5 py-1 rounded text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 transition">
-                        <i data-lucide="ruler" class="w-3.5 h-3.5"></i> Garis Lurus (Haversine)
-                    </button>
+                <!-- Indikator Mesin Routing OSRM -->
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold">
+                    <i data-lucide="car" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <span>Rute Jalan Raya (OSRM)</span>
                 </div>
 
                 <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
@@ -263,8 +259,7 @@
         // Layer Groups
         const officeLayer = L.layerGroup().addTo(map);
         const asnLayer = L.layerGroup().addTo(map);
-        const roadRouteLayer = L.layerGroup().addTo(map); // Default active (OSRM road curve)
-        const straightLineLayer = L.layerGroup();         // Standby (Haversine straight)
+        const roadRouteLayer = L.layerGroup().addTo(map); // Rute fisik jalan raya nyata (OSRM)
 
         // Heatmap Layer (Kepadatan Sebaran Domisili ASN)
         const heatPoints = asns
@@ -385,8 +380,8 @@
                         <span style="color:#64748b;font-size:11px;">NIP: ${asn.nip}</span><br/>
                         <div style="margin:6px 0;padding:7px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;">
                             <div>Kantor: <strong>${asn.unit_saat_ini ? asn.unit_saat_ini.nama_unit : '-'}</strong></div>
-                            <div>Jarak Lurus: <strong style="color:${color};font-size:13px;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong> (${asn.zona_jarak.toUpperCase()})</div>
-                            <div id="osrmInfo_${asn.id}" style="color:#2563eb;font-size:11px;margin-top:2px;">🚗 Menghitung rute jalan riil...</div>
+                            <div>Jarak Tempuh: <strong style="color:${color};font-size:13px;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong> (${asn.zona_jarak.toUpperCase()})</div>
+                            <div id="osrmInfo_${asn.id}" style="color:#2563eb;font-size:11px;margin-top:2px;">🚗 Menghitung rute jalan OSRM...</div>
                             <div style="color:#64748b;font-size:11px;margin-top:2px;">Domisili: ${asn.kelurahan_desa || ''}, Kec. ${asn.kecamatan || ''}</div>
                         </div>
                         <div style="margin-top:8px;padding-top:7px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:6px;">
@@ -401,20 +396,6 @@
                 `);
 
                 asnLayer.addLayer(marker);
-
-                // Buat Garis Lurus (Standby layer)
-                if (asn.unit_saat_ini && asn.unit_saat_ini.kantor_lat && asn.unit_saat_ini.kantor_lng) {
-                    const straightLine = L.polyline([
-                        [asn.domisili_lat, asn.domisili_lng],
-                        [asn.unit_saat_ini.kantor_lat, asn.unit_saat_ini.kantor_lng]
-                    ], {
-                        color: color,
-                        weight: 2,
-                        opacity: 0.6,
-                        dashArray: '5, 8'
-                    });
-                    straightLineLayer.addLayer(straightLine);
-                }
             }
         });
 
@@ -460,7 +441,6 @@
                                     <span style="color:#334155;">${asn.nama} (${asn.nip})</span>
                                     <div style="margin:6px 0;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
                                         <div>🚗 Jarak Rute Jalan (OSRM): <strong style="color:#0f172a;">${roadDistanceKm} km</strong> (~${durationMinutes} mnt)</div>
-                                        <div>📐 Jarak Garis Lurus: <strong style="color:#64748b;">${Number(asn.jarak_ke_kantor_km).toFixed(2)} km</strong></div>
                                     </div>
                                     <a href="${gmapsRoadUrl}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;padding:5px 8px;background:#1d4ed8;color:#ffffff;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
                                         🚗 Buka Navigasi Rute di Google Maps ↗
@@ -473,7 +453,7 @@
                             // Update info popup jika ada
                             const infoDiv = document.getElementById(`osrmInfo_${asn.id}`);
                             if (infoDiv) {
-                                infoDiv.innerHTML = `🚗 Rute Jalan Asli: <strong>${roadDistanceKm} km</strong> (~${durationMinutes} menit berkendara)`;
+                                infoDiv.innerHTML = `🚗 Rute Jalan (OSRM): <strong>${roadDistanceKm} km</strong> (~${durationMinutes} menit)`;
                             }
                         } else {
                             // Fallback jika OSRM tidak menemukan rute
@@ -505,32 +485,6 @@
             badgeRouting.classList.add('hidden');
         });
 
-        // 4. Toggle Mode: Rute Jalan vs Garis Lurus
-        const btnRoad = document.getElementById('btnModeRoad');
-        const btnStraight = document.getElementById('btnModeStraight');
-
-        btnRoad.addEventListener('click', function () {
-            isRoadMode = true;
-            btnRoad.className = 'px-2.5 py-1 rounded text-xs font-bold bg-blue-700 text-white flex items-center gap-1 transition';
-            btnStraight.className = 'px-2.5 py-1 rounded text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 transition';
-
-            if (document.getElementById('toggleLines').checked) {
-                map.removeLayer(straightLineLayer);
-                map.addLayer(roadRouteLayer);
-            }
-        });
-
-        btnStraight.addEventListener('click', function () {
-            isRoadMode = false;
-            btnStraight.className = 'px-2.5 py-1 rounded text-xs font-bold bg-blue-700 text-white flex items-center gap-1 transition';
-            btnRoad.className = 'px-2.5 py-1 rounded text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 transition';
-
-            if (document.getElementById('toggleLines').checked) {
-                map.removeLayer(roadRouteLayer);
-                map.addLayer(straightLineLayer);
-            }
-        });
-
         // Event Checkbox Toggles
         document.getElementById('toggleOffices').addEventListener('change', function (e) {
             if (e.target.checked) map.addLayer(officeLayer);
@@ -544,11 +498,9 @@
 
         document.getElementById('toggleLines').addEventListener('change', function (e) {
             if (e.target.checked) {
-                if (isRoadMode) map.addLayer(roadRouteLayer);
-                else map.addLayer(straightLineLayer);
+                map.addLayer(roadRouteLayer);
             } else {
                 map.removeLayer(roadRouteLayer);
-                map.removeLayer(straightLineLayer);
             }
         });
 

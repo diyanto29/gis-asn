@@ -285,10 +285,79 @@ class TopsisController extends Controller
     public function riwayat(): View
     {
         $riwayat = RekomendasiMutasi::with(['asn', 'unitAsal', 'unitTujuan'])
+            ->orderByRaw("FIELD(status_usulan, 'diajukan_baperjakat', 'draft', 'disetujui', 'ditolak')")
             ->orderBy('id_unit_tujuan')
             ->orderBy('ranking')
-            ->paginate(20);
+            ->get();
 
         return view('topsis.riwayat', compact('riwayat'));
+    }
+
+    /**
+     * Menyetujui usulan rekomendasi mutasi dan mengeksekusi perpindahan unit ASN.
+     */
+    public function approveUsulan(Request $request, int $id): RedirectResponse
+    {
+        $usulan = RekomendasiMutasi::with(['asn', 'unitAsal', 'unitTujuan'])->findOrFail($id);
+
+        if ($usulan->status_usulan === 'disetujui') {
+            return back()->with('error', 'Usulan mutasi ini sudah berstatus disetujui sebelumnya.');
+        }
+
+        $asn = $usulan->asn;
+        $unitAsal = $usulan->unitAsal;
+        $unitTujuan = $usulan->unitTujuan;
+
+        // 1. Update status usulan Baperjakat
+        $catatan = $request->input('catatan', 'Disetujui melalui Sidang Penilai Kinerja / Baperjakat BKPSDM.');
+        $usulan->update([
+            'status_usulan' => 'disetujui',
+            'catatan_baperjakat' => $catatan,
+        ]);
+
+        // 2. Eksekusi perpindahan unit kerja pada data master ASN
+        $asn->update([
+            'id_unit_saat_ini' => $unitTujuan->id,
+            'jarak_ke_kantor_km' => $usulan->jarak_baru_km,
+            'status_permohonan_mutasi' => false,
+            'alasan_mutasi' => null,
+        ]);
+
+        // 3. Update kapasitas bezetting & kuota makro unit kerja jika berbeda
+        if ($unitAsal && $unitAsal->id !== $unitTujuan->id) {
+            $unitAsal->decrement('bezetting_saat_ini');
+            $unitAsal->increment('kuota_formasi_kosong');
+
+            $unitTujuan->increment('bezetting_saat_ini');
+            if ($unitTujuan->kuota_formasi_kosong > 0) {
+                $unitTujuan->decrement('kuota_formasi_kosong');
+            }
+        }
+
+        return redirect()->route('topsis.riwayat')
+            ->with('success', "SK Mutasi Diterbitkan! ASN {$asn->nama_lengkap} resmi dipindahkan dari {$unitAsal->nama_unit} ke {$unitTujuan->nama_unit}.");
+    }
+
+    /**
+     * Menolak usulan rekomendasi mutasi dengan catatan sidang.
+     */
+    public function rejectUsulan(Request $request, int $id): RedirectResponse
+    {
+        $usulan = RekomendasiMutasi::with('asn')->findOrFail($id);
+        $alasan = $request->input('catatan_penolakan', 'Ditolak berdasarkan pertimbangan sidang Baperjakat.');
+
+        $usulan->update([
+            'status_usulan' => 'ditolak',
+            'catatan_baperjakat' => $alasan,
+        ]);
+
+        if ($usulan->asn) {
+            $usulan->asn->update([
+                'status_permohonan_mutasi' => false,
+            ]);
+        }
+
+        return redirect()->route('topsis.riwayat')
+            ->with('success', "Usulan mutasi untuk ASN {$usulan->asn->nama_lengkap} telah ditolak.");
     }
 }

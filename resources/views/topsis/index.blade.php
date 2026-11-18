@@ -84,9 +84,14 @@
                         <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i>
                         <h3 class="font-bold text-slate-900 text-sm">Komponen Kriteria Dinamis</h3>
                     </div>
-                    <button type="button" onclick="openAddCriteriaModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs">
-                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Kriteria
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('master-kriteria.index') }}" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-300 shadow-xs" title="Buka Halaman Manajemen Master Kriteria">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-600"></i> Kelola di Master
+                        </a>
+                        <button type="button" onclick="openAddCriteriaModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Kriteria
+                        </button>
+                    </div>
                 </div>
 
                 <p class="text-xs text-slate-500 leading-relaxed">

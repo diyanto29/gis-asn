@@ -11,6 +11,13 @@
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Data Pegawai & Pemetaan Domisili</h1>
             <p class="text-sm text-slate-500 mt-1">Daftar seluruh ASN, koordinat tempat tinggal, unit kerja, dan beban jarak harian.</p>
         </div>
+        @if (auth()->user()->isAdmin())
+            <div>
+                <a href="{{ route('asn.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold shadow-sm transition">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i> Tambah Pegawai ASN
+                </a>
+            </div>
+        @endif
     </div>
 
     <!-- Filters & Search -->
@@ -55,23 +62,23 @@
     <!-- Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-600">
+            <table class="w-full text-left text-sm text-slate-600 datatable-custom">
                 <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
                     <tr>
-                        <th class="px-5 py-3.5">No</th>
+                        <th class="px-5 py-3.5 w-12 text-center no-sort">No</th>
                         <th class="px-5 py-3.5">Pegawai</th>
                         <th class="px-5 py-3.5">Jabatan / Golongan</th>
                         <th class="px-5 py-3.5">Unit Kerja Saat Ini</th>
                         <th class="px-5 py-3.5">Alamat Domisili</th>
                         <th class="px-5 py-3.5 text-right">Jarak (Km)</th>
                         <th class="px-5 py-3.5 text-center">Zona</th>
-                        <th class="px-5 py-3.5 text-center">Aksi</th>
+                        <th class="px-5 py-3.5 text-center no-sort">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($asns as $index => $asn)
                         <tr class="table-row-standard group">
-                            <td class="px-5 py-3.5 text-xs text-slate-400 font-mono">{{ $asns->firstItem() + $index }}</td>
+                            <td class="px-5 py-3.5 text-xs text-slate-400 font-mono text-center">{{ $loop->iteration }}</td>
                             <td class="px-5 py-3.5">
                                 <a href="{{ route('asn.show', $asn->id) }}" class="font-bold text-slate-900 group-hover:text-blue-700 transition">
                                     {{ $asn->nama_lengkap }}
@@ -118,12 +125,24 @@
                             </td>
                             <td class="px-5 py-3.5 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
-                                    <a href="{{ route('asn.show', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Detail">
+                                    <a href="{{ route('asn.show', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Detail Pegawai">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
                                     <a href="{{ route('asn.edit-lokasi', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Update Titik Lokasi Peta">
                                         <i data-lucide="map-pin" class="w-4 h-4"></i>
                                     </a>
+                                    @if (auth()->user()->isAdmin())
+                                        <a href="{{ route('asn.edit', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit Profil Pegawai">
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('asn.destroy', $asn->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pegawai {{ $asn->nama }} beserta akun loginnya?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Hapus Pegawai">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -135,11 +154,6 @@
                 </tbody>
             </table>
         </div>
-        @if ($asns->hasPages())
-            <div class="px-5 py-4 border-t border-slate-100">
-                {{ $asns->links() }}
-            </div>
-        @endif
     </div>
 
 </div>

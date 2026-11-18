@@ -16,9 +16,16 @@
                 <p class="text-xs text-slate-500 font-mono mt-0.5">NIP: {{ $asn->nip }}</p>
             </div>
         </div>
-        <a href="{{ route('asn.edit-lokasi', $asn->id) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-            <i data-lucide="map-pin" class="w-4 h-4"></i> Perbarui Titik Domisili Peta
-        </a>
+        <div class="flex items-center gap-2">
+            @if (auth()->user()->isAdmin())
+                <a href="{{ route('asn.edit', $asn->id) }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Profil
+                </a>
+            @endif
+            <a href="{{ route('asn.edit-lokasi', $asn->id) }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Perbarui Titik Domisili Peta
+            </a>
+        </div>
     </div>
 
     <!-- 2-Column Layout -->

@@ -265,7 +265,7 @@ class SimutasiSeeder extends Seeder
 
             $zona = $haversine->classifyZone($jarak);
 
-            AsnMaster::updateOrCreate(
+            $asnModel = AsnMaster::updateOrCreate(
                 ['nip' => $asn['nip']],
                 [
                     'nip' => $asn['nip'],
@@ -291,6 +291,32 @@ class SimutasiSeeder extends Seeder
                     'alasan_mutasi' => $asn['alasan_mutasi'],
                 ]
             );
+
+            // Buat akun User otomatis untuk setiap ASN (Native Auth)
+            \App\Models\User::updateOrCreate(
+                ['nip' => $asn['nip']],
+                [
+                    'name' => $asn['nama'],
+                    'nip' => $asn['nip'],
+                    'email' => strtolower(str_replace(' ', '', $asn['nama'])) . '@asn.indramayukab.go.id',
+                    'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                    'role' => 'asn',
+                    'asn_id' => $asnModel->id,
+                ]
+            );
         }
+
+        // 4. Seed Akun Administrator BKPSDM Utama
+        \App\Models\User::updateOrCreate(
+            ['email' => 'admin@bkpsdm.go.id'],
+            [
+                'name' => 'Administrator BKPSDM',
+                'nip' => '198501012010011001',
+                'email' => 'admin@bkpsdm.go.id',
+                'password' => \Illuminate\Support\Facades\Hash::make('admin123'),
+                'role' => 'admin',
+                'asn_id' => null,
+            ]
+        );
     }
 }

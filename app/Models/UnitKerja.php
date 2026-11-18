@@ -43,4 +43,23 @@ class UnitKerja extends Model
     {
         return $this->hasMany(RekomendasiMutasi::class, 'id_unit_asal');
     }
+
+    public function formasiJabatan(): HasMany
+    {
+        return $this->hasMany(FormasiJabatan::class, 'id_unit_kerja');
+    }
+
+    /**
+     * Sinkronisasi kuota_formasi_kosong unit kerja dengan total kuota_lowong
+     * formasi jabatan yang berstatus 'terbuka' pada tahun anggaran tertentu.
+     */
+    public function syncKuotaFormasi(int $tahun = 2026): void
+    {
+        $totalKuota = $this->formasiJabatan()
+            ->where('tahun_anggaran', $tahun)
+            ->where('status', 'terbuka')
+            ->sum('kuota_lowong');
+
+        $this->update(['kuota_formasi_kosong' => $totalKuota]);
+    }
 }

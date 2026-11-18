@@ -28,7 +28,7 @@ Dalam manajemen Aparatur Sipil Negara (ASN), penempatan pegawai sering kali meng
 ### 2.2 Rumusan Masalah Riset
 1. Bagaimana mentransformasikan data domisili pegawai dari teks naratif menjadi data spasial yang presisi?
 2. Bagaimana memodelkan kalkulasi jarak tempuh menggunakan Formula Haversine (geometri bola bumi) yang diselaraskan dengan jarak riil jaringan jalan raya (*road network*) menggunakan OSRM?
-3. Bagaimana merancang Sistem Pendukung Keputusan (SPK) multi-kriteria menggunakan metode TOPSIS dengan bobot kriteria dinamis (*dynamic weighting*) yang mempertimbangkan jarak baru, masa kerja, pangkat/golongan, dan penghematan jarak?
+3. Bagaimana merancang Sistem Pendukung Keputusan (SPK) multi-kriteria menggunakan arsitektur 2-Tahap TOPSIS (Tahap 1: Ranking PNS pada Unit Kerja, Tahap 2: Ranking Unit Kerja pada PNS) dengan penanganan kriteria invarian? *(Rincian lengkap: lihat [METODOLOGI_SKRIPSI_TOPSIS.md](file:///Users/diyanto/simutasi-asn/METODOLOGI_SKRIPSI_TOPSIS.md))*.
 4. Bagaimana merumuskan model pencocokan simetris (*Smart Swap Match*) untuk mengatasi kendala unit kerja yang tidak memiliki kuota formasi kosong (Zero-ABK Impact)?
 
 ---
@@ -163,10 +163,12 @@ Jika koordinat domisili ASN berada di luar radius komuter harian ($d > 100\text{
 
 ## 5. KEBUTUHAN FUNGSIONAL LENGKAP (FUNCTIONAL REQUIREMENTS)
 
-### Modul 1: Autentikasi & Integrasi Single Sign-On (SSO)
-* **FR-01:** Mendukung integrasi Single Sign-On (SSO) dari portal CodeIgniter eksisting menggunakan tabel perantara `sso_tokens`.
-* **FR-02:** Token bersifat *One-Time Ephemeral Token* (otomatis terhapus setelah 1x pemakaian) dan memiliki masa kedaluwarsa maksimal 2 menit.
-* **FR-03:** Sesi pengguna di Laravel dipetakan berdasarkan NIP pegawai secara aman.
+### Modul 1: Autentikasi Mandiri & Integrasi Sistem (Standalone Native Auth & SSO Bridge)
+* **FR-01 (Native Authentication):** Sistem beroperasi secara independen (*standalone*) dengan form login mandiri yang mendukung input **18 Digit NIP** maupun **Alamat Email**, dengan verifikasi hash kata sandi aman (`bcrypt`).
+* **FR-02 (Role-Based Access Control - RBAC):** Pemisahan otorisasi ketat melalui middleware `RoleMiddleware`:
+  * Role `admin` memiliki wewenang penuh terhadap seluruh dasbor makro, manajemen kriteria TOPSIS dinamis, master formasi unit kerja, dan eksekusi sidang Baperjakat.
+  * Role `asn` memiliki akses terproteksi ke dasbor mandiri, profil & pembaruan koordinat GPS domisili, simulasi penempatan Tahap 2, dan pengajuan mutasi mandiri.
+* **FR-03 (SSO Compatibility Bridge):** Tetap menyediakan endpoint `/sso/verify` yang mengonsumsi token sekali pakai (*One-Time Ephemeral Token*) dari tabel `sso_tokens` dengan masa kedaluwarsa maksimal 2 menit untuk kompatibilitas integrasi portal eksternal.
 
 ### Modul 2: Pembaruan Mandiri Titik Domisili (Self-Service Georeferencing)
 * **FR-04:** Menyediakan cascading dropdown wilayah (Provinsi, Kabupaten/Kota, Kecamatan, Kelurahan/Desa) berbasis master data Kemendagri.
@@ -177,8 +179,8 @@ Jika koordinat domisili ASN berada di luar radius komuter harian ($d > 100\text{
 ### Modul 3: Visualisasi Geospasial (GIS Dashboard)
 * **FR-08:** Menampilkan marker kantor dinas (icon gedung navy) dan marker rumah ASN (icon rumah bergradasi hijau/kuning/merah).
 * **FR-09:** Dilengkapi **efek animasi ripple gelombang melingkar** pada setiap marker untuk menunjukkan pulsasi titik spasial aktif.
-* **FR-10 (OSRM Road Curve):** Menampilkan garis rute mengemudi nyata yang meliuk-liuk di atas jalan aspal pantura/provinsi via OSRM Driving Engine.
-* **FR-11 (Garis Lurus Haversine):** Menyediakan tombol toggle pembanding antara Rute Jalan Asli (OSRM) vs Garis Lurus (Haversine).
+* **FR-10 (Pure OSRM Road Curve):** Menampilkan garis rute mengemudi nyata yang meliuk-liuk di atas jalan aspal pantura/provinsi via OSRM Driving Engine, lengkap dengan informasi jarak rute berkendara nyata ($\text{km}$) dan estimasi durasi tempuh ($\text{menit}$).
+* **FR-11 (Fokus Rute Jalan Raya Nyata):** Visualisasi rute pada antarmuka peta dasbor difokuskan secara murni pada rute fisik jalan raya (OSRM), mengeliminasi garis lurus imajiner (Haversine) dari antarmuka visual agar representasi spasial sesuai dengan medan tempuh nyata ASN. Formula Haversine tetap dipertahankan pada service layer sebagai dasar komparasi teoretis dan fallback matematis jika koneksi jaringan OSRM mengalami gangguan.
 * **FR-12 (Heatmap Layer):** Menyediakan layer **Heatmap Kepadatan Domisili (Leaflet.heat)** untuk melihat hotspot sebaran tempat tinggal ASN sekabupaten.
 * **FR-13 (Direct Google Maps):** Popup marker kantor, rumah, dan garis rute menyediakan tautan navigasi langsung ke Google Maps (`target="_blank"`).
 
@@ -206,6 +208,23 @@ Jika koordinat domisili ASN berada di luar radius komuter harian ($d > 100\text{
 * **FR-26 (BKN 10-Year Commitment Guard):** Ekstraksi otomatis tahun TMT CPNS dari 18 digit NIP. Bagi NIP $\ge 2019$ dengan masa kerja $< 10$ tahun, sistem menandai izin rotasi internal Indramayu sah, namun mengunci hak usulan mutasi keluar daerah sesuai PermenPAN-RB No. 27/2021.
 * **FR-27 (Border Commuter Optimization):** Deteksi spasial ASN berdomisili perbatasan (Cirebon, Majalengka, Subang) dengan prioritas rekomendasi unit kerja Indramayu di zona koridor terdekat perbatasan.
 * **FR-28 (Extra-Territorial Anomaly Notice):** Deteksi otomatis ASN dengan jarak domisili $> 100\text{ km}$ atau luar provinsi (seperti Riau, Medan) dengan penandaan notice khusus usulan pindah instansi luar daerah untuk sidang Baperjakat.
+
+### Modul 9: Simulasi Rekomendasi Mandiri ASN & AI Context-Aware Smart Reason Generator
+* **FR-29 (Simulasi Penempatan Mandiri - TOPSIS Tahap 2):** Pegawai ASN dapat menjalankan simulasi mandiri untuk memindai seluruh unit kerja se-kabupaten yang memiliki kuota formasi kosong ($\text{kuota} > 0$), mengevaluasi alternatif kantor menggunakan algoritma TOPSIS berbasis 3 kriteria ($C_1$: Jarak OSRM Baru [Cost], $C_2$: Sisa Kuota Formasi [Benefit], $C_3$: Efisiensi Penghematan Jarak [Benefit]), serta menampilkan visualisasi rute OSRM dari domisili ke unit rekomendasi teratas.
+* **FR-30 (AI Context-Aware Smart Reason Generator):** Pada modal pengajuan permohonan mutasi, asisten AI secara otomatis menganalisis parameter riil pegawai (*Nama, NIP, Jabatan, Kantor Asal, Jarak Lama, Kantor Tujuan, Jarak Baru, Selisih Efisiensi Jarak km, dan Sisa Kuota Formasi*) untuk menghasilkan draf surat permohonan mutasi resmi.
+* **FR-31 (Multi-Style Administrative Narratives):** Menyediakan 3 gaya pertimbangan birokrasi yang siap disisipkan ke berkas sidang Baperjakat:
+  1. *Efisiensi Jarak & Penghematan Mobilitas*
+  2. *Kedekatan Domisili Keluarga & Stabilitas Kerja*
+  3. *Optimalisasi Formasi ABK & Kinerja Organisasi*
+* **FR-32 (Pengajuan Usulan ke Baperjakat):** ASN dapat mengirimkan formulir permohonan mutasi beserta alasan yang telah di-generate ke database rekomendasi (`rekomendasi_mutasi`) dengan status `diajukan_baperjakat` untuk ditindaklanjuti pada sidang pertimbangan mutasi.
+
+### Modul 10: Pengelolaan Master Data Independen (Master ASN, Unit Kerja, Formasi Jabatan, & Master Wilayah)
+* **FR-33 (Master Data Pegawai ASN CRUD):** Admin BKPSDM dapat mendaftarkan ASN baru, mengedit biodata kepegawaian lengkap (jabatan, pangkat/golongan, unit kerja, masa kerja, TMT kerja), menentukan koordinat domisili via pinpoint Leaflet, dan menghapus data pegawai. Pendaftaran ASN baru secara otomatis menginisiasi akun login mandiri (`users`) dengan peran `asn`.
+* **FR-34 (Master Data Unit Kerja CRUD):** Admin BKPSDM dapat menambah unit kerja baru, memetakan koordinat kantor absensi di peta, mengelola kategori instansi (Dinas, Badan, Kecamatan, UPTD, Sekolah), mengedit kebutuhan ABK, bezetting riil, serta kuota formasi kosong. Dilengkapi proteksi penghapusan jika unit masih menaungi pegawai aktif.
+* **FR-35 (Master Data Wilayah & Geospasial CRUD):** Pengelolaan referensi 31 kecamatan di Kabupaten Indramayu mencakup kode Kemendagri, nama kecamatan, titik koordinat pusat spasial (lat/lng), jumlah desa, dan karakteristik wilayah. Dilengkapi peta interaktif untuk menentukan titik pusat serta fitur *fly-to* otomatis saat memilih kecamatan pada form domisili.
+* **FR-36 (Master Formasi Jabatan Dinamis & Multi-Year Tracing):** Pengelolaan detail alokasi formasi kebutuhan jabatan fungsional/struktural (nama jabatan, jenjang, kualifikasi pendidikan linier, kebutuhan ABK, bezetting, kuota lowong, status terbuka/terisi/tutup) dengan filter audit riwayat multi-tahun (e.g. 2025 historis vs 2026 aktif berjalan). Menghubungkan otomatis ketersediaan formasi linier ke menu Simulasi Mandiri ASN serta auto-sync kuota instansi.
+* **FR-37 (Eksekusi SK Mutasi & Closed-Loop Baperjakat):** Tim Penilai Kinerja / Baperjakat dapat menyetujui rekomendasi mutasi (menerbitkan status `disetujui`), yang secara otomatis mengeksekusi perpindahan unit kerja ASN di basis data (`asn_master.id_unit_saat_ini`), mengkalkulasi ulang jarak dinas baru, serta menyesuaikan bezetting dan kuota formasi unit asal maupun unit tujuan secara riil. Tersedia pula opsi penolakan dengan input catatan berita acara sidang.
+* **FR-38 (Pengajuan Paket Tukar Guling ke Baperjakat):** Modul Smart Swap Match terhubung langsung ke basis data Baperjakat, memungkinkan pengguna mengajukan paket pasangan pertukaran simetris (*Zero-ABK*) untuk langsung masuk ke antrean agenda sidang Baperjakat.
 
 ---
 
@@ -292,6 +311,31 @@ Jika koordinat domisili ASN berada di luar radius komuter harian ($d > 100\text{
 ├── catatan_baperjakat : text
 ├── tanggal_kalkulasi : timestamp
 └── timestamps
+
+[master_lokasi]
+├── id : bigint [PK, AI]
+├── kode_kecamatan : varchar(20) [UNIQUE, INDEX] -> Kode Kemendagri
+├── nama_kecamatan : varchar(100) [INDEX] -> 31 Kecamatan Indramayu
+├── pusat_lat : decimal(10,8)
+├── pusat_lng : decimal(11,8)
+├── jumlah_desa : int
+├── keterangan : text
+└── timestamps
+
+[formasi_jabatan]
+├── id : bigint [PK, AI]
+├── id_unit_kerja : bigint [FK -> unit_kerja.id, INDEX]
+├── tahun_anggaran : int [INDEX] -> 2024, 2025, 2026, 2027
+├── periode : varchar(50) -> Reguler, Semester 1
+├── nama_jabatan : varchar(150) [INDEX] -> Analis SDM, Pranata Komputer, dll
+├── jenjang_jabatan : varchar(50) -> Ahli Pertama, Ahli Muda, Pelaksana
+├── kualifikasi_pendidikan : varchar(150)
+├── kebutuhan_abk : int
+├── bezetting_riil : int
+├── kuota_lowong : int
+├── status : enum('terbuka', 'terisi', 'ditutup') [INDEX]
+├── keterangan : text
+└── timestamps
 ```
 
 ---
@@ -301,25 +345,44 @@ Jika koordinat domisili ASN berada di luar radius komuter harian ($d > 100\text{
 * `app/Services/HaversineService.php` : Perhitungan trigonometri spherical great-circle distance dan penentuan zona warna (dekat, sedang, jauh).
 * `app/Services/TopsisService.php` : Mesin normalisasi matriks, pembobotan dinamis, penentuan solusi ideal, jarak separasi, dan pemeringkatan preferensi $V_i$.
 * `app/Services/SwapMatchService.php` : Algoritma pencocokan simetris bipartit dua arah untuk menemukan pasangan tukar guling yang saling menguntungkan (Zero-ABK).
-* `app/Http/Controllers/DashboardController.php` : Penyaji data spasial, agregasi statistik, dan titik koordinat untuk Leaflet.
-* `app/Http/Controllers/AsnController.php` : Modul kepegawaian dan pembaruan mandiri titik koordinat domisili.
-* `app/Http/Controllers/TopsisController.php` : Eksekutor SPK, penyimpan draf usulan sidang, dan pengelola bobot kriteria dinamis.
-* `app/Http/Controllers/SwapMatchController.php` : Pengendali antarmuka pencocokan tukar guling ASN.
-* `app/Http/Controllers/SsoController.php` : Gerbang Single Sign-On (SSO) terintegrasi portal eksisting.
+* `app/Http/Controllers/AuthController.php` : Modul autentikasi mandiri berbasis NIP 18 digit atau email, verifikasi bcrypt, dan tombol demo instan.
+* `app/Http/Controllers/SimulasiMandiriController.php` : Modul simulasi penempatan mandiri ASN (TOPSIS Tahap 2), visualisasi rute jalan raya OSRM, modal pengajuan mutasi dengan AI Smart Reason Generator.
+* `app/Http/Controllers/DashboardController.php` : Penyaji data spasial makro GIS, agregasi statistik zona, dan titik koordinat untuk Leaflet.
+* `app/Http/Controllers/AsnController.php` : Modul kepegawaian (CRUD lengkap, pembuatan akun login otomatis) dan pembaruan mandiri titik koordinat domisili.
+* `app/Http/Controllers/UnitKerjaController.php` : Modul master unit kerja (CRUD lengkap, kategori instansi, peta kantor, kebutuhan ABK, dan kuota formasi lowong).
+* `app/Http/Controllers/FormasiJabatanController.php` : Modul master formasi jabatan & rekam jejak tracing ABK multi-tahun (2025, 2026, status formasi terbuka/terisi/tutup, dan auto-sync kuota unit).
+* `app/Http/Controllers/MasterLokasiController.php` : Modul master data wilayah / kecamatan (CRUD lengkap 31 kecamatan Indramayu, titik pusat spasial, dan integrasi peta).
+* `app/Http/Controllers/KriteriaController.php` : Modul master kriteria & pembobotan dinamis TOPSIS terpisah (CRUD kriteria, toggle aktif/nonaktif, penyesuaian bobot 100%, preset kebijakan, dan auto-normalize).
+* `app/Http/Controllers/TopsisController.php` : Eksekutor SPK Tahap 1 (Top-Down Admin), penyimpan draf usulan sidang, dan pengelola bobot kriteria dinamis.
+* `app/Http/Controllers/SwapMatchController.php` : Pengendali antarmuka pencocokan tukar guling ASN (Zero-ABK).
+* `app/Http/Controllers/SsoController.php` : Gerbang Single Sign-On (SSO) terintegrasi portal eksisting via one-time token.
+* `app/Http/Middleware/RoleMiddleware.php` : Penjaga otorisasi berbasis peran (`admin` vs `asn`).
 
 ---
 
 ## 9. ROADMAP & RENCANA PENGEMBANGAN PASCA-SKRIPSI
 
 1. **Fase 1 (Selesai — MVP Skripsi & Uji Coba BKPSDM):**
-   * Integrasi MariaDB 13.0 & SSO One-Time Token.
+   * Autentikasi Mandiri NIP/Email & RBAC terproteksi.
    * Modul pembaruan domisili spasial & deteksi GPS.
-   * Peta GIS dengan OSRM Road Curve & Animasi Ripple.
+   * Peta GIS dengan Pure OSRM Road Curve & Animasi Ripple.
    * Layer Heatmap Kepadatan Domisili Pegawai.
-   * Mesin TOPSIS Dynamic Weighting + Audit Akademis.
+   * Mesin TOPSIS Dynamic Weighting + Audit Akademis (Tahap 1 & Tahap 2).
+   * Modul Simulasi Rekomendasi Mandiri ASN dengan AI Context-Aware Smart Reason Generator.
    * Mesin Smart Swap Match (Tukar Guling Zero-ABK).
    * Kalkulator Analitik Hemat BBM & Reduksi Emisi Karbon.
+   * Integrasi MariaDB 13.0 lokal / home-server & SQLite fallback.
 2. **Fase 2 (Rencana Lanjutan Pasca-Sidang):**
    * WhatsApp Gateway Notifikasi Otomatis (Fonnte / Baileys).
    * Generator Dokumen PDF Surat Keputusan (SK) Mutasi Bupati ber-QR Code Tanda Tangan Elektronik (TTE BSrE BSSN).
    * Integrasi API Webhook dua arah dengan SIASN BKN Pusat.
+
+---
+
+## 10. REFERENSI DOKUMEN & STANDAR KEPEGAWAIAN
+
+* Dokumen Glosarium & Skenario Kasus ABK: [DOKUMENTASI_ABK_FORMASI_DAN_SINKRONISASI.md](file:///Users/diyanto/simutasi-asn/DOKUMENTASI_ABK_FORMASI_DAN_SINKRONISASI.md)
+* Dokumen Metodologi & Notasi Ilmiah TOPSIS: [METODOLOGI_SKRIPSI_TOPSIS.md](file:///Users/diyanto/simutasi-asn/METODOLOGI_SKRIPSI_TOPSIS.md)
+* Dokumen Desain Perangkat Lunak UML & ERD: [DESAIN_SISTEM_UML_FLOWCHART_ERD.md](file:///Users/diyanto/simutasi-asn/DESAIN_SISTEM_UML_FLOWCHART_ERD.md)
+* Dokumen Riwayat Migrasi Database: [MIGRATIONS.md](file:///Users/diyanto/simutasi-asn/MIGRATIONS.md)
+

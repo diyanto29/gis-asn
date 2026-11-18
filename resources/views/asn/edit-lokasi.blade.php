@@ -85,7 +85,18 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Kecamatan</label>
-                            <input type="text" name="kecamatan" value="{{ old('kecamatan', $asn->kecamatan) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500" placeholder="Kecamatan">
+                            @if(isset($kecamatans) && $kecamatans->count() > 0)
+                                <select id="kecamatanSelect" name="kecamatan" required class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">-- Pilih Kecamatan --</option>
+                                    @foreach ($kecamatans as $kec)
+                                        <option value="{{ $kec->nama_kecamatan }}" data-lat="{{ $kec->pusat_lat }}" data-lng="{{ $kec->pusat_lng }}" {{ old('kecamatan', $asn->kecamatan) == $kec->nama_kecamatan ? 'selected' : '' }}>
+                                            Kec. {{ $kec->nama_kecamatan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="text" name="kecamatan" value="{{ old('kecamatan', $asn->kecamatan) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500" placeholder="Kecamatan">
+                            @endif
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Desa / Kelurahan</label>
@@ -232,6 +243,19 @@
                 alert('Browser Anda tidak mendukung deteksi GPS geolokasi.');
             }
         });
+        // Fast fly to kecamatan when dropdown changed
+        const kecSelect = document.getElementById('kecamatanSelect');
+        if (kecSelect) {
+            kecSelect.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                const lat = parseFloat(opt.getAttribute('data-lat'));
+                const lng = parseFloat(opt.getAttribute('data-lng'));
+                if (lat && lng) {
+                    map.flyTo([lat, lng], 14);
+                    updateMarkerPosition(lat, lng);
+                }
+            });
+        }
     });
 </script>
 @endpush

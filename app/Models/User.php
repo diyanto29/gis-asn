@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'nip', 'email', 'password', 'role', 'asn_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,5 +28,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Relasi ke data profil ASN (jika role adalah asn).
+     */
+    public function asn()
+    {
+        return $this->belongsTo(AsnMaster::class, 'asn_id');
+    }
+
+    /**
+     * Cek apakah pengguna adalah Administrator BKPSDM.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Cek apakah pengguna adalah Pegawai ASN.
+     */
+    public function isAsn(): bool
+    {
+        return $this->role === 'asn';
     }
 }

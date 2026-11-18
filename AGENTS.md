@@ -40,9 +40,10 @@ Aturan permanen dan standar rekayasa perangkat lunak untuk sistem **SIMUTASI-GIS
 
 ---
 
-## 4. Standar Logika Bisnis & Algoritma (Spasial & SPK)
-* **Kalkulasi Spasial (Haversine Formula):**
-  - Perhitungan jarak garis lurus unit kerja vs domisili dihitung secara matematis presisi ($R = 6.371\text{ km}$).
+## 4. Standar Logika Bisnis & Algoritma (Spasial OSRM & SPK TOPSIS)
+* **Kalkulasi Spasial Rute Riil (OSRM - Open Source Routing Machine):**
+  - Perhitungan jarak utama menggunakan rute fisik jalan raya (OSRM Routing Engine) untuk mendapatkan jarak riil (km) dan estimasi durasi tempuh (menit).
+  - Haversine Formula ($R = 6.371\text{ km}$) hanya digunakan sebagai fallback/komparasi jika layanan rute tidak dapat dijangkau.
   - Klasifikasi zona wajib seragam:
     - **Dekat:** $< 5\text{ km}$
     - **Sedang:** $5 - 20\text{ km}$
@@ -56,6 +57,17 @@ Aturan permanen dan standar rekayasa perangkat lunak untuk sistem **SIMUTASI-GIS
 ---
 
 ## 5. Standar Kualitas Kode (Clean Code)
-* Gunakan Controller yang ramping (*thin controller*) dengan memisahkan kalkulasi rumit ke dalam Service Layer (contoh: `HaversineService.php`, `TopsisService.php`).
+* Gunakan Controller yang ramping (*thin controller*) dengan memisahkan kalkulasi rumit ke dalam Service Layer (contoh: `TopsisService.php`, `OsrmService.php`).
 * Form Request Validation wajib diterapkan untuk semua data masuk (terutama validasi latitude/longitude dan upload Excel/CSV).
 * Selalu verifikasi sintaks dan pengujian unit sebelum menyelesaikan implementasi.
+
+---
+
+## 6. Standar Dokumentasi Kode Skripsi & Publikasi Akademik (MANDATORI)
+* **PHPDoc & Notasi Matematis Eksplisit:**
+  - Setiap service dan algoritma (TOPSIS, OSRM, Mutasi) WAJIB dilengkapi komentar PHPDoc lengkap.
+  - Tuliskan rumus matematis eksplisit (notasi LaTeX / formula standar skripsi) pada docblock method agar mudah dikutip ke Bab 3 (Metodologi Penelitian).
+* **Inline Step-by-Step Comments:**
+  - Di dalam tubuh fungsi, algoritma wajib dipecah menjadi langkah-langkah bernomor yang runtut (`Langkah 1: Normalisasi Euclidean`, `Langkah 2: Matriks Terbobot`, `Langkah 3: Solusi Ideal`, dst.) agar dapat langsung dijadikan potongan kode (code snippet) di Bab 4 (Implementasi & Pembahasan).
+* **Konsistensi Simbol Variabel Ilmiah:**
+  - Gunakan penamaan variabel yang mencerminkan simbol akademik: `$matrixR` ($R$), `$matrixY` ($Y$), `$idealPositive` ($A^+$), `$idealNegative` ($A^-$), `$distPositive` ($D^+$), `$distNegative` ($D^-$), dan `$vi` ($V_i$).

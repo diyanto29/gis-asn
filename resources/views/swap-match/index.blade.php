@@ -158,9 +158,21 @@
                         <a href="https://www.google.com/maps/dir/?api=1&origin={{ $pair['asnB']->domisili_lat }},{{ $pair['asnB']->domisili_lng }}&destination={{ $pair['unitA']->kantor_lat }},{{ $pair['unitA']->kantor_lng }}&travelmode=driving" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition">
                             🚗 Rute Baru Pegawai B ↗
                         </a>
-                        <button onclick="alert('Usulan paket tukar guling telah ditandai untuk dimasukkan ke draf agenda sidang Baperjakat berikutnya!')" class="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg shadow-xs transition">
-                            Ajukan Tukar Guling
-                        </button>
+                        <form method="POST" action="{{ route('swap-match.ajukan') }}" class="inline">
+                            @csrf
+                            <input type="hidden" name="asn_a_id" value="{{ $pair['asnA']->id }}">
+                            <input type="hidden" name="asn_b_id" value="{{ $pair['asnB']->id }}">
+                            <input type="hidden" name="unit_a_id" value="{{ $pair['unitA']->id }}">
+                            <input type="hidden" name="unit_b_id" value="{{ $pair['unitB']->id }}">
+                            <input type="hidden" name="dist_a_swap" value="{{ $pair['distA_swap'] }}">
+                            <input type="hidden" name="dist_b_swap" value="{{ $pair['distB_swap'] }}">
+                            <input type="hidden" name="save_a" value="{{ $pair['saveA'] }}">
+                            <input type="hidden" name="save_b" value="{{ $pair['saveB'] }}">
+                            <input type="hidden" name="combined_save_daily" value="{{ $pair['combined_save_daily_km'] }}">
+                            <button type="submit" onclick="return confirm('Ajukan paket pertukaran simetris {{ $pair['asnA']->nama_lengkap }} & {{ $pair['asnB']->nama_lengkap }} ke agenda sidang Baperjakat?');" class="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg shadow-xs transition flex items-center gap-1.5">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> Ajukan Tukar Guling
+                            </button>
+                        </form>
                     </div>
                 </div>
 
