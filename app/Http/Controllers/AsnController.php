@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AsnMaster;
 use App\Models\FormasiJabatan;
+use App\Models\MasterJabatan;
 use App\Models\MasterLokasi;
 use App\Models\UnitKerja;
 use App\Models\User;
@@ -51,10 +52,7 @@ class AsnController extends Controller
     {
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
-        $jabatanList = FormasiJabatan::select('nama_jabatan', 'jenis_jabatan')
-            ->distinct()
-            ->orderBy('nama_jabatan')
-            ->get();
+        $jabatanList = MasterJabatan::orderBy('nama_jabatan')->get();
         return view('asn.create', compact('units', 'kecamatans', 'jabatanList'));
     }
 
@@ -85,6 +83,21 @@ class AsnController extends Controller
             'kelurahan_desa' => 'nullable|string|max:100',
             'alamat_detail' => 'nullable|string',
         ]);
+
+        // Korelasi otomatis ke master_jabatan
+        $masterJbt = MasterJabatan::where('nama_jabatan', $validated['jabatan'])->first();
+        if ($masterJbt) {
+            $validated['id_master_jabatan'] = $masterJbt->id;
+            $validated['jenis_jabatan'] = $validated['jenis_jabatan'] ?? $masterJbt->jenis_jabatan;
+        }
+
+        // Korelasi otomatis ke formasi_jabatan pada unit kerja terpilih
+        $formasiUnit = FormasiJabatan::where('id_unit_kerja', $validated['id_unit_saat_ini'])
+            ->where('nama_jabatan', $validated['jabatan'])
+            ->first();
+        if ($formasiUnit) {
+            $validated['id_formasi_jabatan'] = $formasiUnit->id;
+        }
 
         // Hitung masa kerja otomatis jika ada tgl_cpns
         if (!empty($validated['tgl_cpns'])) {
@@ -143,10 +156,7 @@ class AsnController extends Controller
         $asn = AsnMaster::with('unitSaatIni')->findOrFail($id);
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
-        $jabatanList = FormasiJabatan::select('nama_jabatan', 'jenis_jabatan')
-            ->distinct()
-            ->orderBy('nama_jabatan')
-            ->get();
+        $jabatanList = MasterJabatan::orderBy('nama_jabatan')->get();
         return view('asn.edit', compact('asn', 'units', 'kecamatans', 'jabatanList'));
     }
 
@@ -179,6 +189,21 @@ class AsnController extends Controller
             'kelurahan_desa' => 'nullable|string|max:100',
             'alamat_detail' => 'nullable|string',
         ]);
+
+        // Korelasi otomatis ke master_jabatan
+        $masterJbt = MasterJabatan::where('nama_jabatan', $validated['jabatan'])->first();
+        if ($masterJbt) {
+            $validated['id_master_jabatan'] = $masterJbt->id;
+            $validated['jenis_jabatan'] = $validated['jenis_jabatan'] ?? $masterJbt->jenis_jabatan;
+        }
+
+        // Korelasi otomatis ke formasi_jabatan pada unit kerja terpilih
+        $formasiUnit = FormasiJabatan::where('id_unit_kerja', $validated['id_unit_saat_ini'])
+            ->where('nama_jabatan', $validated['jabatan'])
+            ->first();
+        if ($formasiUnit) {
+            $validated['id_formasi_jabatan'] = $formasiUnit->id;
+        }
 
         if (!empty($validated['tgl_cpns'])) {
             $thnCpns = (int)date('Y', strtotime($validated['tgl_cpns']));

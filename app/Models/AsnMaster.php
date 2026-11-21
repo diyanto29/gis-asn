@@ -16,6 +16,7 @@ class AsnMaster extends Model
         'gelar_depan',
         'gelar_belakang',
         'jabatan',
+        'id_master_jabatan',
         'id_formasi_jabatan',
         'jenis_jabatan',
         'pangkat_golongan',
@@ -61,6 +62,11 @@ class AsnMaster extends Model
     protected $appends = [
         'nama_lengkap',
     ];
+
+    public function masterJabatan(): BelongsTo
+    {
+        return $this->belongsTo(MasterJabatan::class, 'id_master_jabatan');
+    }
 
     public function formasiJabatan(): BelongsTo
     {

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormasiJabatanController;
 use App\Http\Controllers\KriteriaController;
+use App\Http\Controllers\MasterJabatanController;
 use App\Http\Controllers\MasterLokasiController;
 use App\Http\Controllers\SimulasiMandiriController;
 use App\Http\Controllers\SsoController;
@@ -95,6 +96,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/edit', [FormasiJabatanController::class, 'edit'])->name('edit');
         Route::put('/{id}', [FormasiJabatanController::class, 'update'])->name('update');
         Route::delete('/{id}', [FormasiJabatanController::class, 'destroy'])->name('destroy');
+    });
+
+    // Modul Master Referensi Jabatan Standar ASN (Pelaksana & Fungsional)
+    Route::prefix('master-jabatan')->name('master-jabatan.')->middleware('role:admin')->group(function () {
+        Route::get('/', [MasterJabatanController::class, 'index'])->name('index');
+        Route::get('/create', [MasterJabatanController::class, 'create'])->name('create');
+        Route::post('/', [MasterJabatanController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [MasterJabatanController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [MasterJabatanController::class, 'update'])->name('update');
+        Route::delete('/{id}', [MasterJabatanController::class, 'destroy'])->name('destroy');
     });
 
     // Modul Master Lokasi / Wilayah Spasial (Khusus Role: Admin BKPSDM)

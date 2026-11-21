@@ -60,12 +60,17 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan (Get Data / Ketik) <span class="text-rose-500">*</span></label>
-                            <input list="jabatanListOptions" type="text" name="jabatan" value="{{ old('jabatan') }}" required placeholder="Pilih atau ketik nama jabatan..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                            <datalist id="jabatanListOptions">
+                            <select id="jabatanSelect" name="jabatan" class="searchable-select-jabatan w-full text-sm" required data-placeholder="-- Pilih atau Ketik Nama Jabatan --">
+                                <option value="">-- Pilih atau Ketik Nama Jabatan --</option>
                                 @foreach ($jabatanList as $jbt)
-                                    <option value="{{ $jbt->nama_jabatan }}">{{ $jbt->jenis_jabatan ? ucfirst($jbt->jenis_jabatan) : '' }}</option>
+                                    <option value="{{ $jbt->nama_jabatan }}" data-jenis="{{ $jbt->jenis_jabatan }}" {{ old('jabatan') == $jbt->nama_jabatan ? 'selected' : '' }}>
+                                        {{ $jbt->nama_jabatan }} [{{ ucfirst($jbt->jenis_jabatan) }}]
+                                    </option>
                                 @endforeach
-                            </datalist>
+                                @if(old('jabatan') && !$jabatanList->contains('nama_jabatan', old('jabatan')))
+                                    <option value="{{ old('jabatan') }}" selected>{{ old('jabatan') }}</option>
+                                @endif
+                            </select>
                             @error('jabatan')
                                 <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
@@ -73,7 +78,7 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Jabatan <span class="text-rose-500">*</span></label>
-                            <select name="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <select id="jenisJabatanSelect" name="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                                 <option value="fungsional" {{ old('jenis_jabatan') == 'fungsional' ? 'selected' : '' }}>Fungsional</option>
                                 <option value="pelaksana" {{ old('jenis_jabatan', 'pelaksana') == 'pelaksana' ? 'selected' : '' }}>Pelaksana</option>
                                 <option value="struktural" {{ old('jenis_jabatan') == 'struktural' ? 'selected' : '' }}>Struktural</option>
@@ -308,6 +313,19 @@
                 width: '100%',
                 placeholder: function(){ return $(this).data('placeholder'); },
                 allowClear: true
+            });
+
+            $('.searchable-select-jabatan').select2({
+                width: '100%',
+                placeholder: '-- Pilih atau Ketik Nama Jabatan --',
+                allowClear: true,
+                tags: true
+            }).on('change', function () {
+                const selectedOption = $(this).find('option:selected');
+                const jenis = selectedOption.data('jenis');
+                if (jenis) {
+                    $('#jenisJabatanSelect').val(jenis);
+                }
             });
         }
 
