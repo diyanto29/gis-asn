@@ -1,0 +1,1384 @@
+{
+    "HAURGEULIS": {
+        "id": "3212010",
+        "name": "HAURGEULIS",
+        "villages": [
+            {
+                "id": "3212010007",
+                "name": "Haurkolot"
+            },
+            {
+                "id": "3212010008",
+                "name": "Haurgeulis"
+            },
+            {
+                "id": "3212010009",
+                "name": "Sukajati"
+            },
+            {
+                "id": "3212010010",
+                "name": "Wanakaya"
+            },
+            {
+                "id": "3212010011",
+                "name": "Karangtumaritis"
+            },
+            {
+                "id": "3212010012",
+                "name": "Kertanegara"
+            },
+            {
+                "id": "3212010013",
+                "name": "Cipancuh"
+            },
+            {
+                "id": "3212010014",
+                "name": "Mekarjati"
+            },
+            {
+                "id": "3212010015",
+                "name": "Sidadadi"
+            },
+            {
+                "id": "3212010016",
+                "name": "Sumbermulya"
+            }
+        ]
+    },
+    "GANTAR": {
+        "id": "3212011",
+        "name": "GANTAR",
+        "villages": [
+            {
+                "id": "3212011001",
+                "name": "Bantarwaru"
+            },
+            {
+                "id": "3212011002",
+                "name": "Sanca"
+            },
+            {
+                "id": "3212011003",
+                "name": "Mekarjaya"
+            },
+            {
+                "id": "3212011004",
+                "name": "Gantar"
+            },
+            {
+                "id": "3212011005",
+                "name": "Situraja"
+            },
+            {
+                "id": "3212011006",
+                "name": "Baleraja"
+            },
+            {
+                "id": "3212011007",
+                "name": "Mekarwaru"
+            }
+        ]
+    },
+    "KROYA": {
+        "id": "3212020",
+        "name": "KROYA",
+        "villages": [
+            {
+                "id": "3212020001",
+                "name": "Sukaslamet"
+            },
+            {
+                "id": "3212020002",
+                "name": "Tanjungkerta"
+            },
+            {
+                "id": "3212020003",
+                "name": "Kroya"
+            },
+            {
+                "id": "3212020004",
+                "name": "Sumbon"
+            },
+            {
+                "id": "3212020005",
+                "name": "Sukamelang"
+            },
+            {
+                "id": "3212020006",
+                "name": "Temiyang"
+            },
+            {
+                "id": "3212020007",
+                "name": "Temiyangsari"
+            },
+            {
+                "id": "3212020008",
+                "name": "Jayamulya"
+            },
+            {
+                "id": "3212020009",
+                "name": "Sumberjaya"
+            }
+        ]
+    },
+    "GABUSWETAN": {
+        "id": "3212030",
+        "name": "GABUSWETAN",
+        "villages": [
+            {
+                "id": "3212030001",
+                "name": "Kedungdawa"
+            },
+            {
+                "id": "3212030002",
+                "name": "Babakanjaya"
+            },
+            {
+                "id": "3212030003",
+                "name": "Gabuskulon"
+            },
+            {
+                "id": "3212030004",
+                "name": "Sekarmulya"
+            },
+            {
+                "id": "3212030005",
+                "name": "Kedokangabus"
+            },
+            {
+                "id": "3212030006",
+                "name": "Rancamulya"
+            },
+            {
+                "id": "3212030007",
+                "name": "Rancahan"
+            },
+            {
+                "id": "3212030008",
+                "name": "Gabuswetan"
+            },
+            {
+                "id": "3212030009",
+                "name": "Drunten Wetan"
+            },
+            {
+                "id": "3212030010",
+                "name": "Drunten Kulon"
+            }
+        ]
+    },
+    "CIKEDUNG": {
+        "id": "3212040",
+        "name": "CIKEDUNG",
+        "villages": [
+            {
+                "id": "3212040003",
+                "name": "Loyang"
+            },
+            {
+                "id": "3212040004",
+                "name": "Amis"
+            },
+            {
+                "id": "3212040005",
+                "name": "Jatisura"
+            },
+            {
+                "id": "3212040006",
+                "name": "Jambak"
+            },
+            {
+                "id": "3212040007",
+                "name": "Cikedung"
+            },
+            {
+                "id": "3212040012",
+                "name": "Cikedung Lor"
+            },
+            {
+                "id": "3212040013",
+                "name": "Mundakjaya"
+            }
+        ]
+    },
+    "TERISI": {
+        "id": "3212041",
+        "name": "TERISI",
+        "villages": [
+            {
+                "id": "3212041001",
+                "name": "Cikawung"
+            },
+            {
+                "id": "3212041002",
+                "name": "Jatimunggul"
+            },
+            {
+                "id": "3212041003",
+                "name": "Jatimulya"
+            },
+            {
+                "id": "3212041004",
+                "name": "Plosokerep"
+            },
+            {
+                "id": "3212041005",
+                "name": "Rajasinga"
+            },
+            {
+                "id": "3212041006",
+                "name": "Karangasem"
+            },
+            {
+                "id": "3212041007",
+                "name": "Cibereng"
+            },
+            {
+                "id": "3212041008",
+                "name": "Kendayakan"
+            },
+            {
+                "id": "3212041009",
+                "name": "Manggungan"
+            }
+        ]
+    },
+    "LELEA": {
+        "id": "3212050",
+        "name": "LELEA",
+        "villages": [
+            {
+                "id": "3212050001",
+                "name": "Tunggulpayung"
+            },
+            {
+                "id": "3212050005",
+                "name": "Pangauban"
+            },
+            {
+                "id": "3212050006",
+                "name": "Telagasari"
+            },
+            {
+                "id": "3212050007",
+                "name": "Langgengsari"
+            },
+            {
+                "id": "3212050008",
+                "name": "Tamansari"
+            },
+            {
+                "id": "3212050009",
+                "name": "Lelea"
+            },
+            {
+                "id": "3212050011",
+                "name": "Tempelkulon"
+            }
+        ]
+    },
+    "BANGODUA": {
+        "id": "3212060",
+        "name": "BANGODUA",
+        "villages": [
+            {
+                "id": "3212060008",
+                "name": "Mulyasari"
+            },
+            {
+                "id": "3212060015",
+                "name": "Bangodua"
+            },
+            {
+                "id": "3212060017",
+                "name": "Karanggetas"
+            },
+            {
+                "id": "3212060018",
+                "name": "Tegalgirang"
+            },
+            {
+                "id": "3212060019",
+                "name": "Wanasari"
+            },
+            {
+                "id": "3212060020",
+                "name": "Malangsari"
+            },
+            {
+                "id": "3212060021",
+                "name": "Rancasari"
+            }
+        ]
+    },
+    "TUKDANA": {
+        "id": "3212061",
+        "name": "TUKDANA",
+        "villages": [
+            {
+                "id": "3212061001",
+                "name": "Bodas"
+            },
+            {
+                "id": "3212061002",
+                "name": "Gadel"
+            },
+            {
+                "id": "3212061003",
+                "name": "Rancajawat"
+            },
+            {
+                "id": "3212061004",
+                "name": "Kerticala"
+            },
+            {
+                "id": "3212061005",
+                "name": "Sukamulya"
+            },
+            {
+                "id": "3212061006",
+                "name": "Karangkerta"
+            },
+            {
+                "id": "3212061007",
+                "name": "Cangko"
+            },
+            {
+                "id": "3212061008",
+                "name": "Pagedangan"
+            },
+            {
+                "id": "3212061009",
+                "name": "Sukaperna"
+            },
+            {
+                "id": "3212061010",
+                "name": "Sukadana"
+            },
+            {
+                "id": "3212061011",
+                "name": "Tukdana"
+            },
+            {
+                "id": "3212061012",
+                "name": "Lajer"
+            },
+            {
+                "id": "3212061013",
+                "name": "Mekarsari"
+            }
+        ]
+    },
+    "WIDASARI": {
+        "id": "3212070",
+        "name": "WIDASARI",
+        "villages": [
+            {
+                "id": "3212070006",
+                "name": "Bangkaloa Ilir"
+            },
+            {
+                "id": "3212070007",
+                "name": "Widasari"
+            },
+            {
+                "id": "3212070008",
+                "name": "Kalensari"
+            },
+            {
+                "id": "3212070011",
+                "name": "Ujungaris"
+            },
+            {
+                "id": "3212070012",
+                "name": "Kongsijaya"
+            },
+            {
+                "id": "3212070013",
+                "name": "Ujungjaya"
+            },
+            {
+                "id": "3212070014",
+                "name": "Ujungpendokjaya"
+            },
+            {
+                "id": "3212070015",
+                "name": "Leuwigede"
+            },
+            {
+                "id": "3212070016",
+                "name": "Kasmaran"
+            }
+        ]
+    },
+    "KERTASEMAYA": {
+        "id": "3212080",
+        "name": "KERTASEMAYA",
+        "villages": [
+            {
+                "id": "3212080007",
+                "name": "Tulungagung"
+            },
+            {
+                "id": "3212080008",
+                "name": "Jengkok"
+            },
+            {
+                "id": "3212080009",
+                "name": "Tegalwirangrong"
+            },
+            {
+                "id": "3212080010",
+                "name": "Manguntara"
+            },
+            {
+                "id": "3212080011",
+                "name": "Jambe"
+            },
+            {
+                "id": "3212080012",
+                "name": "Lemahayu"
+            },
+            {
+                "id": "3212080013",
+                "name": "Tenajar Kidul"
+            },
+            {
+                "id": "3212080014",
+                "name": "Kertasemaya"
+            },
+            {
+                "id": "3212080015",
+                "name": "Kliwed"
+            },
+            {
+                "id": "3212080016",
+                "name": "Tenajar"
+            },
+            {
+                "id": "3212080017",
+                "name": "Laranganjambe"
+            },
+            {
+                "id": "3212080018",
+                "name": "Tenajar Lor"
+            },
+            {
+                "id": "3212080019",
+                "name": "Sukawera"
+            }
+        ]
+    },
+    "SUKAGUMIWANG": {
+        "id": "3212081",
+        "name": "SUKAGUMIWANG",
+        "villages": [
+            {
+                "id": "3212081001",
+                "name": "Cibeber"
+            },
+            {
+                "id": "3212081002",
+                "name": "Bondan"
+            },
+            {
+                "id": "3212081003",
+                "name": "Gunungsari"
+            },
+            {
+                "id": "3212081004",
+                "name": "Sukagumiwang"
+            },
+            {
+                "id": "3212081005",
+                "name": "Tersana"
+            },
+            {
+                "id": "3212081006",
+                "name": "Cadangpinggan"
+            },
+            {
+                "id": "3212081007",
+                "name": "Gedangan"
+            }
+        ]
+    },
+    "KRANGKENG": {
+        "id": "3212090",
+        "name": "KRANGKENG",
+        "villages": [
+            {
+                "id": "3212090001",
+                "name": "Purwajaya"
+            },
+            {
+                "id": "3212090002",
+                "name": "Kapringan"
+            },
+            {
+                "id": "3212090003",
+                "name": "Singakerta"
+            },
+            {
+                "id": "3212090004",
+                "name": "Dukuhjati"
+            },
+            {
+                "id": "3212090005",
+                "name": "Tegalmulya"
+            },
+            {
+                "id": "3212090008",
+                "name": "Luwunggesik"
+            },
+            {
+                "id": "3212090009",
+                "name": "Kalianyar"
+            },
+            {
+                "id": "3212090010",
+                "name": "Krangkeng"
+            },
+            {
+                "id": "3212090011",
+                "name": "Tanjakan"
+            }
+        ]
+    },
+    "KARANGAMPEL": {
+        "id": "3212100",
+        "name": "KARANGAMPEL",
+        "villages": [
+            {
+                "id": "3212100007",
+                "name": "Kaplonganlor"
+            },
+            {
+                "id": "3212100008",
+                "name": "Tanjungpura"
+            },
+            {
+                "id": "3212100009",
+                "name": "Tanjungsari"
+            },
+            {
+                "id": "3212100010",
+                "name": "Pringgacala"
+            },
+            {
+                "id": "3212100011",
+                "name": "Benda"
+            },
+            {
+                "id": "3212100012",
+                "name": "Sendang"
+            },
+            {
+                "id": "3212100013",
+                "name": "Karangampel Kidul"
+            },
+            {
+                "id": "3212100014",
+                "name": "Karangampel"
+            },
+            {
+                "id": "3212100016",
+                "name": "Dukuhtengah"
+            }
+        ]
+    },
+    "KEDOKAN BUNDER": {
+        "id": "3212101",
+        "name": "KEDOKAN BUNDER",
+        "villages": [
+            {
+                "id": "3212101001",
+                "name": "Kedokanbunder Wetan"
+            },
+            {
+                "id": "3212101002",
+                "name": "Kaplongan"
+            },
+            {
+                "id": "3212101003",
+                "name": "Kedokan Agung"
+            },
+            {
+                "id": "3212101004",
+                "name": "Kedokanbunder"
+            },
+            {
+                "id": "3212101005",
+                "name": "Jayawinangun"
+            },
+            {
+                "id": "3212101006",
+                "name": "Cangkingan"
+            },
+            {
+                "id": "3212101007",
+                "name": "Jayalaksana"
+            }
+        ]
+    },
+    "JUNTINYUAT": {
+        "id": "3212110",
+        "name": "JUNTINYUAT",
+        "villages": [
+            {
+                "id": "3212110001",
+                "name": "Segeran Kidul"
+            },
+            {
+                "id": "3212110002",
+                "name": "Segeran"
+            },
+            {
+                "id": "3212110003",
+                "name": "Juntiweden"
+            },
+            {
+                "id": "3212110004",
+                "name": "Juntikebon"
+            },
+            {
+                "id": "3212110005",
+                "name": "Dadap"
+            },
+            {
+                "id": "3212110006",
+                "name": "Juntinyuat"
+            },
+            {
+                "id": "3212110007",
+                "name": "Juntikedokan"
+            },
+            {
+                "id": "3212110008",
+                "name": "Pondoh"
+            },
+            {
+                "id": "3212110009",
+                "name": "Sambimaya"
+            },
+            {
+                "id": "3212110010",
+                "name": "Tinumpuk"
+            },
+            {
+                "id": "3212110011",
+                "name": "Lombang"
+            },
+            {
+                "id": "3212110012",
+                "name": "Limbangan"
+            }
+        ]
+    },
+    "SLIYEG": {
+        "id": "3212120",
+        "name": "SLIYEG",
+        "villages": [
+            {
+                "id": "3212120001",
+                "name": "Sleman"
+            },
+            {
+                "id": "3212120002",
+                "name": "Tambi"
+            },
+            {
+                "id": "3212120003",
+                "name": "Sudikampiran"
+            },
+            {
+                "id": "3212120004",
+                "name": "Tambi Lor"
+            },
+            {
+                "id": "3212120005",
+                "name": "Sleman Lor"
+            },
+            {
+                "id": "3212120006",
+                "name": "Majasari"
+            },
+            {
+                "id": "3212120007",
+                "name": "Majasih"
+            },
+            {
+                "id": "3212120008",
+                "name": "Sliyeg"
+            },
+            {
+                "id": "3212120009",
+                "name": "Gadingan"
+            },
+            {
+                "id": "3212120010",
+                "name": "Mekargading"
+            },
+            {
+                "id": "3212120011",
+                "name": "Sliyeglor"
+            },
+            {
+                "id": "3212120012",
+                "name": "Tugu Kidul"
+            },
+            {
+                "id": "3212120016",
+                "name": "Longok"
+            }
+        ]
+    },
+    "JATIBARANG": {
+        "id": "3212130",
+        "name": "JATIBARANG",
+        "villages": [
+            {
+                "id": "3212130001",
+                "name": "Sukalila"
+            },
+            {
+                "id": "3212130002",
+                "name": "Pilangsari"
+            },
+            {
+                "id": "3212130003",
+                "name": "Jatibarang Baru"
+            },
+            {
+                "id": "3212130004",
+                "name": "Bulak"
+            },
+            {
+                "id": "3212130005",
+                "name": "Bulak Lor"
+            },
+            {
+                "id": "3212130006",
+                "name": "Jatibarang"
+            },
+            {
+                "id": "3212130008",
+                "name": "Pawidean"
+            },
+            {
+                "id": "3212130009",
+                "name": "Jatisawit"
+            },
+            {
+                "id": "3212130010",
+                "name": "Jatisawit Lor"
+            },
+            {
+                "id": "3212130011",
+                "name": "Krasak"
+            },
+            {
+                "id": "3212130012",
+                "name": "Kalimati"
+            },
+            {
+                "id": "3212130013",
+                "name": "Malangsemirang"
+            },
+            {
+                "id": "3212130014",
+                "name": "Lobener"
+            },
+            {
+                "id": "3212130015",
+                "name": "Lobener Lor"
+            }
+        ]
+    },
+    "BALONGAN": {
+        "id": "3212140",
+        "name": "BALONGAN",
+        "villages": [
+            {
+                "id": "3212140001",
+                "name": "Tegalsembadra"
+            },
+            {
+                "id": "3212140002",
+                "name": "Sukareja"
+            },
+            {
+                "id": "3212140003",
+                "name": "Sukaurip"
+            },
+            {
+                "id": "3212140004",
+                "name": "Rawadalem"
+            },
+            {
+                "id": "3212140005",
+                "name": "Gelarmendala"
+            },
+            {
+                "id": "3212140006",
+                "name": "Tegalurung"
+            },
+            {
+                "id": "3212140007",
+                "name": "Balongan"
+            },
+            {
+                "id": "3212140008",
+                "name": "Sudimampir"
+            },
+            {
+                "id": "3212140009",
+                "name": "Sudimampirlor"
+            },
+            {
+                "id": "3212140010",
+                "name": "Majakerta"
+            }
+        ]
+    },
+    "INDRAMAYU": {
+        "id": "3212150",
+        "name": "INDRAMAYU",
+        "villages": [
+            {
+                "id": "3212150001",
+                "name": "Telukagung"
+            },
+            {
+                "id": "3212150002",
+                "name": "Plumbon"
+            },
+            {
+                "id": "3212150004",
+                "name": "Pekandangan Jaya"
+            },
+            {
+                "id": "3212150005",
+                "name": "Singaraja"
+            },
+            {
+                "id": "3212150006",
+                "name": "Singajaya"
+            },
+            {
+                "id": "3212150007",
+                "name": "Pekandangan"
+            },
+            {
+                "id": "3212150008",
+                "name": "Bojongsari"
+            },
+            {
+                "id": "3212150009",
+                "name": "Kepandean"
+            },
+            {
+                "id": "3212150010",
+                "name": "Karangmalang"
+            },
+            {
+                "id": "3212150011",
+                "name": "Karanganyar"
+            },
+            {
+                "id": "3212150012",
+                "name": "Lemahmekar"
+            },
+            {
+                "id": "3212150013",
+                "name": "Lemahabang"
+            },
+            {
+                "id": "3212150014",
+                "name": "Margadadi"
+            },
+            {
+                "id": "3212150015",
+                "name": "Paoman"
+            },
+            {
+                "id": "3212150016",
+                "name": "Karangsong"
+            },
+            {
+                "id": "3212150017",
+                "name": "Pabeanudik"
+            },
+            {
+                "id": "3212150018",
+                "name": "Tambak"
+            }
+        ]
+    },
+    "SINDANG": {
+        "id": "3212160",
+        "name": "SINDANG",
+        "villages": [
+            {
+                "id": "3212160007",
+                "name": "Panyindangan Kulon"
+            },
+            {
+                "id": "3212160008",
+                "name": "Rambatan Wetan"
+            },
+            {
+                "id": "3212160009",
+                "name": "Panyindangan Wetan"
+            },
+            {
+                "id": "3212160010",
+                "name": "Kenanga"
+            },
+            {
+                "id": "3212160011",
+                "name": "Terusan"
+            },
+            {
+                "id": "3212160012",
+                "name": "Dermayu"
+            },
+            {
+                "id": "3212160013",
+                "name": "Sindang"
+            },
+            {
+                "id": "3212160014",
+                "name": "Penganjang"
+            },
+            {
+                "id": "3212160015",
+                "name": "Babadan"
+            },
+            {
+                "id": "3212160016",
+                "name": "Wanantara"
+            }
+        ]
+    },
+    "CANTIGI": {
+        "id": "3212161",
+        "name": "CANTIGI",
+        "villages": [
+            {
+                "id": "3212161001",
+                "name": "Cangkring"
+            },
+            {
+                "id": "3212161002",
+                "name": "Cantigi Kulon"
+            },
+            {
+                "id": "3212161003",
+                "name": "Cantigi Wetan"
+            },
+            {
+                "id": "3212161004",
+                "name": "Panyingkiran Lor"
+            },
+            {
+                "id": "3212161005",
+                "name": "Panyingkiran Kidul"
+            },
+            {
+                "id": "3212161006",
+                "name": "Lamarantarung"
+            },
+            {
+                "id": "3212161007",
+                "name": "Cemara"
+            }
+        ]
+    },
+    "PASEKAN": {
+        "id": "3212162",
+        "name": "PASEKAN",
+        "villages": [
+            {
+                "id": "3212162001",
+                "name": "Pagirikan"
+            },
+            {
+                "id": "3212162002",
+                "name": "Pasekan"
+            },
+            {
+                "id": "3212162003",
+                "name": "Brondong"
+            },
+            {
+                "id": "3212162004",
+                "name": "Pabeanilir"
+            },
+            {
+                "id": "3212162005",
+                "name": "Totoran"
+            },
+            {
+                "id": "3212162006",
+                "name": "Karanganyar"
+            }
+        ]
+    },
+    "LOHBENER": {
+        "id": "3212170",
+        "name": "LOHBENER",
+        "villages": [
+            {
+                "id": "3212170001",
+                "name": "Kiajaran Kulon"
+            },
+            {
+                "id": "3212170002",
+                "name": "Kijaran Wetan"
+            },
+            {
+                "id": "3212170003",
+                "name": "Lanjan"
+            },
+            {
+                "id": "3212170004",
+                "name": "Langut"
+            },
+            {
+                "id": "3212170005",
+                "name": "Larangan"
+            },
+            {
+                "id": "3212170006",
+                "name": "Waru"
+            },
+            {
+                "id": "3212170007",
+                "name": "Legok"
+            },
+            {
+                "id": "3212170008",
+                "name": "Bojongslawi"
+            },
+            {
+                "id": "3212170009",
+                "name": "Lohbener"
+            },
+            {
+                "id": "3212170010",
+                "name": "Pamayahan"
+            },
+            {
+                "id": "3212170011",
+                "name": "Sindangkerta"
+            },
+            {
+                "id": "3212170015",
+                "name": "Rambatan Kulon"
+            }
+        ]
+    },
+    "ARAHAN": {
+        "id": "3212171",
+        "name": "ARAHAN",
+        "villages": [
+            {
+                "id": "3212171001",
+                "name": "Sukasari"
+            },
+            {
+                "id": "3212171002",
+                "name": "Arahan Kidul"
+            },
+            {
+                "id": "3212171003",
+                "name": "Arahan Lor"
+            },
+            {
+                "id": "3212171004",
+                "name": "Linggajati"
+            },
+            {
+                "id": "3212171005",
+                "name": "Tawangsari"
+            },
+            {
+                "id": "3212171006",
+                "name": "Sukadadi"
+            },
+            {
+                "id": "3212171007",
+                "name": "Pranggong"
+            },
+            {
+                "id": "3212171008",
+                "name": "Cidempet"
+            }
+        ]
+    },
+    "LOSARANG": {
+        "id": "3212180",
+        "name": "LOSARANG",
+        "villages": [
+            {
+                "id": "3212180001",
+                "name": "Ranjeng"
+            },
+            {
+                "id": "3212180002",
+                "name": "Krimun"
+            },
+            {
+                "id": "3212180003",
+                "name": "Puntang"
+            },
+            {
+                "id": "3212180004",
+                "name": "Pegagan"
+            },
+            {
+                "id": "3212180005",
+                "name": "Rajaiyang"
+            },
+            {
+                "id": "3212180006",
+                "name": "Jangga"
+            },
+            {
+                "id": "3212180008",
+                "name": "Pangkalan"
+            },
+            {
+                "id": "3212180010",
+                "name": "Losarang"
+            },
+            {
+                "id": "3212180012",
+                "name": "Santing"
+            },
+            {
+                "id": "3212180013",
+                "name": "Cemara Kulon"
+            }
+        ]
+    },
+    "KANDANGHAUR": {
+        "id": "3212190",
+        "name": "KANDANGHAUR",
+        "villages": [
+            {
+                "id": "3212190002",
+                "name": "Pranti"
+            },
+            {
+                "id": "3212190003",
+                "name": "Wirakanan"
+            },
+            {
+                "id": "3212190004",
+                "name": "Karangmulya"
+            },
+            {
+                "id": "3212190005",
+                "name": "Karanganyar"
+            },
+            {
+                "id": "3212190006",
+                "name": "Wirapanjunan"
+            },
+            {
+                "id": "3212190007",
+                "name": "Parean Girang"
+            },
+            {
+                "id": "3212190008",
+                "name": "Bulak"
+            },
+            {
+                "id": "3212190009",
+                "name": "Ilir"
+            },
+            {
+                "id": "3212190010",
+                "name": "Soge"
+            },
+            {
+                "id": "3212190011",
+                "name": "Eretan Wetan"
+            },
+            {
+                "id": "3212190012",
+                "name": "Eretan Kulon"
+            },
+            {
+                "id": "3212190013",
+                "name": "Kertawinangun"
+            }
+        ]
+    },
+    "BONGAS": {
+        "id": "3212200",
+        "name": "BONGAS",
+        "villages": [
+            {
+                "id": "3212200001",
+                "name": "Cipedang"
+            },
+            {
+                "id": "3212200002",
+                "name": "Sidamulya"
+            },
+            {
+                "id": "3212200003",
+                "name": "Margamulya"
+            },
+            {
+                "id": "3212200004",
+                "name": "Kertajaya"
+            },
+            {
+                "id": "3212200005",
+                "name": "Bongas"
+            },
+            {
+                "id": "3212200006",
+                "name": "Cipaat"
+            },
+            {
+                "id": "3212200007",
+                "name": "Kertamulya"
+            },
+            {
+                "id": "3212200008",
+                "name": "Plawangan"
+            }
+        ]
+    },
+    "ANJATAN": {
+        "id": "3212210",
+        "name": "ANJATAN",
+        "villages": [
+            {
+                "id": "3212210001",
+                "name": "Mangunjaya"
+            },
+            {
+                "id": "3212210002",
+                "name": "Bugistua"
+            },
+            {
+                "id": "3212210003",
+                "name": "Bugis"
+            },
+            {
+                "id": "3212210004",
+                "name": "Salamdarma"
+            },
+            {
+                "id": "3212210006",
+                "name": "Wanguk"
+            },
+            {
+                "id": "3212210007",
+                "name": "Lempuyang"
+            },
+            {
+                "id": "3212210008",
+                "name": "Kopyah"
+            },
+            {
+                "id": "3212210009",
+                "name": "Anjatan Baru"
+            },
+            {
+                "id": "3212210010",
+                "name": "Anjatan"
+            },
+            {
+                "id": "3212210011",
+                "name": "Cilandak"
+            },
+            {
+                "id": "3212210012",
+                "name": "Cilandak Lor"
+            },
+            {
+                "id": "3212210013",
+                "name": "Anjatan Utara"
+            }
+        ]
+    },
+    "SUKRA": {
+        "id": "3212220",
+        "name": "SUKRA",
+        "villages": [
+            {
+                "id": "3212220001",
+                "name": "Bogor"
+            },
+            {
+                "id": "3212220002",
+                "name": "Sukra"
+            },
+            {
+                "id": "3212220003",
+                "name": "Ujunggebang"
+            },
+            {
+                "id": "3212220004",
+                "name": "Tegaltaman"
+            },
+            {
+                "id": "3212220005",
+                "name": "Sukrawetan"
+            },
+            {
+                "id": "3212220006",
+                "name": "Sumuradem"
+            },
+            {
+                "id": "3212220007",
+                "name": "Sumuradem Timur"
+            },
+            {
+                "id": "3212220008",
+                "name": "Karanglayung"
+            }
+        ]
+    },
+    "PATROL": {
+        "id": "3212221",
+        "name": "PATROL",
+        "villages": [
+            {
+                "id": "3212221001",
+                "name": "Limpas"
+            },
+            {
+                "id": "3212221002",
+                "name": "Patrol"
+            },
+            {
+                "id": "3212221003",
+                "name": "Arjasari"
+            },
+            {
+                "id": "3212221004",
+                "name": "Sukahaji"
+            },
+            {
+                "id": "3212221006",
+                "name": "Patrollor"
+            },
+            {
+                "id": "3212221007",
+                "name": "Patrol Baru"
+            },
+            {
+                "id": "3212221008",
+                "name": "Mekarsari"
+            }
+        ]
+    }
+}

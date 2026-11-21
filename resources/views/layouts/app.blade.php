@@ -39,12 +39,90 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
 
+    <!-- Select2 (Modern Searchable Dropdowns) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12); }
+
+        /* =========================================================================
+           SELECT2 MODERN LIGHT THEME CUSTOMIZATION (Enterprise GovTech Aesthetic)
+        ========================================================================== */
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container .select2-selection--single {
+            height: 42px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 0.5rem !important;
+            padding: 6px 12px !important;
+            background-color: #ffffff !important;
+            display: flex !important;
+            align-items: center !important;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .select2-container--default.select2-container--open .select2-selection--single,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+            outline: none !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #0f172a !important;
+            font-size: 0.875rem !important;
+            font-weight: 500 !important;
+            padding-left: 0 !important;
+            line-height: normal !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #94a3b8 !important;
+            font-size: 0.8125rem !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+            right: 8px !important;
+        }
+        .select2-dropdown {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15) !important;
+            font-size: 0.875rem !important;
+            background-color: #ffffff !important;
+            z-index: 99999 !important;
+            overflow: hidden;
+        }
+        .select2-container--default .select2-search--dropdown {
+            padding: 8px 10px !important;
+            background-color: #f8fafc !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 0.375rem !important;
+            padding: 6px 10px !important;
+            font-size: 0.8125rem !important;
+            background-color: #ffffff !important;
+            outline: none !important;
+        }
+        .select2-results__option {
+            padding: 8px 12px !important;
+            font-size: 0.8125rem !important;
+            color: #1e293b !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #1e3a8a !important;
+            color: #ffffff !important;
+        }
+        .select2-container--default .select2-results__option[aria-selected="true"] {
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
 
         /* =========================================================================
            INTERACTIVE MICRO-ANIMATIONS & TRANSITION SYSTEM (Adopsi dari crm_worrie)
@@ -596,6 +674,17 @@
                             }
                         });
                     }
+                });
+            }
+
+            // Inisialisasi Select2 untuk dropdown pencarian (.searchable-select)
+            if (typeof $.fn.select2 !== 'undefined') {
+                $('.searchable-select').each(function () {
+                    $(this).select2({
+                        width: '100%',
+                        placeholder: $(this).attr('placeholder') || '-- Pilih Opsi --',
+                        allowClear: Boolean($(this).attr('placeholder'))
+                    });
                 });
             }
         });
