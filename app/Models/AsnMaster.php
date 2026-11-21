@@ -16,12 +16,21 @@ class AsnMaster extends Model
         'gelar_depan',
         'gelar_belakang',
         'jabatan',
+        'id_formasi_jabatan',
+        'jenis_jabatan',
         'pangkat_golongan',
+        'tmt_golongan',
         'masa_kerja_tahun',
         'nilai_skp',
         'tanggungan_keluarga',
         'tmt_kerja_unit',
+        'tgl_jabatan',
+        'tgl_cpns',
+        'tgl_pns',
+        'tingkat_pendidikan',
+        'pendidikan_terakhir',
         'id_unit_saat_ini',
+        'unit_kerja_induk',
         'domisili_lat',
         'domisili_lng',
         'provinsi',
@@ -42,8 +51,21 @@ class AsnMaster extends Model
         'jarak_ke_kantor_km' => 'float',
         'masa_kerja_tahun' => 'integer',
         'tmt_kerja_unit' => 'date',
+        'tgl_jabatan' => 'date',
+        'tgl_cpns' => 'date',
+        'tgl_pns' => 'date',
+        'tmt_golongan' => 'date',
         'status_permohonan_mutasi' => 'boolean',
     ];
+
+    protected $appends = [
+        'nama_lengkap',
+    ];
+
+    public function formasiJabatan(): BelongsTo
+    {
+        return $this->belongsTo(FormasiJabatan::class, 'id_formasi_jabatan');
+    }
 
     public function unitSaatIni(): BelongsTo
     {

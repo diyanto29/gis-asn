@@ -10,23 +10,40 @@ use Illuminate\View\View;
 class KriteriaController extends Controller
 {
     /**
-     * Menampilkan halaman Master Kriteria & Pembobotan Dinamis TOPSIS.
+     * Menampilkan halaman Master Kriteria & Pembobotan Dinamis TOPSIS untuk 2 Mode.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $kriteria = TopsisKriteria::orderBy('kode_kriteria')->get();
+        $currentMode = $request->get('mode', 'pns_to_dinas');
+        if (!in_array($currentMode, ['pns_to_dinas', 'dinas_to_pns'])) {
+            $currentMode = 'pns_to_dinas';
+        }
+
+        $kriteria = TopsisKriteria::where('kategori_mode', $currentMode)->orderBy('kode_kriteria')->get();
         $activeKriteria = $kriteria->where('is_active', true);
         $totalBobot = $activeKriteria->sum('bobot');
 
-        return view('master-kriteria.index', compact('kriteria', 'activeKriteria', 'totalBobot'));
+        // Statistik ringkas kedua mode untuk tabs
+        $countPnsToDinas = TopsisKriteria::where('kategori_mode', 'pns_to_dinas')->count();
+        $countDinasToPns = TopsisKriteria::where('kategori_mode', 'dinas_to_pns')->count();
+
+        return view('master-kriteria.index', compact(
+            'kriteria',
+            'activeKriteria',
+            'totalBobot',
+            'currentMode',
+            'countPnsToDinas',
+            'countDinasToPns'
+        ));
     }
 
     /**
-     * Menambah kriteria baru ke dalam sistem.
+     * Menambah kriteria baru ke dalam mode tertentu.
      */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'kategori_mode' => 'required|in:pns_to_dinas,dinas_to_pns',
             'nama_kriteria' => 'required|string|max:100',
             'parameter_key' => 'required|string|max:50',
             'atribut' => 'required|in:cost,benefit',
@@ -34,8 +51,10 @@ class KriteriaController extends Controller
             'keterangan' => 'nullable|string|max:255',
         ]);
 
-        // Auto-generate kode_kriteria (C1, C2, C3, ...)
-        $existingCodes = TopsisKriteria::pluck('kode_kriteria')->toArray();
+        $mode = $validated['kategori_mode'];
+
+        // Auto-generate kode_kriteria per mode (C1, C2, C3, ...)
+        $existingCodes = TopsisKriteria::where('kategori_mode', $mode)->pluck('kode_kriteria')->toArray();
         $maxNum = 0;
         foreach ($existingCodes as $code) {
             if (preg_match('/^C(\d+)$/i', $code, $matches)) {
@@ -45,6 +64,7 @@ class KriteriaController extends Controller
         $newCode = 'C' . ($maxNum + 1);
 
         TopsisKriteria::create([
+            'kategori_mode' => $mode,
             'kode_kriteria' => $newCode,
             'nama_kriteria' => $validated['nama_kriteria'],
             'parameter_key' => $validated['parameter_key'],
@@ -54,8 +74,8 @@ class KriteriaController extends Controller
             'keterangan' => $validated['keterangan'] ?? 'Kriteria dinamis tambahan.',
         ]);
 
-        return redirect()->route('master-kriteria.index')
-            ->with('success', "Kriteria baru [{$newCode}] {$validated['nama_kriteria']} berhasil ditambahkan! Silakan gunakan 'Auto-Normalize 100%' agar total bobot tepat 100%.");
+        return redirect()->route('master-kriteria.index', ['mode' => $mode])
+            ->with('success', "Kriteria baru [{$newCode}] {$validated['nama_kriteria']} berhasil ditambahkan pada mode " . ($mode === 'pns_to_dinas' ? 'PNS to Dinas' : 'Dinas to PNS') . "! Silakan gunakan 'Auto-Normalize 100%' agar total bobot tepat 100%.");
     }
 
     /**
@@ -71,60 +91,73 @@ class KriteriaController extends Controller
         $k->save();
 
         $status = $k->is_active ? 'diaktifkan' : 'dinonaktifkan';
-        return redirect()->route('master-kriteria.index')
-            ->with('success', "Kriteria [{$k->kode_kriteria}] {$k->nama_kriteria} berhasil {$status}.");
+        return redirect()->route('master-kriteria.index', ['mode' => $k->kategori_mode])
+            ->with('success', "Kriteria [{$k->kode_kriteria}] {$k->nama_kriteria} berhasil {$status}. Total bobot kriteria aktif akan divalidasi ke 100%.");
     }
 
     /**
-     * Memperbarui bobot kriteria aktif dengan validasi ketat total 100%.
-     */
-    public function updateBobot(Request $request): RedirectResponse
-    {
-        $bobotInput = $request->input('bobot', []);
-
-        if (empty($bobotInput)) {
-            return redirect()->route('master-kriteria.index')
-                ->with('error', 'Tidak ada data bobot kriteria yang dikirimkan.');
-        }
-
-        $activeKriteria = TopsisKriteria::where('is_active', true)->get();
-        $totalInput = 0;
-
-        foreach ($activeKriteria as $k) {
-            if (isset($bobotInput[$k->id])) {
-                $totalInput += (float)$bobotInput[$k->id];
-            }
-        }
-
-        // Toleransi floating point 0.999 s.d. 1.001
-        if (abs($totalInput - 1.00) > 0.01) {
-            return redirect()->route('master-kriteria.index')
-                ->with('error', "Gagal menyimpan: Total bobot kriteria aktif adalah " . round($totalInput * 100) . "% (" . number_format($totalInput, 2) . "). Sesuai kaidah ilmiah TOPSIS, total bobot wajib tepat 100% (1.00). Gunakan tombol 'Auto-Normalize' jika ingin sistem membaginya secara otomatis.");
-        }
-
-        foreach ($activeKriteria as $k) {
-            if (isset($bobotInput[$k->id])) {
-                $k->bobot = (float)$bobotInput[$k->id];
-                $k->save();
-            }
-        }
-
-        return redirect()->route('master-kriteria.index')
-            ->with('success', 'Pengaturan bobot kriteria TOPSIS berhasil disimpan.');
-    }
-
-    /**
-     * Menghapus kriteria custom dari sistem.
+     * Menghapus kriteria kustom.
      */
     public function destroy(int $id): RedirectResponse
     {
         $k = TopsisKriteria::findOrFail($id);
         $code = $k->kode_kriteria;
         $name = $k->nama_kriteria;
+        $mode = $k->kategori_mode;
         $k->delete();
 
-        return redirect()->route('master-kriteria.index')
+        return redirect()->route('master-kriteria.index', ['mode' => $mode])
             ->with('success', "Kriteria [{$code}] {$name} berhasil dihapus dari sistem.");
     }
-}
 
+    /**
+     * Memperbarui bobot seluruh kriteria aktif dengan validasi 100%.
+     */
+    public function updateBobot(Request $request): RedirectResponse
+    {
+        $bobotInput = $request->input('bobot', []);
+        $mode = $request->input('kategori_mode', 'pns_to_dinas');
+        
+        if (empty($bobotInput)) {
+            return back()->with('error', 'Tidak ada data bobot kriteria yang dikirimkan.');
+        }
+
+        $activeIds = TopsisKriteria::where('kategori_mode', $mode)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->toArray();
+
+        // Cek apakah user input dalam skala 100 atau 1.00
+        $rawSum = 0;
+        foreach ($bobotInput as $id => $val) {
+            if (in_array((int)$id, $activeIds)) {
+                $rawSum += (float)$val;
+            }
+        }
+        $isPercentageMode = ($rawSum > 2.0);
+
+        $processed = [];
+        $total = 0;
+        foreach ($bobotInput as $id => $val) {
+            if (in_array((int)$id, $activeIds)) {
+                $num = (float)$val;
+                $processed[$id] = $isPercentageMode ? ($num / 100.0) : $num;
+                $total += $processed[$id];
+            }
+        }
+
+        // Validasi ketat total bobot harus tepat 1.00 (toleransi desimal 0.99 s/d 1.01)
+        if ($total < 0.99 || $total > 1.01) {
+            $persenDisplay = round($total * 100, 1);
+            return back()->with('error', "Validasi Gagal: Akumulasi total bobot kriteria aktif wajib tepat 100% (1.00). Total input saat ini: {$persenDisplay}% ({$total}). Silakan klik tombol 'Auto-Normalize 100%'.");
+        }
+
+        // Simpan bobot baru
+        foreach ($processed as $id => $val) {
+            TopsisKriteria::where('id', $id)->update(['bobot' => round($val, 4)]);
+        }
+
+        return redirect()->route('master-kriteria.index', ['mode' => $mode])
+            ->with('success', 'Bobot kriteria aktif berhasil diperbarui (Total: 100%). Perhitungan peringkat TOPSIS akan menggunakan proporsi kriteria ini.');
+    }
+}

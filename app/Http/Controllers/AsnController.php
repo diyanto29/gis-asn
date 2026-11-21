@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AsnMaster;
+use App\Models\FormasiJabatan;
 use App\Models\MasterLokasi;
 use App\Models\UnitKerja;
 use App\Models\User;
@@ -50,7 +51,11 @@ class AsnController extends Controller
     {
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
-        return view('asn.create', compact('units', 'kecamatans'));
+        $jabatanList = FormasiJabatan::select('nama_jabatan', 'jenis_jabatan')
+            ->distinct()
+            ->orderBy('nama_jabatan')
+            ->get();
+        return view('asn.create', compact('units', 'kecamatans', 'jabatanList'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -61,10 +66,17 @@ class AsnController extends Controller
             'gelar_depan' => 'nullable|string|max:20',
             'gelar_belakang' => 'nullable|string|max:20',
             'jabatan' => 'required|string|max:150',
+            'jenis_jabatan' => 'required|in:struktural,fungsional,pelaksana',
             'pangkat_golongan' => 'required|string|max:20',
-            'masa_kerja_tahun' => 'required|integer|min:0',
-            'tmt_kerja_unit' => 'nullable|date',
+            'tmt_golongan' => 'nullable|date',
+            'tgl_jabatan' => 'nullable|date',
+            'tgl_cpns' => 'nullable|date',
+            'tgl_pns' => 'nullable|date',
+            'tingkat_pendidikan' => 'nullable|string|max:50',
+            'pendidikan_terakhir' => 'nullable|string|max:150',
+            'masa_kerja_tahun' => 'nullable|integer|min:0',
             'id_unit_saat_ini' => 'required|exists:unit_kerja,id',
+            'unit_kerja_induk' => 'nullable|string|max:255',
             'domisili_lat' => 'required|numeric|between:-90,90',
             'domisili_lng' => 'required|numeric|between:-180,180',
             'provinsi' => 'nullable|string|max:100',
@@ -73,6 +85,16 @@ class AsnController extends Controller
             'kelurahan_desa' => 'nullable|string|max:100',
             'alamat_detail' => 'nullable|string',
         ]);
+
+        // Hitung masa kerja otomatis jika ada tgl_cpns
+        if (!empty($validated['tgl_cpns'])) {
+            $thnCpns = (int)date('Y', strtotime($validated['tgl_cpns']));
+            $validated['masa_kerja_tahun'] = max(0, 2026 - $thnCpns);
+        } else {
+            $validated['masa_kerja_tahun'] = $validated['masa_kerja_tahun'] ?? 5;
+        }
+
+        $validated['tmt_kerja_unit'] = $validated['tgl_jabatan'] ?? $validated['tgl_cpns'] ?? now();
 
         $unit = UnitKerja::findOrFail($validated['id_unit_saat_ini']);
 
@@ -93,20 +115,17 @@ class AsnController extends Controller
             ]));
 
             // Otomatis buat akun User Login mandiri (role: asn)
-            $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $asn->nama));
-            $email = "{$cleanName}@asn.indramayukab.go.id";
-            if (User::where('email', $email)->exists()) {
-                $email = "{$asn->nip}@asn.indramayukab.go.id";
+            $email = "{$asn->nip}@bkpsdm.indramayukab.go.id";
+            if (!User::where('nip', $asn->nip)->exists()) {
+                User::create([
+                    'name' => $asn->nama,
+                    'nip' => $asn->nip,
+                    'email' => $email,
+                    'password' => Hash::make('password'),
+                    'role' => 'asn',
+                    'asn_id' => $asn->id,
+                ]);
             }
-
-            User::create([
-                'name' => $asn->nama,
-                'nip' => $asn->nip,
-                'email' => $email,
-                'password' => Hash::make('password123'),
-                'role' => 'asn',
-                'asn_id' => $asn->id,
-            ]);
         });
 
         return redirect()->route('asn.index')
@@ -124,7 +143,11 @@ class AsnController extends Controller
         $asn = AsnMaster::with('unitSaatIni')->findOrFail($id);
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
-        return view('asn.edit', compact('asn', 'units', 'kecamatans'));
+        $jabatanList = FormasiJabatan::select('nama_jabatan', 'jenis_jabatan')
+            ->distinct()
+            ->orderBy('nama_jabatan')
+            ->get();
+        return view('asn.edit', compact('asn', 'units', 'kecamatans', 'jabatanList'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -132,15 +155,22 @@ class AsnController extends Controller
         $asn = AsnMaster::findOrFail($id);
 
         $validated = $request->validate([
-            'nip' => "required|numeric|digits:18|unique:asn_master,nip,{$id}",
+            'nip' => 'required|numeric|digits:18|unique:asn_master,nip,' . $asn->id,
             'nama' => 'required|string|max:150',
             'gelar_depan' => 'nullable|string|max:20',
             'gelar_belakang' => 'nullable|string|max:20',
             'jabatan' => 'required|string|max:150',
+            'jenis_jabatan' => 'required|in:struktural,fungsional,pelaksana',
             'pangkat_golongan' => 'required|string|max:20',
-            'masa_kerja_tahun' => 'required|integer|min:0',
-            'tmt_kerja_unit' => 'nullable|date',
+            'tmt_golongan' => 'nullable|date',
+            'tgl_jabatan' => 'nullable|date',
+            'tgl_cpns' => 'nullable|date',
+            'tgl_pns' => 'nullable|date',
+            'tingkat_pendidikan' => 'nullable|string|max:50',
+            'pendidikan_terakhir' => 'nullable|string|max:150',
+            'masa_kerja_tahun' => 'nullable|integer|min:0',
             'id_unit_saat_ini' => 'required|exists:unit_kerja,id',
+            'unit_kerja_induk' => 'nullable|string|max:255',
             'domisili_lat' => 'required|numeric|between:-90,90',
             'domisili_lng' => 'required|numeric|between:-180,180',
             'provinsi' => 'nullable|string|max:100',
@@ -150,9 +180,14 @@ class AsnController extends Controller
             'alamat_detail' => 'nullable|string',
         ]);
 
+        if (!empty($validated['tgl_cpns'])) {
+            $thnCpns = (int)date('Y', strtotime($validated['tgl_cpns']));
+            $validated['masa_kerja_tahun'] = max(0, 2026 - $thnCpns);
+        }
+
         $unit = UnitKerja::findOrFail($validated['id_unit_saat_ini']);
 
-        // Rekalkulasi jarak ke unit kerja
+        // Hitung ulang jarak ke kantor
         $jarak = $this->haversine->calculateDistance(
             $validated['domisili_lat'],
             $validated['domisili_lng'],
@@ -177,7 +212,7 @@ class AsnController extends Controller
         });
 
         return redirect()->route('asn.show', $asn->id)
-            ->with('success', "Data pegawai {$asn->nama} berhasil diperbarui.");
+            ->with('success', "Data profil dan koordinat pegawai ASN {$asn->nama} berhasil diperbarui.");
     }
 
     public function destroy(int $id): RedirectResponse

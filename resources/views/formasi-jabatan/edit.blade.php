@@ -45,10 +45,19 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan <span class="text-rose-500">*</span></label>
                     <input type="text" name="nama_jabatan" value="{{ old('nama_jabatan', $formasi->nama_jabatan) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Jabatan <span class="text-rose-500">*</span></label>
+                    <select name="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="fungsional" {{ old('jenis_jabatan', $formasi->jenis_jabatan) == 'fungsional' ? 'selected' : '' }}>Jabatan Fungsional</option>
+                        <option value="pelaksana" {{ old('jenis_jabatan', $formasi->jenis_jabatan) == 'pelaksana' ? 'selected' : '' }}>Jabatan Pelaksana</option>
+                        <option value="struktural" {{ old('jenis_jabatan', $formasi->jenis_jabatan) == 'struktural' ? 'selected' : '' }}>Jabatan Struktural</option>
+                    </select>
                 </div>
 
                 <div>

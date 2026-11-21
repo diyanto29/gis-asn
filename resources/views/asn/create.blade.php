@@ -58,28 +58,103 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan <span class="text-rose-500">*</span></label>
-                            <input type="text" name="jabatan" value="{{ old('jabatan') }}" required placeholder="Contoh: Analis Kebijakan Ahli Muda" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan (Get Data / Ketik) <span class="text-rose-500">*</span></label>
+                            <input list="jabatanListOptions" type="text" name="jabatan" value="{{ old('jabatan') }}" required placeholder="Pilih atau ketik nama jabatan..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <datalist id="jabatanListOptions">
+                                @foreach ($jabatanList as $jbt)
+                                    <option value="{{ $jbt->nama_jabatan }}">{{ $jbt->jenis_jabatan ? ucfirst($jbt->jenis_jabatan) : '' }}</option>
+                                @endforeach
+                            </datalist>
+                            @error('jabatan')
+                                <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Jabatan <span class="text-rose-500">*</span></label>
+                            <select name="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                                <option value="fungsional" {{ old('jenis_jabatan') == 'fungsional' ? 'selected' : '' }}>Fungsional</option>
+                                <option value="pelaksana" {{ old('jenis_jabatan', 'pelaksana') == 'pelaksana' ? 'selected' : '' }}>Pelaksana</option>
+                                <option value="struktural" {{ old('jenis_jabatan') == 'struktural' ? 'selected' : '' }}>Struktural</option>
+                            </select>
+                            @error('jenis_jabatan')
+                                <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Pangkat / Golongan <span class="text-rose-500">*</span></label>
                             <select name="pangkat_golongan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                                <option value="Juru Muda (I/a)" {{ old('pangkat_golongan') == 'Juru Muda (I/a)' ? 'selected' : '' }}>Juru Muda (I/a)</option>
+                                <option value="Juru Muda Tk. I (I/b)" {{ old('pangkat_golongan') == 'Juru Muda Tk. I (I/b)' ? 'selected' : '' }}>Juru Muda Tk. I (I/b)</option>
+                                <option value="Juru (I/c)" {{ old('pangkat_golongan') == 'Juru (I/c)' ? 'selected' : '' }}>Juru (I/c)</option>
+                                <option value="Juru Tk. I (I/d)" {{ old('pangkat_golongan') == 'Juru Tk. I (I/d)' ? 'selected' : '' }}>Juru Tk. I (I/d)</option>
+                                <option value="Pengatur Muda (II/a)" {{ old('pangkat_golongan') == 'Pengatur Muda (II/a)' ? 'selected' : '' }}>Pengatur Muda (II/a)</option>
+                                <option value="Pengatur Muda Tk. I (II/b)" {{ old('pangkat_golongan') == 'Pengatur Muda Tk. I (II/b)' ? 'selected' : '' }}>Pengatur Muda Tk. I (II/b)</option>
+                                <option value="Pengatur (II/c)" {{ old('pangkat_golongan') == 'Pengatur (II/c)' ? 'selected' : '' }}>Pengatur (II/c)</option>
+                                <option value="Pengatur Tk. I (II/d)" {{ old('pangkat_golongan') == 'Pengatur Tk. I (II/d)' ? 'selected' : '' }}>Pengatur Tk. I (II/d)</option>
                                 <option value="Penata Muda (III/a)" {{ old('pangkat_golongan') == 'Penata Muda (III/a)' ? 'selected' : '' }}>Penata Muda (III/a)</option>
                                 <option value="Penata Muda Tk. I (III/b)" {{ old('pangkat_golongan') == 'Penata Muda Tk. I (III/b)' ? 'selected' : '' }}>Penata Muda Tk. I (III/b)</option>
                                 <option value="Penata (III/c)" {{ old('pangkat_golongan', 'Penata (III/c)') == 'Penata (III/c)' ? 'selected' : '' }}>Penata (III/c)</option>
                                 <option value="Penata Tk. I (III/d)" {{ old('pangkat_golongan') == 'Penata Tk. I (III/d)' ? 'selected' : '' }}>Penata Tk. I (III/d)</option>
                                 <option value="Pembina (IV/a)" {{ old('pangkat_golongan') == 'Pembina (IV/a)' ? 'selected' : '' }}>Pembina (IV/a)</option>
                                 <option value="Pembina Tk. I (IV/b)" {{ old('pangkat_golongan') == 'Pembina Tk. I (IV/b)' ? 'selected' : '' }}>Pembina Tk. I (IV/b)</option>
-                                <option value="Pengatur (II/c)" {{ old('pangkat_golongan') == 'Pengatur (II/c)' ? 'selected' : '' }}>Pengatur (II/c)</option>
-                                <option value="Pengatur Tk. I (II/d)" {{ old('pangkat_golongan') == 'Pengatur Tk. I (II/d)' ? 'selected' : '' }}>Pengatur Tk. I (II/d)</option>
+                                <option value="Pembina Utama Muda (IV/c)" {{ old('pangkat_golongan') == 'Pembina Utama Muda (IV/c)' ? 'selected' : '' }}>Pembina Utama Muda (IV/c)</option>
+                                <option value="Pembina Utama Madya (IV/d)" {{ old('pangkat_golongan') == 'Pembina Utama Madya (IV/d)' ? 'selected' : '' }}>Pembina Utama Madya (IV/d)</option>
+                                <option value="Pembina Utama (IV/e)" {{ old('pangkat_golongan') == 'Pembina Utama (IV/e)' ? 'selected' : '' }}>Pembina Utama (IV/e)</option>
                             </select>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Masa Kerja (Tahun) <span class="text-rose-500">*</span></label>
-                            <input type="number" name="masa_kerja_tahun" value="{{ old('masa_kerja_tahun', 5) }}" min="0" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">TMT Golongan Terakhir</label>
+                            <input type="date" name="tmt_golongan" value="{{ old('tmt_golongan') }}" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Tanggal Riwayat Kepegawaian Sesuai Nota Klien -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Jabatan (TMT)</label>
+                            <input type="date" name="tgl_jabatan" value="{{ old('tgl_jabatan') }}" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Dasar masa jabatan</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal CPNS</label>
+                            <input type="date" name="tgl_cpns" value="{{ old('tgl_cpns') }}" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Dasar masa kerja</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal PNS</label>
+                            <input type="date" name="tgl_pns" value="{{ old('tgl_pns') }}" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Pengangkatan penuh</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Masa Kerja (Thn) <span class="text-rose-500">*</span></label>
+                            <input type="number" name="masa_kerja_tahun" value="{{ old('masa_kerja_tahun', 5) }}" min="0" required class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Otomatis/manual</span>
+                        </div>
+                    </div>
+
+                    <!-- Riwayat Pendidikan -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Pendidikan</label>
+                            <select name="tingkat_pendidikan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">-- Pilih Jenjang --</option>
+                                <option value="SLTA" {{ old('tingkat_pendidikan') == 'SLTA' ? 'selected' : '' }}>SLTA / Sederajat</option>
+                                <option value="D-III" {{ old('tingkat_pendidikan') == 'D-III' ? 'selected' : '' }}>Diploma III (D-III)</option>
+                                <option value="D-IV" {{ old('tingkat_pendidikan') == 'D-IV' ? 'selected' : '' }}>Diploma IV (D-IV)</option>
+                                <option value="S-1" {{ old('tingkat_pendidikan', 'S-1') == 'S-1' ? 'selected' : '' }}>Strata 1 (S-1)</option>
+                                <option value="S-2" {{ old('tingkat_pendidikan') == 'S-2' ? 'selected' : '' }}>Strata 2 (S-2)</option>
+                                <option value="S-3" {{ old('tingkat_pendidikan') == 'S-3' ? 'selected' : '' }}>Strata 3 (S-3)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pendidikan Terakhir (Jurusan)</label>
+                            <input type="text" name="pendidikan_terakhir" value="{{ old('pendidikan_terakhir') }}" placeholder="Contoh: S-1 ILMU PEMERINTAHAN" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                         </div>
                     </div>
 
@@ -94,8 +169,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">TMT Bekerja di Unit Saat Ini</label>
-                            <input type="date" name="tmt_kerja_unit" value="{{ old('tmt_kerja_unit', date('Y-m-d')) }}" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Kerja Induk (OPD Pengampu)</label>
+                            <input type="text" name="unit_kerja_induk" value="{{ old('unit_kerja_induk') }}" placeholder="Contoh: DINAS PENDIDIKAN DAN KEBUDAYAAN" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                         </div>
                     </div>
                 </div>

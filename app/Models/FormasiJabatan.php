@@ -23,6 +23,7 @@ class FormasiJabatan extends Model
         'tahun_anggaran',
         'periode',
         'nama_jabatan',
+        'jenis_jabatan',
         'jenjang_jabatan',
         'kualifikasi_pendidikan',
         'kebutuhan_abk',

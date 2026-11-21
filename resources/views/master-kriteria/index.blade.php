@@ -20,6 +20,20 @@
         </div>
     </div>
 
+    <!-- Mode Switcher Tabs -->
+    <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
+        <a href="{{ route('master-kriteria.index', ['mode' => 'pns_to_dinas']) }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition {{ $currentMode === 'pns_to_dinas' ? 'bg-blue-700 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Mode 1: PNS to Dinas (Pegawai Cari Kantor)</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono {{ $currentMode === 'pns_to_dinas' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $countPnsToDinas }} Kriteria</span>
+        </a>
+        <a href="{{ route('master-kriteria.index', ['mode' => 'dinas_to_pns']) }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition {{ $currentMode === 'dinas_to_pns' ? 'bg-blue-700 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+            <i data-lucide="building-2" class="w-4 h-4"></i>
+            <span>Mode 2: Dinas to PNS (Dinas Cari Pegawai)</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono {{ $currentMode === 'dinas_to_pns' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $countDinasToPns }} Kriteria</span>
+        </a>
+    </div>
+
     <!-- Info & Presets Banner -->
     <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -49,6 +63,7 @@
     <!-- Main Weight Form -->
     <form id="weightForm" method="POST" action="{{ route('master-kriteria.update-bobot') }}" class="space-y-6">
         @csrf
+        <input type="hidden" name="kategori_mode" value="{{ $currentMode }}">
 
         <!-- Total Meter Bar -->
         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -201,6 +216,14 @@
 
         <form method="POST" action="{{ route('master-kriteria.store') }}" class="p-5 space-y-4">
             @csrf
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Target Mode SPK <span class="text-rose-500">*</span></label>
+                <select name="kategori_mode" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="pns_to_dinas" {{ $currentMode === 'pns_to_dinas' ? 'selected' : '' }}>Mode 1: PNS to Dinas (Pegawai Cari Kantor)</option>
+                    <option value="dinas_to_pns" {{ $currentMode === 'dinas_to_pns' ? 'selected' : '' }}>Mode 2: Dinas to PNS (Dinas Cari Pegawai)</option>
+                </select>
+            </div>
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kriteria <span class="text-rose-500">*</span></label>

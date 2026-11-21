@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AsnMaster;
+use App\Models\FormasiJabatan;
 use App\Models\RekomendasiMutasi;
 use App\Models\TopsisKriteria;
 use App\Models\UnitKerja;
@@ -19,282 +20,320 @@ class TopsisController extends Controller
         protected TopsisService $topsis
     ) {}
 
-    public function index(): View
+    /**
+     * Halaman Utama Menu TOPSIS: Redirect ke Mode 1 (PNS to Dinas).
+     */
+    public function index(): RedirectResponse
     {
-        // Hanya unit kerja yang punya kuota formasi lowong (> 0) yang bisa jadi tujuan mutasi
-        $targetUnits = UnitKerja::where('kuota_formasi_kosong', '>', 0)
-            ->orderBy('nama_unit')
+        return redirect()->route('topsis.pns-to-dinas');
+    }
+
+    /**
+     * =========================================================================
+     * MODE 1: REKOMENDASI SPK "PNS TO DINAS"
+     * Skenario: Pegawai ASN mencari penempatan dinas terbaik yang ideal baginya.
+     * =========================================================================
+     */
+    public function pnsToDinas(Request $request): View
+    {
+        $asnList = AsnMaster::with('unitSaatIni')->orderBy('nama')->get();
+        $selectedAsnId = $request->get('asn_id');
+
+        $kriteriaModels = TopsisKriteria::where('kategori_mode', 'pns_to_dinas')
+            ->where('is_active', true)
+            ->orderBy('kode_kriteria')
             ->get();
 
-        $kriteria = TopsisKriteria::orderBy('kode_kriteria')->get();
-        $activeKriteria = $kriteria->where('is_active', true);
-        $totalBobot = $activeKriteria->sum('bobot');
+        $selectedAsn = null;
+        $topsisResult = null;
+        $ranked = [];
 
-        return view('topsis.index', compact('targetUnits', 'kriteria', 'activeKriteria', 'totalBobot'));
-    }
+        if ($selectedAsnId) {
+            $selectedAsn = AsnMaster::with(['unitSaatIni', 'formasiJabatan'])->findOrFail($selectedAsnId);
 
-    public function storeKriteria(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'nama_kriteria' => 'required|string|max:100',
-            'parameter_key' => 'required|string|max:50',
-            'atribut' => 'required|in:cost,benefit',
-            'bobot' => 'required|numeric|min:0|max:1',
-            'keterangan' => 'nullable|string|max:255',
-        ]);
+            // Cari alternatif unit kerja tujuan yang bukan unit saat ini
+            $candidateUnits = UnitKerja::where('id', '!=', $selectedAsn->id_unit_saat_ini)
+                ->whereNotNull('kantor_lat')
+                ->whereNotNull('kantor_lng')
+                ->get();
 
-        // Auto-generate kode_kriteria (C1, C2, C3, ...)
-        $existingCodes = TopsisKriteria::pluck('kode_kriteria')->toArray();
-        $maxNum = 0;
-        foreach ($existingCodes as $code) {
-            if (preg_match('/^C(\d+)$/i', $code, $matches)) {
-                $maxNum = max($maxNum, (int)$matches[1]);
+            // Kumpulkan data kualifikasi formasi linear untuk C5
+            $openFormasiUnitIds = FormasiJabatan::where('status', 'terbuka')
+                ->where('kuota_lowong', '>', 0)
+                ->pluck('id_unit_kerja')
+                ->toArray();
+
+            // Hitung masa jabatan dan masa kerja ASN
+            $tglJabatan = $selectedAsn->tgl_jabatan ?: $selectedAsn->tmt_kerja_unit;
+            $masaJabatanTahun = $tglJabatan ? max(0.5, round((time() - strtotime($tglJabatan)) / (365.25 * 86400), 2)) : 2.0;
+            
+            $tglCpns = $selectedAsn->tgl_cpns;
+            $masaKerjaTahun = $tglCpns ? max(1, round((time() - strtotime($tglCpns)) / (365.25 * 86400), 2)) : ($selectedAsn->masa_kerja_tahun ?: 5);
+
+            $alternatives = [];
+            $unitDetails = [];
+
+            foreach ($candidateUnits as $unit) {
+                $jarakBaru = $this->haversine->calculateDistance(
+                    $selectedAsn->domisili_lat,
+                    $selectedAsn->domisili_lng,
+                    $unit->kantor_lat,
+                    $unit->kantor_lng
+                );
+
+                $jarakLama = $selectedAsn->jarak_ke_kantor_km ?: 15.0;
+                $hematJarak = round(max(0, $jarakLama - $jarakBaru), 2);
+
+                // Kebutuhan staf dinas tujuan (ABK - Bezetting)
+                $kebutuhanStaf = max(0, $unit->kebutuhan_abk - $unit->bezetting_saat_ini);
+                if ($kebutuhanStaf === 0 && $unit->kuota_formasi_kosong > 0) {
+                    $kebutuhanStaf = $unit->kuota_formasi_kosong;
+                }
+
+                // C5 Formasi Jabatan Linear (1 = Ada Kuota Formasi, 0 = Tidak Ada)
+                $hasLinearFormasi = in_array($unit->id, $openFormasiUnitIds) || ($unit->kuota_formasi_kosong > 0) ? 1.0 : 0.0;
+
+                $unitKey = 'unit_' . $unit->id;
+                $alternatives[$unitKey] = [
+                    'id' => $unit->id,
+                    'nama_unit' => $unit->nama_unit,
+                    'jarak_baru_km' => $jarakBaru,
+                    'hemat_jarak_km' => $hematJarak,
+                    'kebutuhan_staf' => $kebutuhanStaf,
+                    'has_formasi' => $hasLinearFormasi,
+                    
+                    // Matriks kriteria untuk TOPSIS
+                    'C1' => $jarakBaru,               // Cost
+                    'C2' => $masaJabatanTahun,        // Benefit
+                    'C3' => $masaKerjaTahun,          // Benefit
+                    'C4' => (float)$kebutuhanStaf,    // Benefit
+                    'C5' => $hasLinearFormasi,        // Benefit
+                ];
+
+                $unitDetails[$unit->id] = $unit;
             }
-        }
-        $newCode = 'C' . ($maxNum + 1);
 
-        TopsisKriteria::create([
-            'kode_kriteria' => $newCode,
-            'nama_kriteria' => $validated['nama_kriteria'],
-            'parameter_key' => $validated['parameter_key'],
-            'atribut' => $validated['atribut'],
-            'bobot' => (float)$validated['bobot'],
-            'is_active' => true,
-            'keterangan' => $validated['keterangan'] ?? 'Kriteria dinamis tambahan.',
-        ]);
-
-        return back()->with('success', "Kriteria baru [{$newCode}] {$validated['nama_kriteria']} berhasil ditambahkan! Silakan sesuaikan atau gunakan 'Auto-Normalize 100%' agar total bobot pas 100%.");
-    }
-
-    public function toggleKriteria(int $id): RedirectResponse
-    {
-        $k = TopsisKriteria::findOrFail($id);
-        $k->is_active = !$k->is_active;
-        if (!$k->is_active) {
-            $k->bobot = 0.00;
-        }
-        $k->save();
-
-        $status = $k->is_active ? 'diaktifkan' : 'dinonaktifkan';
-        return back()->with('success', "Kriteria [{$k->kode_kriteria}] {$k->nama_kriteria} berhasil {$status}. Total bobot kriteria aktif akan divalidasi ke 100%.");
-    }
-
-    public function destroyKriteria(int $id): RedirectResponse
-    {
-        $k = TopsisKriteria::findOrFail($id);
-        $code = $k->kode_kriteria;
-        $name = $k->nama_kriteria;
-        $k->delete();
-
-        return back()->with('success', "Kriteria [{$code}] {$name} berhasil dihapus dari sistem.");
-    }
-
-    public function updateBobot(Request $request): RedirectResponse
-    {
-        $bobotInput = $request->input('bobot', []);
-        
-        if (empty($bobotInput)) {
-            return back()->with('error', 'Tidak ada data bobot kriteria yang dikirimkan.');
-        }
-
-        // Ambil ID kriteria yang aktif
-        $activeIds = TopsisKriteria::where('is_active', true)->pluck('id')->toArray();
-
-        // Konversi jika user menginput dalam format persentase bulat (misal 35, 25, 25, 15 => total 100)
-        $rawSum = 0;
-        foreach ($bobotInput as $id => $val) {
-            if (in_array((int)$id, $activeIds)) {
-                $rawSum += (float)$val;
-            }
-        }
-        $isPercentageMode = ($rawSum > 2.0);
-
-        $processed = [];
-        $total = 0;
-        foreach ($bobotInput as $id => $val) {
-            if (in_array((int)$id, $activeIds)) {
-                $num = (float)$val;
-                $processed[$id] = $isPercentageMode ? ($num / 100.0) : $num;
-                $total += $processed[$id];
-            }
-        }
-
-        // Validasi ketat total bobot harus tepat 1.00 (toleransi desimal 0.99 s/d 1.01)
-        if ($total < 0.99 || $total > 1.01) {
-            $persenDisplay = round($total * 100, 1);
-            return back()->with('error', "Validasi Gagal: Akumulasi total bobot kriteria aktif wajib tepat 100% (1.00). Total input saat ini: {$persenDisplay}% ({$total}). Gunakan tombol 'Auto-Normalize 100%'.");
-        }
-
-        // Simpan bobot baru untuk kriteria aktif
-        foreach ($processed as $id => $val) {
-            TopsisKriteria::where('id', $id)->update(['bobot' => round($val, 4)]);
-        }
-
-        return back()->with('success', 'Bobot kriteria aktif berhasil diperbarui (Total: 100%). Perhitungan peringkat TOPSIS akan menggunakan proporsi kriteria ini.');
-    }
-
-    public function proses(Request $request): View|RedirectResponse
-    {
-        $request->validate([
-            'unit_tujuan_id' => 'required|exists:unit_kerja,id',
-        ]);
-
-        $unitTujuan = UnitKerja::findOrFail($request->unit_tujuan_id);
-        
-        // 1. Ambil kriteria yang berstatus AKTIF saja
-        $kriteriaModels = TopsisKriteria::where('is_active', true)->orderBy('kode_kriteria')->get();
-
-        if ($kriteriaModels->isEmpty()) {
-            return back()->with('error', 'Tidak ada kriteria aktif! Silakan aktifkan minimal 1 kriteria di panel kriteria.');
-        }
-
-        // Verifikasi total bobot kriteria aktif harus 100% (1.00)
-        $totalBobot = $kriteriaModels->sum('bobot');
-        if ($totalBobot < 0.99 || $totalBobot > 1.01) {
-            $persen = round($totalBobot * 100, 1);
-            return back()->with('error', "Kalkulasi Dibatalkan: Akumulasi bobot kriteria aktif saat ini adalah {$persen}%. Wajib tepat 100% (1.00). Silakan klik 'Auto-Normalize 100%' terlebih dahulu.");
-        }
-
-        // 2. Ambil kandidat ASN yang bukan dari unit tujuan dan punya titik koordinat domisili
-        $candidates = AsnMaster::with('unitSaatIni')
-            ->where('id_unit_saat_ini', '!=', $unitTujuan->id)
-            ->whereNotNull('domisili_lat')
-            ->whereNotNull('domisili_lng')
-            ->get();
-
-        if ($candidates->isEmpty()) {
-            return view('topsis.hasil', [
-                'unitTujuan' => $unitTujuan,
-                'kriteria' => [],
-                'ranked' => [],
-                'details' => [],
-                'message' => 'Tidak ditemukan kandidat ASN yang memenuhi syarat koordinat.',
-            ]);
-        }
-
-        // 3. Siapkan alternatif matriks keputusan secara dinamis untuk setiap kriteria aktif
-        $alternatives = [];
-        foreach ($candidates as $asn) {
-            $jarakBaru = $this->haversine->calculateDistance(
-                $asn->domisili_lat,
-                $asn->domisili_lng,
-                $unitTujuan->kantor_lat,
-                $unitTujuan->kantor_lng
-            );
-
-            $hematJarak = max(0.0, (float)$asn->jarak_ke_kantor_km - $jarakBaru);
-
-            // Skoring pangkat golongan (II/c = 1 ... IV/c = 9)
-            $golScore = match ($asn->pangkat_golongan) {
-                'II/c' => 1, 'II/d' => 2,
-                'III/a' => 3, 'III/b' => 4, 'III/c' => 5, 'III/d' => 6,
-                'IV/a' => 7, 'IV/b' => 8, 'IV/c' => 9,
-                default => 3,
-            };
-
-            // Estimasi usia dari NIP (8 digit pertama = YYYYMMDD)
-            $birthYear = (int)substr($asn->nip, 0, 4);
-            $usia = ($birthYear >= 1950 && $birthYear <= 2010) ? (2026 - $birthYear) : 40;
-
-            $altRow = [
-                'id' => $asn->id,
-                'asn_model' => $asn,
-                'nip' => $asn->nip,
-                'nama' => $asn->nama_lengkap,
-                'unit_asal' => $asn->unitSaatIni->nama_unit ?? '-',
-                'jarak_lama' => (float)$asn->jarak_ke_kantor_km,
-                'jarak_baru' => (float)$jarakBaru,
-                'hemat_jarak' => (float)$hematJarak,
-            ];
-
-            // Mapping dinamis untuk setiap kode kriteria aktif (C1, C2, C3, C4, C5, dst.)
+            // Bobot kriteria
+            $criteriaWeights = [];
             foreach ($kriteriaModels as $k) {
-                $code = $k->kode_kriteria;
-                $key = $k->parameter_key ?? 'jarak_baru';
-
-                $altRow[$code] = match ($key) {
-                    'jarak_baru' => (float)$jarakBaru,
-                    'hemat_jarak' => (float)$hematJarak,
-                    'masa_kerja' => (float)$asn->masa_kerja_tahun,
-                    'pangkat_golongan' => (float)$golScore,
-                    'nilai_skp' => (float)($asn->nilai_skp ?? 88.5),
-                    'usia_pegawai' => (float)$usia,
-                    'tanggungan_keluarga' => (float)($asn->tanggungan_keluarga ?? 2),
-                    default => (float)($asn->{$key} ?? 0.0),
-                };
+                $criteriaWeights[$k->kode_kriteria] = [
+                    'bobot' => $k->bobot,
+                    'atribut' => $k->atribut,
+                ];
             }
 
-            $alternatives[] = $altRow;
+            if (!empty($alternatives) && !empty($criteriaWeights)) {
+                $topsisResult = $this->topsis->calculate(array_values($alternatives), $criteriaWeights);
+                $ranked = $topsisResult['ranked'];
+
+                // Attach detail unit kerja ke hasil ranking
+                foreach ($ranked as &$item) {
+                    $altId = $item['alternative']['id'] ?? null;
+                    $item['id'] = $altId;
+                    $item['vi'] = $item['v_value'];
+                    $item['unit'] = $unitDetails[$altId] ?? null;
+                    $altInfo = $alternatives['unit_' . $altId] ?? null;
+                    $item['jarak_baru_km'] = $altInfo['jarak_baru_km'] ?? 0;
+                    $item['hemat_jarak_km'] = $altInfo['hemat_jarak_km'] ?? 0;
+                    $item['kebutuhan_staf'] = $altInfo['kebutuhan_staf'] ?? 0;
+                    $item['has_formasi'] = $altInfo['has_formasi'] ?? 0;
+                }
+                unset($item);
+            }
         }
 
-        // 4. Siapkan array kriteria untuk TopsisService
-        $criteria = [];
-        foreach ($kriteriaModels as $k) {
-            $criteria[$k->kode_kriteria] = [
-                'bobot' => (float)$k->bobot,
-                'atribut' => $k->atribut,
-                'nama' => $k->nama_kriteria,
-                'parameter_key' => $k->parameter_key,
-            ];
-        }
-
-        // 5. Hitung menggunakan TopsisService secara dinamis
-        $topsisResult = $this->topsis->calculate($alternatives, $criteria);
-
-        return view('topsis.hasil', [
-            'unitTujuan' => $unitTujuan,
-            'kriteria' => $criteria,
-            'ranked' => $topsisResult['ranked'],
-            'details' => $topsisResult['details'],
-        ]);
+        return view('topsis.pns-to-dinas', compact(
+            'asnList',
+            'selectedAsn',
+            'kriteriaModels',
+            'ranked',
+            'topsisResult'
+        ));
     }
 
+    /**
+     * =========================================================================
+     * MODE 2: REKOMENDASI SPK "DINAS TO PNS"
+     * Skenario: Suatu Dinas/Unit Kerja mencari kandidat ASN terbaik se-kabupaten.
+     * =========================================================================
+     */
+    public function dinasToPns(Request $request): View
+    {
+        // Tampilkan daftar unit kerja
+        $unitList = UnitKerja::orderBy('nama_unit')->get();
+        $selectedUnitId = $request->get('unit_id');
+
+        $kriteriaModels = TopsisKriteria::where('kategori_mode', 'dinas_to_pns')
+            ->where('is_active', true)
+            ->orderBy('kode_kriteria')
+            ->get();
+
+        $selectedUnit = null;
+        $topsisResult = null;
+        $ranked = [];
+
+        if ($selectedUnitId) {
+            $selectedUnit = UnitKerja::findOrFail($selectedUnitId);
+
+            // Kandidat adalah seluruh ASN yang bukan dari unit ini dan memiliki titik domisili
+            $candidateAsns = AsnMaster::with('unitSaatIni')
+                ->where('id_unit_saat_ini', '!=', $selectedUnit->id)
+                ->whereNotNull('domisili_lat')
+                ->whereNotNull('domisili_lng')
+                ->get();
+
+            $alternatives = [];
+            $asnDetails = [];
+
+            foreach ($candidateAsns as $asn) {
+                // Jarak domisili ASN ke dinas pemohon
+                $jarakKeDinas = $this->haversine->calculateDistance(
+                    $asn->domisili_lat,
+                    $asn->domisili_lng,
+                    $selectedUnit->kantor_lat,
+                    $selectedUnit->kantor_lng
+                );
+
+                $jarakLama = $asn->jarak_ke_kantor_km ?: 15.0;
+                $hematJarak = round(max(0, $jarakLama - $jarakKeDinas), 2);
+
+                // C2: Masa Jabatan ASN di unit asal (tahun)
+                $tglJabatan = $asn->tgl_jabatan ?: $asn->tmt_kerja_unit;
+                $masaJabatanTahun = $tglJabatan ? max(0.5, round((time() - strtotime($tglJabatan)) / (365.25 * 86400), 2)) : 2.0;
+
+                // C3: Masa Kerja PNS sejak CPNS (tahun)
+                $tglCpns = $asn->tgl_cpns;
+                $masaKerjaTahun = $tglCpns ? max(1, round((time() - strtotime($tglCpns)) / (365.25 * 86400), 2)) : ($asn->masa_kerja_tahun ?: 5);
+
+                // C4: Kondisi Pegawai Unit Asal (Beban ABK)
+                // Jika unit asalnya surplus (bezetting > abk) => Nilai 3
+                // Jika cukup (bezetting == abk) => Nilai 2
+                // Jika kurang (bezetting < abk) => Nilai 1
+                $kondisiUnitAsal = 2.0;
+                if ($asn->unitSaatIni) {
+                    $u = $asn->unitSaatIni;
+                    if ($u->bezetting_saat_ini > $u->kebutuhan_abk) {
+                        $kondisiUnitAsal = 3.0; // Surplus (Sangat aman ditarik)
+                    } elseif ($u->bezetting_saat_ini === $u->kebutuhan_abk) {
+                        $kondisiUnitAsal = 2.0; // Cukup
+                    } else {
+                        $kondisiUnitAsal = 1.0; // Kurang (Risiko defisit staf)
+                    }
+                }
+
+                $asnKey = 'asn_' . $asn->id;
+                $alternatives[$asnKey] = [
+                    'id' => $asn->id,
+                    'nama' => $asn->nama,
+                    'nip' => $asn->nip,
+                    'jabatan' => $asn->jabatan,
+                    'jarak_ke_dinas_km' => $jarakKeDinas,
+                    'hemat_jarak_km' => $hematJarak,
+                    'masa_jabatan_tahun' => $masaJabatanTahun,
+                    'masa_kerja_tahun' => $masaKerjaTahun,
+                    'kondisi_unit_asal_skor' => $kondisiUnitAsal,
+
+                    // Matriks kriteria untuk TOPSIS
+                    'C1' => $jarakKeDinas,           // Cost
+                    'C2' => $masaJabatanTahun,       // Benefit
+                    'C3' => $masaKerjaTahun,         // Benefit
+                    'C4' => $kondisiUnitAsal,        // Benefit
+                ];
+
+                $asnDetails[$asn->id] = $asn;
+            }
+
+            // Bobot kriteria
+            $criteriaWeights = [];
+            foreach ($kriteriaModels as $k) {
+                $criteriaWeights[$k->kode_kriteria] = [
+                    'bobot' => $k->bobot,
+                    'atribut' => $k->atribut,
+                ];
+            }
+
+            if (!empty($alternatives) && !empty($criteriaWeights)) {
+                $topsisResult = $this->topsis->calculate(array_values($alternatives), $criteriaWeights);
+                $ranked = $topsisResult['ranked'];
+
+                // Attach detail ASN ke hasil ranking
+                foreach ($ranked as &$item) {
+                    $altId = $item['alternative']['id'] ?? null;
+                    $item['id'] = $altId;
+                    $item['vi'] = $item['v_value'];
+                    $item['asn'] = $asnDetails[$altId] ?? null;
+                    $altInfo = $alternatives['asn_' . $altId] ?? null;
+                    $item['jarak_ke_dinas_km'] = $altInfo['jarak_ke_dinas_km'] ?? 0;
+                    $item['hemat_jarak_km'] = $altInfo['hemat_jarak_km'] ?? 0;
+                    $item['masa_jabatan_tahun'] = $altInfo['masa_jabatan_tahun'] ?? 0;
+                    $item['masa_kerja_tahun'] = $altInfo['masa_kerja_tahun'] ?? 0;
+                    $item['kondisi_unit_asal_skor'] = $altInfo['kondisi_unit_asal_skor'] ?? 2;
+                }
+                unset($item);
+            }
+        }
+
+        return view('topsis.dinas-to-pns', compact(
+            'unitList',
+            'selectedUnit',
+            'kriteriaModels',
+            'ranked',
+            'topsisResult'
+        ));
+    }
+
+    /**
+     * Menyimpan hasil kalkulasi rekomendasi ke Database Baperjakat.
+     */
     public function simpanRekomendasi(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'unit_tujuan_id' => 'required|exists:unit_kerja,id',
-            'ranks' => 'required|array',
+            'id_asn' => 'required|exists:asn_master,id',
+            'id_unit_tujuan' => 'required|exists:unit_kerja,id',
+            'jarak_baru_km' => 'required|numeric',
+            'selisih_hemat_jarak_km' => 'required|numeric',
+            'nilai_preferensi_v' => 'required|numeric',
+            'ranking' => 'required|integer',
+            'catatan' => 'nullable|string',
         ]);
 
-        $unitTujuan = UnitKerja::findOrFail($validated['unit_tujuan_id']);
-        $now = now();
+        $asn = AsnMaster::findOrFail($validated['id_asn']);
 
-        foreach ($validated['ranks'] as $item) {
-            RekomendasiMutasi::updateOrCreate(
-                [
-                    'id_asn' => $item['id_asn'],
-                    'id_unit_tujuan' => $unitTujuan->id,
-                ],
-                [
-                    'id_unit_asal' => $item['id_unit_asal'],
-                    'jarak_asal_km' => $item['jarak_asal_km'],
-                    'jarak_baru_km' => $item['jarak_baru_km'],
-                    'selisih_hemat_jarak_km' => $item['selisih_hemat_jarak_km'],
-                    'nilai_preferensi_v' => $item['nilai_preferensi_v'],
-                    'ranking' => $item['ranking'],
-                    'status_usulan' => 'draft',
-                    'tanggal_kalkulasi' => $now,
-                ]
-            );
-        }
+        RekomendasiMutasi::updateOrCreate(
+            [
+                'id_asn' => $asn->id,
+                'id_unit_tujuan' => $validated['id_unit_tujuan'],
+            ],
+            [
+                'id_unit_asal' => $asn->id_unit_saat_ini,
+                'jarak_asal_km' => $asn->jarak_ke_kantor_km ?: 15.0,
+                'jarak_baru_km' => $validated['jarak_baru_km'],
+                'selisih_hemat_jarak_km' => $validated['selisih_hemat_jarak_km'],
+                'nilai_preferensi_v' => $validated['nilai_preferensi_v'],
+                'ranking' => $validated['ranking'],
+                'status_usulan' => 'diajukan_baperjakat',
+                'catatan_baperjakat' => $validated['catatan'] ?? 'Diajukan melalui SPK TOPSIS multi-kriteria.',
+                'tanggal_kalkulasi' => now(),
+            ]
+        );
 
-        return redirect()->route('topsis.riwayat')
-            ->with('success', "Rekomendasi mutasi menuju {$unitTujuan->nama_unit} berhasil disimpan ke basis data Baperjakat.");
+        return back()->with('success', "Rekomendasi mutasi untuk {$asn->nama} berhasil diajukan ke Sidang Baperjakat BKPSDM!");
     }
 
+    /**
+     * Menampilkan riwayat rekomendasi mutasi & sidang Baperjakat.
+     */
     public function riwayat(): View
     {
         $riwayat = RekomendasiMutasi::with(['asn', 'unitAsal', 'unitTujuan'])
-            ->orderByRaw("FIELD(status_usulan, 'diajukan_baperjakat', 'draft', 'disetujui', 'ditolak')")
-            ->orderBy('id_unit_tujuan')
-            ->orderBy('ranking')
+            ->orderByDesc('tanggal_kalkulasi')
             ->get();
 
         return view('topsis.riwayat', compact('riwayat'));
     }
 
     /**
-     * Menyetujui usulan rekomendasi mutasi dan mengeksekusi perpindahan unit ASN.
+     * Menyetujui usulan rekomendasi mutasi dan menerbitkan SK Mutasi.
      */
     public function approveUsulan(Request $request, int $id): RedirectResponse
     {
@@ -335,7 +374,7 @@ class TopsisController extends Controller
         }
 
         return redirect()->route('topsis.riwayat')
-            ->with('success', "SK Mutasi Diterbitkan! ASN {$asn->nama_lengkap} resmi dipindahkan dari {$unitAsal->nama_unit} ke {$unitTujuan->nama_unit}.");
+            ->with('success', "SK Mutasi Diterbitkan! ASN {$asn->nama} resmi dipindahkan dari {$unitAsal->nama_unit} ke {$unitTujuan->nama_unit}.");
     }
 
     /**
@@ -358,6 +397,6 @@ class TopsisController extends Controller
         }
 
         return redirect()->route('topsis.riwayat')
-            ->with('success', "Usulan mutasi untuk ASN {$usulan->asn->nama_lengkap} telah ditolak.");
+            ->with('success', "Usulan mutasi untuk ASN {$usulan->asn->nama} telah ditolak.");
     }
 }

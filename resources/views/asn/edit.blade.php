@@ -59,24 +59,55 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan <span class="text-rose-500">*</span></label>
-                            <input type="text" name="jabatan" value="{{ old('jabatan', $asn->jabatan) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan (Get Data / Ketik) <span class="text-rose-500">*</span></label>
+                            <input list="jabatanListOptions" type="text" name="jabatan" value="{{ old('jabatan', $asn->jabatan) }}" required placeholder="Pilih atau ketik nama jabatan..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <datalist id="jabatanListOptions">
+                                @foreach ($jabatanList as $jbt)
+                                    <option value="{{ $jbt->nama_jabatan }}">{{ $jbt->jenis_jabatan ? ucfirst($jbt->jenis_jabatan) : '' }}</option>
+                                @endforeach
+                            </datalist>
+                            @error('jabatan')
+                                <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Jabatan <span class="text-rose-500">*</span></label>
+                            <select name="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                                <option value="fungsional" {{ old('jenis_jabatan', $asn->jenis_jabatan) == 'fungsional' ? 'selected' : '' }}>Fungsional</option>
+                                <option value="pelaksana" {{ old('jenis_jabatan', $asn->jenis_jabatan ?? 'pelaksana') == 'pelaksana' ? 'selected' : '' }}>Pelaksana</option>
+                                <option value="struktural" {{ old('jenis_jabatan', $asn->jenis_jabatan) == 'struktural' ? 'selected' : '' }}>Struktural</option>
+                            </select>
+                            @error('jenis_jabatan')
+                                <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Pangkat / Golongan <span class="text-rose-500">*</span></label>
                             <select name="pangkat_golongan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                                 @php
                                     $golongans = [
+                                        'Juru Muda (I/a)',
+                                        'Juru Muda Tk. I (I/b)',
+                                        'Juru (I/c)',
+                                        'Juru Tk. I (I/d)',
+                                        'Pengatur Muda (II/a)',
+                                        'Pengatur Muda Tk. I (II/b)',
+                                        'Pengatur (II/c)',
+                                        'Pengatur Tk. I (II/d)',
                                         'Penata Muda (III/a)',
                                         'Penata Muda Tk. I (III/b)',
                                         'Penata (III/c)',
                                         'Penata Tk. I (III/d)',
                                         'Pembina (IV/a)',
                                         'Pembina Tk. I (IV/b)',
-                                        'Pengatur (II/c)',
-                                        'Pengatur Tk. I (II/d)'
+                                        'Pembina Utama Muda (IV/c)',
+                                        'Pembina Utama Madya (IV/d)',
+                                        'Pembina Utama (IV/e)',
                                     ];
                                 @endphp
                                 @foreach ($golongans as $gol)
@@ -86,8 +117,52 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Masa Kerja (Tahun) <span class="text-rose-500">*</span></label>
-                            <input type="number" name="masa_kerja_tahun" value="{{ old('masa_kerja_tahun', $asn->masa_kerja_tahun) }}" min="0" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">TMT Golongan Terakhir</label>
+                            <input type="date" name="tmt_golongan" value="{{ old('tmt_golongan', $asn->tmt_golongan ? date('Y-m-d', strtotime($asn->tmt_golongan)) : '') }}" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Tanggal Riwayat Kepegawaian Sesuai Nota Klien -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Jabatan (TMT)</label>
+                            <input type="date" name="tgl_jabatan" value="{{ old('tgl_jabatan', $asn->tgl_jabatan ? date('Y-m-d', strtotime($asn->tgl_jabatan)) : '') }}" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Dasar masa jabatan</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal CPNS</label>
+                            <input type="date" name="tgl_cpns" value="{{ old('tgl_cpns', $asn->tgl_cpns ? date('Y-m-d', strtotime($asn->tgl_cpns)) : '') }}" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Dasar masa kerja</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal PNS</label>
+                            <input type="date" name="tgl_pns" value="{{ old('tgl_pns', $asn->tgl_pns ? date('Y-m-d', strtotime($asn->tgl_pns)) : '') }}" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Pengangkatan penuh</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Masa Kerja (Thn) <span class="text-rose-500">*</span></label>
+                            <input type="number" name="masa_kerja_tahun" value="{{ old('masa_kerja_tahun', $asn->masa_kerja_tahun) }}" min="0" required class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Otomatis/manual</span>
+                        </div>
+                    </div>
+
+                    <!-- Riwayat Pendidikan -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Pendidikan</label>
+                            <select name="tingkat_pendidikan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">-- Pilih Jenjang --</option>
+                                <option value="SLTA" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'SLTA' ? 'selected' : '' }}>SLTA / Sederajat</option>
+                                <option value="D-III" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'D-III' ? 'selected' : '' }}>Diploma III (D-III)</option>
+                                <option value="D-IV" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'D-IV' ? 'selected' : '' }}>Diploma IV (D-IV)</option>
+                                <option value="S-1" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan ?? 'S-1') == 'S-1' ? 'selected' : '' }}>Strata 1 (S-1)</option>
+                                <option value="S-2" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'S-2' ? 'selected' : '' }}>Strata 2 (S-2)</option>
+                                <option value="S-3" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'S-3' ? 'selected' : '' }}>Strata 3 (S-3)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pendidikan Terakhir (Jurusan)</label>
+                            <input type="text" name="pendidikan_terakhir" value="{{ old('pendidikan_terakhir', $asn->pendidikan_terakhir) }}" placeholder="Contoh: S-1 ILMU PEMERINTAHAN" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                         </div>
                     </div>
 
@@ -102,8 +177,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">TMT Bekerja di Unit Saat Ini</label>
-                            <input type="date" name="tmt_kerja_unit" value="{{ old('tmt_kerja_unit', $asn->tmt_kerja_unit ? date('Y-m-d', strtotime($asn->tmt_kerja_unit)) : '') }}" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Kerja Induk (OPD Pengampu)</label>
+                            <input type="text" name="unit_kerja_induk" value="{{ old('unit_kerja_induk', $asn->unit_kerja_induk) }}" placeholder="Contoh: DINAS PENDIDIKAN DAN KEBUDAYAAN" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                         </div>
                     </div>
                 </div>

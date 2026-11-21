@@ -361,10 +361,16 @@
                     </a>
 
                     @if(Auth::check() && Auth::user()->isAdmin())
-                    <a href="{{ route('topsis.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.index', 'topsis.proses') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="calculator" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.index', 'topsis.proses') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span class="flex-1">Eksekusi SPK TOPSIS</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700">Tahap 1</span>
+                    <a href="{{ route('topsis.pns-to-dinas') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.pns-to-dinas*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="user-check" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.pns-to-dinas*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">PNS ➔ Dinas</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">Mode 1</span>
+                    </a>
+
+                    <a href="{{ route('topsis.dinas-to-pns') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.dinas-to-pns*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="building-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.dinas-to-pns*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Dinas ➔ PNS</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700">Mode 2</span>
                     </a>
                     @endif
 

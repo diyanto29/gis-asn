@@ -128,13 +128,16 @@ class EndToEndUserJourneyTest extends TestCase
         $kriteriaResponse = $this->actingAs($admin)->get('/master-kriteria');
         $kriteriaResponse->assertStatus(200);
 
-        // 7. Eksekusi SPK TOPSIS Tahap 1 (Top-Down Admin)
+        // 7. Eksekusi SPK TOPSIS (Mode 1: PNS to Dinas & Mode 2: Dinas to PNS)
+        $sampleAsn = AsnMaster::firstOrFail();
+        $topsisMode1 = $this->actingAs($admin)->get("/topsis/pns-to-dinas?asn_id={$sampleAsn->id}");
+        $topsisMode1->assertStatus(200);
+        $topsisMode1->assertSee('Rekomendasi Mutasi: PNS ke Dinas');
+
         $unitTujuan = UnitKerja::where('kuota_formasi_kosong', '>', 0)->firstOrFail();
-        $topsisProses = $this->actingAs($admin)->post('/topsis/proses', [
-            'unit_tujuan_id' => $unitTujuan->id,
-        ]);
-        $topsisProses->assertStatus(200);
-        $topsisProses->assertSee('Hasil Perangkingan TOPSIS');
+        $topsisMode2 = $this->actingAs($admin)->get("/topsis/dinas-to-pns?unit_id={$unitTujuan->id}");
+        $topsisMode2->assertStatus(200);
+        $topsisMode2->assertSee('Rekomendasi Mutasi: Dinas ke PNS');
 
         // 8. Pengajuan Swap Match ke Baperjakat
         $asns = AsnMaster::all();

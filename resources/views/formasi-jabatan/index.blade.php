@@ -146,7 +146,16 @@
                                 <span class="text-[11px] text-slate-400">{{ $formasi->unitKerja->kategori ?? '' }}</span>
                             </td>
                             <td class="px-5 py-3.5">
-                                <div class="font-bold text-slate-900">{{ $formasi->nama_jabatan }}</div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-slate-900">{{ $formasi->nama_jabatan }}</span>
+                                    @if ($formasi->jenis_jabatan === 'struktural')
+                                        <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded">Struktural</span>
+                                    @elseif ($formasi->jenis_jabatan === 'fungsional')
+                                        <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded">Fungsional</span>
+                                    @elseif ($formasi->jenis_jabatan === 'pelaksana')
+                                        <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">Pelaksana</span>
+                                    @endif
+                                </div>
                                 <div class="text-xs text-slate-500 mt-0.5">Syarat: {{ $formasi->kualifikasi_pendidikan ?? 'Kesesuaian rumpun ilmu' }}</div>
                                 @if ($formasi->keterangan)
                                     <div class="text-[11px] text-slate-400 italic mt-0.5 max-w-sm truncate">{{ $formasi->keterangan }}</div>

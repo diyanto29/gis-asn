@@ -121,11 +121,8 @@ Route::middleware('auth')->group(function () {
     // =====================================================================
     Route::prefix('topsis')->name('topsis.')->middleware('role:admin')->group(function () {
         Route::get('/', [TopsisController::class, 'index'])->name('index');
-        Route::post('/bobot', [TopsisController::class, 'updateBobot'])->name('update-bobot');
-        Route::post('/kriteria', [TopsisController::class, 'storeKriteria'])->name('kriteria.store');
-        Route::post('/kriteria/{id}/toggle', [TopsisController::class, 'toggleKriteria'])->name('kriteria.toggle');
-        Route::delete('/kriteria/{id}', [TopsisController::class, 'destroyKriteria'])->name('kriteria.destroy');
-        Route::post('/proses', [TopsisController::class, 'proses'])->name('proses');
+        Route::get('/pns-to-dinas', [TopsisController::class, 'pnsToDinas'])->name('pns-to-dinas');
+        Route::get('/dinas-to-pns', [TopsisController::class, 'dinasToPns'])->name('dinas-to-pns');
         Route::post('/simpan', [TopsisController::class, 'simpanRekomendasi'])->name('simpan');
         Route::get('/riwayat', [TopsisController::class, 'riwayat'])->name('riwayat');
         Route::post('/riwayat/{id}/approve', [TopsisController::class, 'approveUsulan'])->name('approve');

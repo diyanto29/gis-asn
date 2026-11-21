@@ -9,6 +9,7 @@ class TopsisKriteria extends Model
     protected $table = 'topsis_kriteria';
 
     protected $fillable = [
+        'kategori_mode',
         'kode_kriteria',
         'parameter_key',
         'nama_kriteria',
@@ -22,4 +23,14 @@ class TopsisKriteria extends Model
         'bobot' => 'float',
         'is_active' => 'boolean',
     ];
+
+    public function scopePnsToDinas($query)
+    {
+        return $query->where('kategori_mode', 'pns_to_dinas');
+    }
+
+    public function scopeDinasToPns($query)
+    {
+        return $query->where('kategori_mode', 'dinas_to_pns');
+    }
 }
