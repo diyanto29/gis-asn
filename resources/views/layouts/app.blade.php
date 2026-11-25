@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'SIMUTASI-GIS') — Sistem Pemetaan & Rekomendasi Mutasi ASN</title>
+    <title>@yield('title', 'Rekom Mutasi PNS') — Sistem Pemetaan & Rekomendasi Mutasi PNS</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -399,10 +399,10 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
-                        <span class="font-extrabold text-slate-900 text-sm tracking-tight">SIMUTASI-GIS</span>
+                        <span class="font-extrabold text-slate-900 text-sm tracking-tight">Rekom Mutasi PNS</span>
                         <span class="bg-blue-50 text-blue-700 text-[10px] uppercase font-bold px-1.5 py-0.2 rounded border border-blue-200">v1.0</span>
                     </div>
-                    <span class="text-[10px] text-slate-400 font-semibold block leading-tight">BKPSDM Kabupaten</span>
+                    <span class="text-[10px] text-slate-400 font-semibold block leading-tight">BKPSDM Kabupaten Indramayu</span>
                 </div>
             </a>
             <button onclick="toggleSidebar()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 lg:hidden">
@@ -452,11 +452,14 @@
                     </a>
                     @endif
 
+                    {{-- HIDE SEMENTARA FITUR SMART SWAP SESUAI INSTRUKSI KLIEN --}}
+                    @if(false)
                     <a href="{{ route('swap-match.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('swap-match.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="repeat" class="w-4 h-4 shrink-0 {{ request()->routeIs('swap-match.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span class="flex-1">Smart Swap Match</span>
                         <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Zero-ABK</span>
                     </a>
+                    @endif
 
                     @if(Auth::check() && Auth::user()->isAdmin())
                     <a href="{{ route('topsis.riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.riwayat') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
@@ -476,10 +479,13 @@
                     @endif
                 </div>
                 <div class="space-y-1">
+                    {{-- HIDE SEMENTARA DAFTAR ASN/PNS SESUAI INSTRUKSI KLIEN --}}
+                    @if(false)
                     <a href="{{ route('asn.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.index', 'asn.show', 'asn.create', 'asn.edit*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="users" class="w-4 h-4 shrink-0 {{ request()->routeIs('asn.index', 'asn.show', 'asn.create', 'asn.edit*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Data Pegawai ASN</span>
+                        <span>Data Pegawai PNS</span>
                     </a>
+                    @endif
 
                     <a href="{{ route('unit-kerja.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('unit-kerja.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="building-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('unit-kerja.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
@@ -538,7 +544,7 @@
                     </div>
                 </div>
                 <span class="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 {{ Auth::user()->isAdmin() ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
-                    {{ Auth::user()->isAdmin() ? 'Admin' : 'ASN' }}
+                    {{ Auth::user()->isAdmin() ? 'Admin' : 'PNS' }}
                 </span>
             </div>
             @endif
@@ -565,26 +571,14 @@
                     <i data-lucide="menu" class="w-5 h-5"></i>
                 </button>
                 <div>
-                    <h2 class="font-bold text-slate-900 text-sm sm:text-base leading-tight">@yield('title', 'Sistem Rekomendasi Mutasi ASN')</h2>
+                    <h2 class="font-bold text-slate-900 text-sm sm:text-base leading-tight">@yield('title', 'Sistem Rekomendasi Mutasi PNS')</h2>
                     <div class="text-[11px] text-slate-400 hidden sm:block">Pemerintah Kabupaten Indramayu &bull; Badan Kepegawaian & Pengembangan SDM</div>
                 </div>
             </div>
 
             <!-- Right: Quick Actions & User Account -->
             <div class="flex items-center gap-2 sm:gap-3">
-                @if(Auth::check() && Auth::user()->isAdmin())
-                <a href="{{ route('topsis.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-xs transition">
-                    <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Jalankan SPK</span>
-                </a>
-                @endif
-
-                <button onclick="window.print()" class="p-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs transition" title="Cetak Halaman Ini">
-                    <i data-lucide="printer" class="w-4 h-4"></i>
-                </button>
-
                 @if(Auth::check())
-                <div class="h-6 w-px bg-slate-200 mx-1"></div>
                 <form action="{{ route('logout') }}" method="POST" class="inline">
                     @csrf
                     <button type="submit" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 rounded-lg text-xs font-semibold transition" title="Keluar dari Sistem">

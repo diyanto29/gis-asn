@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Sistem Pendukung Keputusan (SPK) TOPSIS Mutasi ASN')
+@section('title', 'Sistem Pendukung Keputusan (SPK) TOPSIS Mutasi PNS')
 
 @section('content')
 <div class="space-y-6">
@@ -8,7 +8,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Sistem Pendukung Keputusan (SPK) Mutasi ASN</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Sistem Pendukung Keputusan (SPK) Mutasi PNS</h1>
             <p class="text-sm text-slate-500 mt-1">
                 Kombinasi Formula Haversine Spasial & Algoritma TOPSIS dengan Pembobotan Kriteria Dinamis (Dynamic Weighting).
             </p>
@@ -292,13 +292,13 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nama Kriteria</label>
-                <input type="text" name="nama_kriteria" required placeholder="Contoh: Nilai Capaian Kinerja (SKP ASN)" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+                <input type="text" name="nama_kriteria" required placeholder="Contoh: Nilai Capaian Kinerja (SKP PNS)" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Sumber Data Parameter</label>
                 <select name="parameter_key" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
-                    <option value="nilai_skp">📋 Nilai Capaian Kinerja Pegawai (SKP ASN)</option>
+                    <option value="nilai_skp">📋 Nilai Capaian Kinerja Pegawai (SKP PNS)</option>
                     <option value="usia_pegawai">🎂 Usia Pegawai (Tahun - Dihitung dari NIP)</option>
                     <option value="tanggungan_keluarga">👥 Jumlah Tanggungan Keluarga</option>
                     <option value="masa_kerja">⏳ Masa Kerja Pegawai (Tahun)</option>

@@ -12,7 +12,7 @@
         <h4 class="text-xs font-semibold text-slate-700">Tim Penilai Kinerja / Badan Pertimbangan Jabatan dan Kepangkatan (Baperjakat)</h4>
         <p class="text-[10px] text-slate-500 mt-0.5">Jl. Mayjen Sutoyo No. 1, Lemahmekar, Kec. Indramayu, Kabupaten Indramayu, Jawa Barat 45214</p>
         <div class="mt-3 text-xs font-bold uppercase tracking-wide text-slate-900 bg-slate-100 py-1 border border-slate-300">
-            Daftar Usulan dan Rekomendasi Mutasi Rotasi Pegawai ASN Berbasis Spasial OSRM & TOPSIS
+            Daftar Usulan dan Rekomendasi Mutasi Rotasi Pegawai PNS Berbasis Spasial OSRM & TOPSIS
         </div>
     </div>
 
@@ -27,7 +27,7 @@
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-1">Daftar Usulan & Eksekusi Mutasi Baperjakat</h1>
             <p class="text-sm text-slate-500 mt-0.5">
-                Pusat pengesahan usulan rotasi ASN: setujui untuk menerbitkan SK dan memindahkan pegawai secara riil, atau tolak dengan berita acara.
+                Pusat pengesahan usulan rotasi PNS: setujui untuk menerbitkan SK dan memindahkan pegawai secara riil, atau tolak dengan berita acara.
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -61,7 +61,7 @@
                 <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 no-sort">No</th>
-                        <th class="px-4 py-3.5">Pegawai ASN</th>
+                        <th class="px-4 py-3.5">Pegawai PNS</th>
                         <th class="px-4 py-3.5">Unit Asal ➔ Tujuan</th>
                         <th class="px-4 py-3.5 text-right">Jarak Lama</th>
                         <th class="px-4 py-3.5 text-right">Jarak Baru</th>
@@ -125,7 +125,7 @@
                                 @if (in_array($rek->status_usulan, ['draft', 'diajukan_baperjakat']))
                                     <div class="flex items-center justify-center gap-1.5">
                                         <!-- Tombol Setujui & Eksekusi Mutasi -->
-                                        <form method="POST" action="{{ route('topsis.approve', $rek->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin MENYETUJUI dan MENERBITKAN SK MUTASI untuk {{ $rek->asn->nama_lengkap }} ke {{ $rek->unitTujuan->nama_unit }}? Unit kerja ASN akan langsung berpindah di sistem.');" class="inline">
+                                        <form method="POST" action="{{ route('topsis.approve', $rek->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin MENYETUJUI dan MENERBITKAN SK MUTASI untuk {{ $rek->asn->nama_lengkap }} ke {{ $rek->unitTujuan->nama_unit }}? Unit kerja PNS akan langsung berpindah di sistem.');" class="inline">
                                             @csrf
                                             <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition flex items-center gap-1" title="Setujui Mutasi dan Terbitkan SK">
                                                 <i data-lucide="check" class="w-3.5 h-3.5"></i> Setujui

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Pemetaan Spasial ASN')
+@section('title', 'Dashboard Pemetaan Spasial PNS')
 
 @section('content')
 <div class="space-y-6">
@@ -8,15 +8,10 @@
     <!-- Header Page -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Dashboard Pemetaan Geospasial ASN</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Dashboard Pemetaan Geospasial PNS</h1>
             <p class="text-sm text-slate-500 mt-1">
                 Visualisasi titik domisili pegawai, unit kerja, radius jarak tempuh, dan potensi rotasi mendekatkan rumah.
             </p>
-        </div>
-        <div class="flex items-center gap-2">
-            <a href="{{ route('topsis.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-                <i data-lucide="play" class="w-4 h-4"></i> Jalankan SPK Mutasi
-            </a>
         </div>
     </div>
 
@@ -24,7 +19,7 @@
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <!-- Total Pegawai -->
         <div class="interactive-card animate-card-slide bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between" style="animation-delay: 0.05s;">
-            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total ASN</div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total PNS</div>
             <div class="mt-2 flex items-baseline justify-between">
                 <span class="text-2xl font-extrabold text-slate-900">{{ $totalAsn }}</span>
                 <span class="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="users" class="w-4 h-4"></i></span>
@@ -114,7 +109,7 @@
                 </label>
                 <label class="inline-flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" id="toggleAsn" checked class="rounded border-slate-300 text-slate-700 focus:ring-blue-500">
-                    <span>Rumah ASN ({{ $asns->count() }})</span>
+                    <span>Rumah PNS ({{ $asns->count() }})</span>
                 </label>
                 <label class="inline-flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" id="toggleLines" checked class="rounded border-slate-300 text-slate-700 focus:ring-blue-500">
@@ -147,7 +142,8 @@
         </div>
     </div>
 
-    <!-- Green GovTech & Swap Match Quick Impact Banner -->
+    {{-- HIDE SEMENTARA FITUR SMART SWAP SESUAI INSTRUKSI KLIEN --}}
+    @if(false)
     <div class="interactive-card bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-emerald-400 shrink-0">
@@ -169,15 +165,14 @@
             </a>
         </div>
     </div>
+    @endif
+
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i>
-                <h3 class="font-bold text-slate-800 text-sm">Daftar ASN dengan Jarak Domisili Terjauh (Prioritas Rekomendasi Mutasi)</h3>
+                <h3 class="font-bold text-slate-800 text-sm">Daftar PNS dengan Jarak Domisili Terjauh (Prioritas Rekomendasi Mutasi)</h3>
             </div>
-            <a href="{{ route('asn.index', ['zona' => 'jauh']) }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
-                Lihat Semua ASN &rarr;
-            </a>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-600">
@@ -229,7 +224,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-5 py-6 text-center text-slate-400">Belum ada data ASN dengan titik koordinat domisili.</td>
+                            <td colspan="7" class="px-5 py-6 text-center text-slate-400">Belum ada data PNS dengan titik koordinat domisili.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -437,7 +432,7 @@
 
                             roadLine.bindPopup(`
                                 <div style="font-size:12px;line-height:1.45;min-width:240px;">
-                                    <strong style="color:#0f172a;font-size:13px;">Rute Perjalanan Harian ASN</strong><br/>
+                                    <strong style="color:#0f172a;font-size:13px;">Rute Perjalanan Harian PNS</strong><br/>
                                     <span style="color:#334155;">${asn.nama} (${asn.nip})</span>
                                     <div style="margin:6px 0;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
                                         <div>🚗 Jarak Rute Jalan (OSRM): <strong style="color:#0f172a;">${roadDistanceKm} km</strong> (~${durationMinutes} mnt)</div>

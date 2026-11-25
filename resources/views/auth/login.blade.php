@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk Sistem — SIMUTASI-GIS BKPSDM</title>
+    <title>Masuk Sistem — Rekom Mutasi PNS BKPSDM</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,10 +40,10 @@
             </div>
         </div>
         <h2 class="mt-4 text-center text-2xl font-extrabold tracking-tight text-slate-900">
-            SIMUTASI-GIS
+            Rekom Mutasi PNS
         </h2>
         <p class="mt-1 text-center text-xs text-slate-500 font-medium">
-            Sistem Pemetaan Spasial & Rekomendasi Mutasi ASN Terintegrasi<br>
+            Sistem Pemetaan Spasial & Rekomendasi Mutasi PNS Terintegrasi<br>
             <span class="text-blue-700 font-semibold">BKPSDM Kabupaten Indramayu</span>
         </p>
     </div>
@@ -97,7 +97,7 @@
                             class="block w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent transition">
                     </div>
                     <p class="mt-1 text-[11px] text-slate-400">
-                        Admin: gunakan email dinas | Pegawai ASN: gunakan 18 digit NIP.
+                        Admin: gunakan email dinas | Pegawai PNS: gunakan 18 digit NIP.
                     </p>
                 </div>
 
@@ -136,32 +136,6 @@
                 </div>
             </form>
 
-            <!-- Quick Demo Credentials Selector (Sangat Membantu saat Ujian/Sidang Skripsi) -->
-            <div class="mt-6 pt-5 border-t border-slate-100">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-3">
-                    Akses Cepat Pengujian (Demo Akun Skripsi)
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button type="button" onclick="fillCredentials('admin@bkpsdm.go.id', 'admin123')"
-                        class="p-2.5 rounded-xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100 text-blue-900 text-left transition flex flex-col">
-                        <span class="font-bold flex items-center gap-1.5 text-[11px]">
-                            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                            Role Admin BKPSDM
-                        </span>
-                        <span class="text-[10px] text-blue-600/80 font-mono mt-0.5">admin@bkpsdm.go.id</span>
-                    </button>
-
-                    <button type="button" onclick="fillCredentials('198507122010011005', 'password123')"
-                        class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-left transition flex flex-col">
-                        <span class="font-bold flex items-center gap-1.5 text-[11px]">
-                            <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-600"></i>
-                            Role Pegawai ASN
-                        </span>
-                        <span class="text-[10px] text-slate-500 font-mono mt-0.5">NIP: 19850712...</span>
-                    </button>
-                </div>
-            </div>
-
         </div>
 
         <div class="text-center mt-6 text-xs text-slate-400">
@@ -183,11 +157,6 @@
                 icon.setAttribute('data-lucide', 'eye');
             }
             lucide.createIcons();
-        }
-
-        function fillCredentials(login, pwd) {
-            document.getElementById('login').value = login;
-            document.getElementById('password').value = pwd;
         }
     </script>
 </body>

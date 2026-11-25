@@ -11,7 +11,7 @@
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Edit Data Pegawai ASN</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Edit Data Pegawai PNS</h1>
             <p class="text-xs text-slate-500 mt-0.5">{{ $asn->nama_lengkap }} &bull; NIP: {{ $asn->nip }}</p>
         </div>
     </div>
@@ -26,7 +26,7 @@
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
                     <h3 class="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3 flex items-center gap-2">
-                        <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i> Informasi Identitas & Jabatan ASN
+                        <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i> Informasi Identitas & Jabatan PNS
                     </h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

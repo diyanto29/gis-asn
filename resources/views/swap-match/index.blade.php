@@ -9,7 +9,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Smart Swap Match (Tukar Guling ASN)</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Smart Swap Match (Tukar Guling PNS)</h1>
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
                     Zero-ABK Impact
                 </span>

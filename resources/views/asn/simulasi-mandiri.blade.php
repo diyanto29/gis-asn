@@ -41,7 +41,7 @@
             @if(Auth::user()->isAdmin() && $asnList->count() > 1)
             <div class="flex items-center gap-2 self-start lg:self-center shrink-0">
                 <form action="{{ route('asn.simulasi-mandiri') }}" method="GET" class="flex items-center gap-2">
-                    <label for="asn_id" class="text-xs font-semibold text-slate-600 whitespace-nowrap">Pilih ASN:</label>
+                    <label for="asn_id" class="text-xs font-semibold text-slate-600 whitespace-nowrap">Pilih PNS:</label>
                     <select name="asn_id" id="asn_id" onchange="this.form.submit()" class="text-xs border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50 font-medium focus:ring-2 focus:ring-blue-600">
                         @foreach($asnList as $p)
                             <option value="{{ $p->id }}" {{ $p->id == $asn->id ? 'selected' : '' }}>
@@ -93,7 +93,7 @@
                 <div class="flex items-center gap-4">
                     <span class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-full bg-blue-600 inline-block border border-white shadow-xs"></span>
-                        Rumah Domisili ASN
+                        Rumah Domisili PNS
                     </span>
                     <span class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-full bg-slate-400 inline-block"></span>

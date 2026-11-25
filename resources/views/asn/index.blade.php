@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Data Kepegawaian & Domisili Spasial ASN')
+@section('title', 'Data Kepegawaian & Domisili Spasial PNS')
 
 @section('content')
 <div class="space-y-6">
@@ -8,13 +8,13 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Data Pegawai & Pemetaan Domisili</h1>
-            <p class="text-sm text-slate-500 mt-1">Daftar seluruh ASN, koordinat tempat tinggal, unit kerja, dan beban jarak harian.</p>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Data Pegawai & Pemetaan Domisili PNS</h1>
+            <p class="text-sm text-slate-500 mt-1">Daftar seluruh PNS, koordinat tempat tinggal, unit kerja, riwayat TMT, dan beban jarak harian.</p>
         </div>
         @if (auth()->user()->isAdmin())
             <div>
                 <a href="{{ route('asn.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold shadow-sm transition">
-                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i> Tambah Pegawai ASN
+                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i> Tambah Pegawai PNS
                 </a>
             </div>
         @endif
@@ -94,9 +94,14 @@
                                 </div>
                             </td>
                             <td class="px-5 py-3.5">
-                                <div>{{ $asn->jabatan }}</div>
-                                <span class="inline-block mt-0.5 px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-semibold rounded">{{ $asn->pangkat_golongan }}</span>
-                                <span class="text-xs text-slate-400 ml-1">({{ $asn->masa_kerja_tahun }} thn)</span>
+                                <div class="font-semibold text-slate-900 text-xs">{{ $asn->jabatan }}</div>
+                                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                    <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded">{{ $asn->pangkat_golongan }}</span>
+                                    <span class="text-[10px] text-slate-500 font-mono">TMT Gol: {{ $asn->tmt_golongan ? $asn->tmt_golongan->format('d/m/Y') : '-' }}</span>
+                                </div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">
+                                    TMT Jbt: {{ $asn->tgl_jabatan ? $asn->tgl_jabatan->format('d/m/Y') : '-' }} &bull; Kerja: {{ $asn->masa_kerja_tahun }} Thn
+                                </div>
                             </td>
                             <td class="px-5 py-3.5 font-medium text-slate-800">
                                 {{ $asn->unitSaatIni->nama_unit ?? '-' }}

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Master Referensi Jabatan Standar ASN')
+@section('title', 'Master Referensi Jabatan Standar PNS')
 
 @section('content')
 <div class="space-y-6">
@@ -8,9 +8,9 @@
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Master Referensi Jabatan ASN</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Master Referensi Jabatan PNS</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Katalog baku nomenklatur jabatan (Pelaksana & Fungsional) untuk standarisasi profil ASN dan validasi formasi linier TOPSIS.
+                Katalog baku nomenklatur jabatan (Pelaksana & Fungsional) untuk standarisasi profil PNS dan validasi formasi linier TOPSIS.
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -94,7 +94,7 @@
                 <i data-lucide="list" class="w-4 h-4 text-slate-400"></i>
                 Daftar Nomenklatur Master Jabatan
             </h2>
-            <span class="text-xs text-slate-500 font-medium">Tersinkronisasi dengan {{ number_format($jabatanList->sum('asns_count')) }} Pegawai ASN</span>
+            <span class="text-xs text-slate-500 font-medium">Tersinkronisasi dengan {{ number_format($jabatanList->sum('asns_count')) }} Pegawai PNS</span>
         </div>
 
         <div class="p-4">
@@ -106,7 +106,7 @@
                         <th>Nama Jabatan Standar</th>
                         <th>Jenis Jabatan</th>
                         <th>Jenjang / Rumpun</th>
-                        <th class="text-center">ASN Terhubung</th>
+                        <th class="text-center">PNS Terhubung</th>
                         <th class="text-right no-sort">Aksi</th>
                     </tr>
                 </thead>
@@ -147,7 +147,7 @@
                             <td class="text-center">
                                 @if ($item->asns_count > 0)
                                     <span class="inline-flex items-center gap-1 font-bold text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                                        <i data-lucide="user" class="w-3 h-3"></i> {{ $item->asns_count }} ASN
+                                        <i data-lucide="user" class="w-3 h-3"></i> {{ $item->asns_count }} PNS
                                     </span>
                                 @else
                                     <span class="text-xs text-slate-400 font-mono">-</span>

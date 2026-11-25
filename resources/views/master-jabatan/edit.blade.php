@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Master Jabatan ASN')
+@section('title', 'Edit Master Jabatan PNS')
 
 @section('content')
 <div class="max-w-3xl mx-auto space-y-6">
@@ -14,7 +14,7 @@
                 <span class="text-slate-800 font-semibold">Edit Jabatan</span>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Perbarui Referensi Jabatan</h1>
-            <p class="text-sm text-slate-500 mt-0.5">Perubahan nama jabatan otomatis mensinkronkan data profil ASN yang terhubung.</p>
+            <p class="text-sm text-slate-500 mt-0.5">Perubahan nama jabatan otomatis mensinkronkan data profil PNS yang terhubung.</p>
         </div>
         <a href="{{ route('master-jabatan.index') }}" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-xs transition">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
@@ -28,7 +28,7 @@
                 <i data-lucide="edit" class="w-5 h-5 text-blue-600"></i>
                 Formulir Perubahan Nomenklatur
             </h2>
-            <p class="text-xs text-slate-500 mt-1">ID Referensi: #{{ $jabatan->id }} | Terhubung ke: <strong>{{ $jabatan->asns()->count() }} Pegawai ASN</strong></p>
+            <p class="text-xs text-slate-500 mt-1">ID Referensi: #{{ $jabatan->id }} | Terhubung ke: <strong>{{ $jabatan->asns()->count() }} Pegawai PNS</strong></p>
         </div>
 
         <form action="{{ route('master-jabatan.update', $jabatan->id) }}" method="POST" class="p-6 space-y-6">

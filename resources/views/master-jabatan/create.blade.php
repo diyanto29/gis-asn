@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Master Jabatan ASN')
+@section('title', 'Tambah Master Jabatan PNS')
 
 @section('content')
 <div class="max-w-3xl mx-auto space-y-6">
@@ -14,7 +14,7 @@
                 <span class="text-slate-800 font-semibold">Tambah Baru</span>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tambah Referensi Jabatan</h1>
-            <p class="text-sm text-slate-500 mt-0.5">Daftarkan nomenklatur jabatan baru untuk standardisasi data ASN & Formasi.</p>
+            <p class="text-sm text-slate-500 mt-0.5">Daftarkan nomenklatur jabatan baru untuk standardisasi data PNS & Formasi.</p>
         </div>
         <a href="{{ route('master-jabatan.index') }}" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-xs transition">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali

@@ -12,7 +12,7 @@
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Hasil Rekomendasi Mutasi ASN</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Hasil Rekomendasi Mutasi PNS</h1>
                 <p class="text-xs text-slate-500 mt-0.5">
                     Unit Tujuan: <strong class="text-slate-800">{{ $unitTujuan->nama_unit }}</strong> &bull; Kuota Lowong: <strong class="text-emerald-700">{{ $unitTujuan->kuota_formasi_kosong }} Formasi</strong>
                 </p>
@@ -33,7 +33,7 @@
         <div>
             <strong class="text-blue-950 font-bold block mb-0.5">Catatan Regulasi BKN & Kepatuhan Spasial Kepegawaian:</strong>
             <ul class="list-disc list-inside text-slate-600 space-y-0.5 text-[11px]">
-                <li><strong>Aturan Komitmen 10 Tahun (PermenPAN-RB 27/2021):</strong> ASN dengan TMT CPNS &ge; 2019 yang belum 10 tahun masa kerja berstatus <em>Rotasi Internal Sah</em>. Sistem memindahkan ke unit kerja Indramayu terdekat tanpa melanggar larangan pindah instansi keluar daerah.</li>
+                <li><strong>Aturan Komitmen 10 Tahun (PermenPAN-RB 27/2021):</strong> PNS dengan TMT CPNS &ge; 2019 yang belum 10 tahun masa kerja berstatus <em>Rotasi Internal Sah</em>. Sistem memindahkan ke unit kerja Indramayu terdekat tanpa melanggar larangan pindah instansi keluar daerah.</li>
                 <li><strong>Komuter Perbatasan (Cirebon / Sekitar):</strong> Sistem memprioritaskan penempatan koridor terdekat perbatasan guna menekan waktu tempuh harian.</li>
                 <li><strong>Domisili Ekstra-Teritorial (&gt;100 km):</strong> Rekomendasi internal Indramayu berjarak tinggi; ditandai untuk atensi khusus sidang Baperjakat.</li>
             </ul>
@@ -49,7 +49,7 @@
             <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-slate-900 text-sm">Peringkat Kelayakan Rekomendasi (Nilai Preferensi $V_i$)</h2>
-                    <p class="text-xs text-slate-500">Urutan ASN yang paling ideal dipindahkan mendekati domisili berdasarkan matriks multi-kriteria.</p>
+                    <p class="text-xs text-slate-500">Urutan PNS yang paling ideal dipindahkan mendekati domisili berdasarkan matriks multi-kriteria.</p>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
                     <i data-lucide="check-circle" class="w-4 h-4"></i> Simpan ke Usulan Baperjakat

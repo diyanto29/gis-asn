@@ -13,7 +13,7 @@
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Rekomendasi Mutasi: PNS ke Dinas</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Pilih seorang Pegawai ASN untuk menghitung ranking penempatan Dinas/Unit Kerja tujuan terbaik berdasarkan metode TOPSIS multi-kriteria.
+                Pilih seorang Pegawai PNS untuk menghitung ranking penempatan Dinas/Unit Kerja tujuan terbaik berdasarkan metode TOPSIS multi-kriteria.
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -46,10 +46,10 @@
             <div class="flex flex-col sm:flex-row sm:items-end gap-3">
                 <div class="flex-1">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Pilih Pegawai ASN (Target Pemohon Rotasi) <span class="text-rose-500">*</span>
+                        Pilih Pegawai PNS (Target Pemohon Rotasi) <span class="text-rose-500">*</span>
                     </label>
                     <select name="asn_id" required class="w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs">
-                        <option value="">-- Pilih salah satu dari 500 Pegawai ASN --</option>
+                        <option value="">-- Pilih salah satu dari 500 Pegawai PNS --</option>
                         @foreach ($asnList as $a)
                             <option value="{{ $a->id }}" {{ (string)$a->id === (string)request('asn_id') ? 'selected' : '' }}>
                                 {{ $a->nama }} (NIP. {{ $a->nip }}) - {{ $a->jabatan }} [{{ $a->unitSaatIni->nama_unit ?? 'Unit Asal' }}]

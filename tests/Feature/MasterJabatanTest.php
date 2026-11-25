@@ -15,7 +15,7 @@ class MasterJabatanTest extends TestCase
 
         $response = $this->actingAs($admin)->get(route('master-jabatan.index'));
         $response->assertStatus(200);
-        $response->assertSee('Master Referensi Jabatan ASN');
+        $response->assertSee('Master Referensi Jabatan PNS');
     }
 
     public function test_admin_can_create_new_master_jabatan(): void

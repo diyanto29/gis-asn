@@ -150,7 +150,7 @@
                 <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 no-sort">Rank</th>
-                        <th class="px-4 py-3.5">Pegawai ASN</th>
+                        <th class="px-4 py-3.5">Pegawai PNS</th>
                         <th class="px-4 py-3.5">Jabatan & Jenis</th>
                         <th class="px-4 py-3.5">Unit Kerja Asal</th>
                         <th class="px-4 py-3.5 text-right">Jarak Rumah ke Dinas</th>
@@ -176,7 +176,7 @@
                             </td>
                             <td class="px-4 py-3.5">
                                 <div class="font-bold text-slate-900 group-hover:text-blue-700 transition">
-                                    {{ $item['asn']->nama ?? 'Pegawai ASN' }}
+                                    {{ $item['asn']->nama ?? 'Pegawai PNS' }}
                                 </div>
                                 <div class="text-xs text-slate-400 font-mono">
                                     NIP. {{ $item['asn']->nip ?? '-' }} &bull; Gol. {{ $item['asn']->pangkat_golongan ?? '-' }}

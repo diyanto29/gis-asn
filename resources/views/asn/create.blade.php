@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Pegawai ASN Baru')
+@section('title', 'Tambah Pegawai PNS Baru')
 
 @section('content')
 <div class="space-y-6">
@@ -11,7 +11,7 @@
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tambah Pegawai ASN Baru</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tambah Pegawai PNS Baru</h1>
             <p class="text-xs text-slate-500 mt-0.5">Pendaftaran pegawai, penempatan unit kerja, dan pemetaan koordinat domisili tempat tinggal.</p>
         </div>
     </div>
@@ -25,7 +25,7 @@
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
                     <h3 class="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3 flex items-center gap-2">
-                        <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i> Informasi Identitas & Jabatan ASN
+                        <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i> Informasi Identitas & Jabatan PNS
                     </h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -283,7 +283,7 @@
                             <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i> Akun Login Otomatis
                         </div>
                         <p class="text-[11px] text-blue-700 leading-relaxed">
-                            Setelah disimpan, sistem akan secara otomatis membuat akun login ASN mandiri menggunakan 18-digit NIP dengan kata sandi bawaan: <code class="font-mono bg-blue-100 px-1 py-0.5 rounded">password123</code>.
+                            Setelah disimpan, sistem akan secara otomatis membuat akun login PNS mandiri menggunakan 18-digit NIP dengan kata sandi bawaan: <code class="font-mono bg-blue-100 px-1 py-0.5 rounded">password123</code>.
                         </p>
                     </div>
 
