@@ -17,11 +17,14 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
+            {{-- HIDE SEMENTARA BOBOT KRITERIA SESUAI INSTRUKSI KLIEN --}}
+            @if(false)
             <a href="{{ route('master-kriteria.index', ['mode' => 'pns_to_dinas']) }}" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition shadow-xs flex items-center gap-1.5">
                 <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i> Bobot Kriteria ({{ $kriteriaModels->count() }})
             </a>
+            @endif
             <a href="{{ route('topsis.dinas-to-pns') }}" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Beralih ke Mode 2 (Dinas ke PNS)
+                <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Beralih ke Dinas ➔ PNS
             </a>
         </div>
     </div>
@@ -40,7 +43,7 @@
         </div>
     @endif
 
-    <!-- Selector Pegawai ASN -->
+    <!-- Selector Pegawai PNS -->
     <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
         <form method="GET" action="{{ route('topsis.pns-to-dinas') }}" class="space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-end gap-3">
@@ -48,8 +51,8 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                         Pilih Pegawai PNS (Target Pemohon Rotasi) <span class="text-rose-500">*</span>
                     </label>
-                    <select name="asn_id" required class="w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs">
-                        <option value="">-- Pilih salah satu dari 500 Pegawai PNS --</option>
+                    <select name="asn_id" required class="searchable-select w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs" placeholder="-- Cari Nama / NIP Pegawai PNS --">
+                        <option value="">-- Pilih salah satu Pegawai PNS --</option>
                         @foreach ($asnList as $a)
                             <option value="{{ $a->id }}" {{ (string)$a->id === (string)request('asn_id') ? 'selected' : '' }}>
                                 {{ $a->nama }} (NIP. {{ $a->nip }}) - {{ $a->jabatan }} [{{ $a->unitSaatIni->nama_unit ?? 'Unit Asal' }}]
@@ -57,8 +60,8 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="calculator" class="w-4 h-4"></i> Hitung Rekomendasi TOPSIS
+                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 shrink-0 h-[42px]">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i> Tampilkan Peta & Ranking
                 </button>
             </div>
         </form>
@@ -92,6 +95,8 @@
         @endif
     </div>
 
+    {{-- HIDE SEMENTARA PANEL KRITERIA AKTIF SESUAI INSTRUKSI KLIEN --}}
+    @if(false)
     <!-- Panel Kriteria Aktif (Foto 2) -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
         <div class="flex items-center justify-between mb-3">
@@ -117,8 +122,25 @@
             @endforeach
         </div>
     </div>
+    @endif
 
     @if ($selectedAsn && count($ranked) > 0)
+    <!-- Peta Spasial Rekomendasi PNS -> Dinas (Show Map) -->
+    <div id="mapSection" class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i data-lucide="map" class="w-4 h-4 text-blue-700"></i>
+                <h3 class="font-bold text-slate-900 text-sm">Peta Rekomendasi Penempatan — {{ $selectedAsn->nama }}</h3>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-600 inline-block"></span> Domisili PNS</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span> Kantor Asal</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> Top 10 Dinas Rekomendasi</span>
+            </div>
+        </div>
+        <div id="spkMapPnsToDinas" style="height: 400px;" class="w-full relative z-0"></div>
+    </div>
+
     <!-- Tabel Hasil Ranking DataTables 2 -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
@@ -147,7 +169,7 @@
                         <th class="px-4 py-3.5 text-center">Kebutuhan Staf</th>
                         <th class="px-4 py-3.5 text-center">Formasi Linier</th>
                         <th class="px-4 py-3.5 text-center font-mono font-bold text-blue-900">Nilai V<sub>i</sub></th>
-                        <th class="px-4 py-3.5 text-center no-sort">Aksi Sidang</th>
+                        <th class="px-4 py-3.5 text-center no-sort">Peta</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -200,6 +222,15 @@
                                 {{ number_format($item['vi'], 4) }}
                             </td>
                             <td class="px-4 py-3.5 text-center">
+                                <button type="button"
+                                    onclick="focusUnitOnMap({{ $item['unit']->kantor_lat ?? 0 }}, {{ $item['unit']->kantor_lng ?? 0 }}, {{ json_encode($item['unit']->nama_unit ?? 'Unit Kerja') }}, {{ $item['rank'] }}, '{{ number_format($item['jarak_baru_km'], 2) }}', '{{ number_format($item['vi'], 4) }}')"
+                                    class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs"
+                                    title="Tampilkan rute ke unit ini pada peta">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Lihat Peta
+                                </button>
+
+                                {{-- HIDE SEMENTARA AJUKAN SIDANG BAPERJAKAT SESUAI INSTRUKSI KLIEN --}}
+                                @if(false)
                                 <form method="POST" action="{{ route('topsis.simpan') }}" class="inline">
                                     @csrf
                                     <input type="hidden" name="id_asn" value="{{ $selectedAsn->id }}">
@@ -214,6 +245,7 @@
                                         <i data-lucide="send" class="w-3.5 h-3.5"></i> Ajukan Sidang
                                     </button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -230,3 +262,101 @@
 
 </div>
 @endsection
+
+@if ($selectedAsn && count($ranked) > 0)
+@push('scripts')
+<script>
+    let spkMap1, activeHighlightLine1, activeHighlightMarker1;
+    const pnsHomeLat = {{ $selectedAsn->domisili_lat ?? -6.32635 }};
+    const pnsHomeLng = {{ $selectedAsn->domisili_lng ?? 108.32042 }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!document.getElementById('spkMapPnsToDinas')) return;
+
+        spkMap1 = L.map('spkMapPnsToDinas').setView([pnsHomeLat, pnsHomeLng], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(spkMap1);
+
+        const bounds = [[pnsHomeLat, pnsHomeLng]];
+
+        // 1. Marker Rumah PNS (Merah)
+        L.circleMarker([pnsHomeLat, pnsHomeLng], {
+            radius: 10, fillColor: '#e11d48', color: '#ffffff', weight: 3, fillOpacity: 1
+        }).addTo(spkMap1).bindPopup(`<strong>Domisili PNS</strong><br/>{{ addslashes($selectedAsn->nama) }}`).openPopup();
+
+        // 2. Marker Kantor Asal (Slate)
+        @if($selectedAsn->unitSaatIni && $selectedAsn->unitSaatIni->kantor_lat)
+            const asalLat = {{ $selectedAsn->unitSaatIni->kantor_lat }};
+            const asalLng = {{ $selectedAsn->unitSaatIni->kantor_lng }};
+            L.circleMarker([asalLat, asalLng], {
+                radius: 8, fillColor: '#64748b', color: '#ffffff', weight: 2, fillOpacity: 0.9
+            }).addTo(spkMap1).bindPopup(`<strong>Kantor Asal</strong><br/>{{ addslashes($selectedAsn->unitSaatIni->nama_unit) }}<br/>Jarak: {{ number_format($selectedAsn->jarak_ke_kantor_km, 2) }} km`);
+            L.polyline([[pnsHomeLat, pnsHomeLng], [asalLat, asalLng]], {
+                color: '#94a3b8', weight: 2, dashArray: '5, 6', opacity: 0.7
+            }).addTo(spkMap1);
+            bounds.push([asalLat, asalLng]);
+        @endif
+
+        // 3. Top 10 Rekomendasi Dinas (Emerald)
+        @php
+            $topUnitsMap = collect($ranked)->take(10)->map(function($item) {
+                return [
+                    'rank' => $item['rank'],
+                    'nama' => $item['unit']->nama_unit ?? 'Unit Kerja',
+                    'lat' => (float) ($item['unit']->kantor_lat ?? 0),
+                    'lng' => (float) ($item['unit']->kantor_lng ?? 0),
+                    'jarak' => number_format($item['jarak_baru_km'], 2),
+                    'vi' => number_format($item['vi'], 4),
+                ];
+            })->values();
+        @endphp
+        const topUnits = @json($topUnitsMap);
+
+        topUnits.forEach(u => {
+            if (!u.lat || !u.lng) return;
+            L.circleMarker([u.lat, u.lng], {
+                radius: u.rank === 1 ? 9 : 7,
+                fillColor: u.rank === 1 ? '#059669' : '#10b981',
+                color: '#ffffff',
+                weight: 2,
+                fillOpacity: 0.95
+            }).addTo(spkMap1).bindPopup(
+                `<span style="font-weight:700;color:#059669;">Rank #${u.rank}</span><br/><strong>${u.nama}</strong><br/>Jarak: <strong>${u.jarak} km</strong> &bull; V<sub>i</sub>: ${u.vi}`
+            );
+            if (u.rank <= 3) {
+                L.polyline([[pnsHomeLat, pnsHomeLng], [u.lat, u.lng]], {
+                    color: '#10b981', weight: u.rank === 1 ? 3 : 1.5, dashArray: u.rank === 1 ? null : '4, 5', opacity: 0.75
+                }).addTo(spkMap1);
+                bounds.push([u.lat, u.lng]);
+            }
+        });
+
+        if (bounds.length > 1) {
+            spkMap1.fitBounds(bounds, { padding: [40, 40] });
+        }
+    });
+
+    function focusUnitOnMap(lat, lng, nama, rank, jarak, vi) {
+        if (!spkMap1 || !lat || !lng) return;
+        document.getElementById('mapSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (activeHighlightLine1) spkMap1.removeLayer(activeHighlightLine1);
+        if (activeHighlightMarker1) spkMap1.removeLayer(activeHighlightMarker1);
+
+        activeHighlightLine1 = L.polyline([[pnsHomeLat, pnsHomeLng], [lat, lng]], {
+            color: '#2563eb', weight: 4, opacity: 0.9
+        }).addTo(spkMap1);
+
+        activeHighlightMarker1 = L.circleMarker([lat, lng], {
+            radius: 11, fillColor: '#2563eb', color: '#ffffff', weight: 3, fillOpacity: 1
+        }).addTo(spkMap1).bindPopup(
+            `<span style="font-weight:700;color:#1d4ed8;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak Baru: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}`
+        ).openPopup();
+
+        spkMap1.fitBounds([[pnsHomeLat, pnsHomeLng], [lat, lng]], { padding: [60, 60] });
+    }
+</script>
+@endpush
+@endif

@@ -17,11 +17,14 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
+            {{-- HIDE SEMENTARA BOBOT KRITERIA SESUAI INSTRUKSI KLIEN --}}
+            @if(false)
             <a href="{{ route('master-kriteria.index', ['mode' => 'dinas_to_pns']) }}" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition shadow-xs flex items-center gap-1.5">
                 <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i> Bobot Kriteria ({{ $kriteriaModels->count() }})
             </a>
+            @endif
             <a href="{{ route('topsis.pns-to-dinas') }}" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Beralih ke Mode 1 (PNS ke Dinas)
+                <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Beralih ke PNS ➔ Dinas
             </a>
         </div>
     </div>
@@ -48,7 +51,7 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                         Pilih Dinas / Unit Kerja (Target yang Membutuhkan Pegawai) <span class="text-rose-500">*</span>
                     </label>
-                    <select name="unit_id" required class="w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs">
+                    <select name="unit_id" required class="searchable-select w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs" placeholder="-- Cari Nama Dinas / Unit Kerja --">
                         <option value="">-- Pilih salah satu Unit Kerja / Instansi --</option>
                         @foreach ($unitList as $u)
                             <option value="{{ $u->id }}" {{ (string)$u->id === (string)request('unit_id') ? 'selected' : '' }}>
@@ -57,8 +60,8 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="search" class="w-4 h-4"></i> Cari Kandidat Terbaik
+                <button type="submit" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 shrink-0 h-[42px]">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i> Tampilkan Peta & Kandidat
                 </button>
             </div>
         </form>
@@ -102,6 +105,8 @@
         @endif
     </div>
 
+    {{-- HIDE SEMENTARA PANEL KRITERIA AKTIF SESUAI INSTRUKSI KLIEN --}}
+    @if(false)
     <!-- Panel Kriteria Aktif Mode 2 (Foto 2) -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
         <div class="flex items-center justify-between mb-3">
@@ -127,8 +132,24 @@
             @endforeach
         </div>
     </div>
+    @endif
 
     @if ($selectedUnit && count($ranked) > 0)
+    <!-- Peta Spasial Rekomendasi Dinas -> PNS (Show Map) -->
+    <div id="mapSectionDinas" class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i data-lucide="map" class="w-4 h-4 text-indigo-700"></i>
+                <h3 class="font-bold text-slate-900 text-sm">Peta Sebaran Kandidat PNS — {{ $selectedUnit->nama_unit }}</h3>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-indigo-700 inline-block"></span> Lokasi Dinas Tujuan</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> Top 10 Domisili Kandidat PNS</span>
+            </div>
+        </div>
+        <div id="spkMapDinasToPns" style="height: 400px;" class="w-full relative z-0"></div>
+    </div>
+
     <!-- Tabel Hasil Ranking DataTables 2 -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
@@ -157,7 +178,7 @@
                         <th class="px-4 py-3.5 text-center">Masa Jabatan / Kerja</th>
                         <th class="px-4 py-3.5 text-center">Kondisi Unit Asal</th>
                         <th class="px-4 py-3.5 text-center font-mono font-bold text-indigo-900">Nilai V<sub>i</sub></th>
-                        <th class="px-4 py-3.5 text-center no-sort">Aksi Sidang</th>
+                        <th class="px-4 py-3.5 text-center no-sort">Peta</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -218,6 +239,15 @@
                                 {{ number_format($item['vi'], 4) }}
                             </td>
                             <td class="px-4 py-3.5 text-center">
+                                <button type="button"
+                                    onclick="focusPnsOnMap({{ $item['asn']->domisili_lat ?? 0 }}, {{ $item['asn']->domisili_lng ?? 0 }}, {{ json_encode($item['asn']->nama ?? 'Pegawai PNS') }}, {{ $item['rank'] }}, '{{ number_format($item['jarak_ke_dinas_km'], 2) }}', '{{ number_format($item['vi'], 4) }}')"
+                                    class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs"
+                                    title="Tampilkan lokasi domisili PNS ini pada peta">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Lihat Peta
+                                </button>
+
+                                {{-- HIDE SEMENTARA TARIK PEGAWAI / BAPERJAKAT SESUAI INSTRUKSI KLIEN --}}
+                                @if(false)
                                 <form method="POST" action="{{ route('topsis.simpan') }}" class="inline">
                                     @csrf
                                     <input type="hidden" name="id_asn" value="{{ $item['id'] }}">
@@ -232,6 +262,7 @@
                                         <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Tarik Pegawai
                                     </button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -248,3 +279,88 @@
 
 </div>
 @endsection
+
+@if ($selectedUnit && count($ranked) > 0)
+@push('scripts')
+<script>
+    let spkMap2, activeHighlightLine2, activeHighlightMarker2;
+    const dinasLat = {{ $selectedUnit->kantor_lat ?? -6.32635 }};
+    const dinasLng = {{ $selectedUnit->kantor_lng ?? 108.32042 }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!document.getElementById('spkMapDinasToPns')) return;
+
+        spkMap2 = L.map('spkMapDinasToPns').setView([dinasLat, dinasLng], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(spkMap2);
+
+        const bounds = [[dinasLat, dinasLng]];
+
+        // 1. Marker Dinas Tujuan (Indigo)
+        L.circleMarker([dinasLat, dinasLng], {
+            radius: 10, fillColor: '#4338ca', color: '#ffffff', weight: 3, fillOpacity: 1
+        }).addTo(spkMap2).bindPopup(`<strong>Lokasi Dinas Tujuan</strong><br/>{{ addslashes($selectedUnit->nama_unit) }}`).openPopup();
+
+        // 2. Top 10 Kandidat PNS (Emerald)
+        @php
+            $topPnsMap = collect($ranked)->take(10)->map(function($item) {
+                return [
+                    'rank' => $item['rank'],
+                    'nama' => $item['asn']->nama ?? 'Pegawai PNS',
+                    'lat' => (float) ($item['asn']->domisili_lat ?? 0),
+                    'lng' => (float) ($item['asn']->domisili_lng ?? 0),
+                    'jarak' => number_format($item['jarak_ke_dinas_km'], 2),
+                    'vi' => number_format($item['vi'], 4),
+                ];
+            })->values();
+        @endphp
+        const topPns = @json($topPnsMap);
+
+        topPns.forEach(p => {
+            if (!p.lat || !p.lng) return;
+            L.circleMarker([p.lat, p.lng], {
+                radius: p.rank === 1 ? 9 : 7,
+                fillColor: p.rank === 1 ? '#059669' : '#10b981',
+                color: '#ffffff',
+                weight: 2,
+                fillOpacity: 0.95
+            }).addTo(spkMap2).bindPopup(
+                `<span style="font-weight:700;color:#059669;">Rank #${p.rank}</span><br/><strong>${p.nama}</strong><br/>Jarak ke Dinas: <strong>${p.jarak} km</strong> &bull; V<sub>i</sub>: ${p.vi}`
+            );
+            if (p.rank <= 3) {
+                L.polyline([[dinasLat, dinasLng], [p.lat, p.lng]], {
+                    color: '#10b981', weight: p.rank === 1 ? 3 : 1.5, dashArray: p.rank === 1 ? null : '4, 5', opacity: 0.75
+                }).addTo(spkMap2);
+                bounds.push([p.lat, p.lng]);
+            }
+        });
+
+        if (bounds.length > 1) {
+            spkMap2.fitBounds(bounds, { padding: [40, 40] });
+        }
+    });
+
+    function focusPnsOnMap(lat, lng, nama, rank, jarak, vi) {
+        if (!spkMap2 || !lat || !lng) return;
+        document.getElementById('mapSectionDinas').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (activeHighlightLine2) spkMap2.removeLayer(activeHighlightLine2);
+        if (activeHighlightMarker2) spkMap2.removeLayer(activeHighlightMarker2);
+
+        activeHighlightLine2 = L.polyline([[dinasLat, dinasLng], [lat, lng]], {
+            color: '#4338ca', weight: 4, opacity: 0.9
+        }).addTo(spkMap2);
+
+        activeHighlightMarker2 = L.circleMarker([lat, lng], {
+            radius: 11, fillColor: '#e11d48', color: '#ffffff', weight: 3, fillOpacity: 1
+        }).addTo(spkMap2).bindPopup(
+            `<span style="font-weight:700;color:#4338ca;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak ke Dinas: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}`
+        ).openPopup();
+
+        spkMap2.fitBounds([[dinasLat, dinasLng], [lat, lng]], { padding: [60, 60] });
+    }
+</script>
+@endpush
+@endif

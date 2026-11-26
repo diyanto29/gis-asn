@@ -426,51 +426,7 @@
                 </div>
             </div>
 
-            <!-- Sistem Keputusan & Mutasi -->
-            <div>
-                <div class="px-3 mb-2 font-bold uppercase tracking-wider text-[10px] text-slate-400">
-                    Sistem Rekomendasi
-                </div>
-                <div class="space-y-1">
-                    <a href="{{ route('asn.simulasi-mandiri') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.simulasi-mandiri*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="compass" class="w-4 h-4 shrink-0 {{ request()->routeIs('asn.simulasi-mandiri*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span class="flex-1">Simulasi Penempatan</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">Tahap 2</span>
-                    </a>
-
-                    @if(Auth::check() && Auth::user()->isAdmin())
-                    <a href="{{ route('topsis.pns-to-dinas') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.pns-to-dinas*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="user-check" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.pns-to-dinas*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span class="flex-1">PNS ➔ Dinas</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">Mode 1</span>
-                    </a>
-
-                    <a href="{{ route('topsis.dinas-to-pns') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.dinas-to-pns*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="building-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.dinas-to-pns*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span class="flex-1">Dinas ➔ PNS</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700">Mode 2</span>
-                    </a>
-                    @endif
-
-                    {{-- HIDE SEMENTARA FITUR SMART SWAP SESUAI INSTRUKSI KLIEN --}}
-                    @if(false)
-                    <a href="{{ route('swap-match.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('swap-match.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="repeat" class="w-4 h-4 shrink-0 {{ request()->routeIs('swap-match.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span class="flex-1">Smart Swap Match</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Zero-ABK</span>
-                    </a>
-                    @endif
-
-                    @if(Auth::check() && Auth::user()->isAdmin())
-                    <a href="{{ route('topsis.riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.riwayat') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="file-check-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.riwayat') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Usulan Baperjakat</span>
-                    </a>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Master Data Pengelolaan (Terpisah & Terstruktur) -->
+            <!-- Master Data Pengelolaan (Sesuai Struktur Sederhana Klien) -->
             <div>
                 <div class="px-3 mb-2 font-bold uppercase tracking-wider text-[10px] text-slate-400 flex items-center justify-between">
                     <span>Master Data</span>
@@ -479,30 +435,29 @@
                     @endif
                 </div>
                 <div class="space-y-1">
-                    {{-- HIDE SEMENTARA DAFTAR ASN/PNS SESUAI INSTRUKSI KLIEN --}}
-                    @if(false)
                     <a href="{{ route('asn.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.index', 'asn.show', 'asn.create', 'asn.edit*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="users" class="w-4 h-4 shrink-0 {{ request()->routeIs('asn.index', 'asn.show', 'asn.create', 'asn.edit*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Data Pegawai PNS</span>
+                        <span>Data PNS</span>
                     </a>
-                    @endif
 
                     <a href="{{ route('unit-kerja.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('unit-kerja.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="building-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('unit-kerja.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Formasi Unit (ABK)</span>
+                        <span>Data Unit Kerja</span>
                     </a>
 
                     @if(Auth::check() && Auth::user()->isAdmin())
                     <a href="{{ route('master-jabatan.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('master-jabatan.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="tag" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-jabatan.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Master Referensi Jabatan</span>
+                        <span>Data Referensi Jabatan</span>
                     </a>
 
                     <a href="{{ route('formasi-jabatan.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('formasi-jabatan.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="briefcase" class="w-4 h-4 shrink-0 {{ request()->routeIs('formasi-jabatan.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Master Formasi Jabatan</span>
+                        <span>Data Formasi Jabatan</span>
                     </a>
 
+                    {{-- HIDE SEMENTARA MENU MASTER WILAYAH & KRITERIA SESUAI INSTRUKSI KLIEN --}}
+                    @if(false)
                     <a href="{{ route('master-lokasi.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('master-lokasi.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="map" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-lokasi.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span>Master Wilayah (31 Kec)</span>
@@ -512,6 +467,49 @@
                         <i data-lucide="sliders" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-kriteria.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span>Master Kriteria & Bobot</span>
                     </a>
+                    @endif
+                    @endif
+                </div>
+            </div>
+
+            <!-- SPK (Sistem Pendukung Keputusan) -->
+            <div>
+                <div class="px-3 mb-2 font-bold uppercase tracking-wider text-[10px] text-slate-400">
+                    SPK
+                </div>
+                <div class="space-y-1">
+                    @if(Auth::check() && Auth::user()->isAdmin())
+                    <a href="{{ route('topsis.dinas-to-pns') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.dinas-to-pns*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="building-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.dinas-to-pns*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Dinas ➔ PNS</span>
+                    </a>
+
+                    <a href="{{ route('topsis.pns-to-dinas') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.pns-to-dinas*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="user-check" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.pns-to-dinas*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">PNS ➔ Dinas</span>
+                    </a>
+                    @endif
+
+                    {{-- HIDE SEMENTARA SIMULASI, SMART SWAP & BAPERJAKAT SESUAI INSTRUKSI KLIEN --}}
+                    @if(false)
+                    <a href="{{ route('asn.simulasi-mandiri') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.simulasi-mandiri*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="compass" class="w-4 h-4 shrink-0 {{ request()->routeIs('asn.simulasi-mandiri*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Simulasi Penempatan</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">Tahap 2</span>
+                    </a>
+
+                    <a href="{{ route('swap-match.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('swap-match.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="repeat" class="w-4 h-4 shrink-0 {{ request()->routeIs('swap-match.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Smart Swap Match</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Zero-ABK</span>
+                    </a>
+
+                    @if(Auth::check() && Auth::user()->isAdmin())
+                    <a href="{{ route('topsis.riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.riwayat') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="file-check-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.riwayat') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span>Usulan Baperjakat</span>
+                    </a>
+                    @endif
                     @endif
                 </div>
             </div>
