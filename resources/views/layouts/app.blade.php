@@ -479,6 +479,11 @@
                 </div>
                 <div class="space-y-1">
                     @if(Auth::check() && Auth::user()->isAdmin())
+                    <a href="{{ route('master-kriteria.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('master-kriteria.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="sliders" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-kriteria.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span>Kriteria & Bobot</span>
+                    </a>
+
                     <a href="{{ route('topsis.dinas-to-pns') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.dinas-to-pns*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="building-2" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.dinas-to-pns*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span class="flex-1">Dinas ➔ PNS</span>

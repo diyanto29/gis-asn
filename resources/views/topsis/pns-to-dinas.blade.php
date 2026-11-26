@@ -336,26 +336,68 @@
         if (bounds.length > 1) {
             spkMap1.fitBounds(bounds, { padding: [40, 40] });
         }
+
+        // Auto-track rute jalan raya OSRM untuk Rank #1 saat peta dimuat
+        if (topUnits.length > 0 && topUnits[0].lat && topUnits[0].lng) {
+            const first = topUnits[0];
+            drawOsrmTrack1(first.lat, first.lng, first.nama, first.rank, first.jarak, first.vi, false);
+        }
     });
 
     function focusUnitOnMap(lat, lng, nama, rank, jarak, vi) {
         if (!spkMap1 || !lat || !lng) return;
         document.getElementById('mapSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        drawOsrmTrack1(lat, lng, nama, rank, jarak, vi, true);
+    }
 
+    function drawOsrmTrack1(lat, lng, nama, rank, jarak, vi, openPop) {
         if (activeHighlightLine1) spkMap1.removeLayer(activeHighlightLine1);
         if (activeHighlightMarker1) spkMap1.removeLayer(activeHighlightMarker1);
 
+        // Fallback garis langsung sambil memuat rute jalan raya OSRM
         activeHighlightLine1 = L.polyline([[pnsHomeLat, pnsHomeLng], [lat, lng]], {
-            color: '#2563eb', weight: 4, opacity: 0.9
+            color: '#2563eb', weight: 3, dashArray: '6, 6', opacity: 0.75
         }).addTo(spkMap1);
 
         activeHighlightMarker1 = L.circleMarker([lat, lng], {
             radius: 11, fillColor: '#2563eb', color: '#ffffff', weight: 3, fillOpacity: 1
         }).addTo(spkMap1).bindPopup(
-            `<span style="font-weight:700;color:#1d4ed8;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak Baru: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}`
-        ).openPopup();
+            `<span style="font-weight:700;color:#1d4ed8;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak Lurus: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}<br/><span style="color:#64748b;font-size:11px;">Melacak rute jalan raya OSRM...</span>`
+        );
 
-        spkMap1.fitBounds([[pnsHomeLat, pnsHomeLng], [lat, lng]], { padding: [60, 60] });
+        if (openPop) {
+            activeHighlightMarker1.openPopup();
+            spkMap1.fitBounds([[pnsHomeLat, pnsHomeLng], [lat, lng]], { padding: [60, 60] });
+        }
+
+        fetch(`https://router.project-osrm.org/route/v1/driving/${pnsHomeLng},${pnsHomeLat};${lng},${lat}?overview=full&geometries=geojson`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    const km = (route.distance / 1000).toFixed(2);
+                    const menit = Math.round(route.duration / 60);
+                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+                    if (activeHighlightLine1) spkMap1.removeLayer(activeHighlightLine1);
+                    activeHighlightLine1 = L.polyline(coords, {
+                        color: '#2563eb', weight: 4.5, opacity: 0.9
+                    }).addTo(spkMap1);
+
+                    activeHighlightMarker1.setPopupContent(
+                        `<span style="font-weight:700;color:#1d4ed8;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Rute Jalan Riil (OSRM): <strong>${km} km</strong> (~${menit} mnt)<br/>Nilai V<sub>i</sub>: <strong>${vi}</strong>`
+                    );
+                    if (openPop) {
+                        activeHighlightMarker1.openPopup();
+                        spkMap1.fitBounds(activeHighlightLine1.getBounds(), { padding: [50, 50] });
+                    }
+                }
+            })
+            .catch(() => {
+                activeHighlightMarker1.setPopupContent(
+                    `<span style="font-weight:700;color:#1d4ed8;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak Spasial: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}`
+                );
+            });
     }
 </script>
 @endpush
