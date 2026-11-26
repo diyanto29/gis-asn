@@ -23,15 +23,21 @@ class AsnController extends Controller
 
     public function index(Request $request): View
     {
-        $query = AsnMaster::with('unitSaatIni');
+        $query = AsnMaster::with(['unitSaatIni', 'masterJabatan', 'formasiJabatan']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('nip', 'like', "%{$search}%")
-                  ->orWhere('jabatan', 'like', "%{$search}%");
+                  ->orWhere('jabatan', 'like', "%{$search}%")
+                  ->orWhere('kecamatan', 'like', "%{$search}%")
+                  ->orWhereHas('masterJabatan', fn ($mq) => $mq->where('kode_jabatan', 'like', "%{$search}%"));
             });
+        }
+
+        if ($request->filled('jenis_jabatan')) {
+            $query->where('jenis_jabatan', $request->jenis_jabatan);
         }
 
         if ($request->filled('zona')) {
@@ -84,16 +90,24 @@ class AsnController extends Controller
             'alamat_detail' => 'nullable|string',
         ]);
 
-        // Korelasi otomatis ke master_jabatan
-        $masterJbt = MasterJabatan::where('nama_jabatan', $validated['jabatan'])->first();
+        // Korelasi otomatis ke master_jabatan (case-insensitive)
+        $masterJbt = MasterJabatan::whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))])->first();
         if ($masterJbt) {
             $validated['id_master_jabatan'] = $masterJbt->id;
+            $validated['jabatan'] = $masterJbt->nama_jabatan;
             $validated['jenis_jabatan'] = $validated['jenis_jabatan'] ?? $masterJbt->jenis_jabatan;
         }
 
         // Korelasi otomatis ke formasi_jabatan pada unit kerja terpilih
         $formasiUnit = FormasiJabatan::where('id_unit_kerja', $validated['id_unit_saat_ini'])
-            ->where('nama_jabatan', $validated['jabatan'])
+            ->where(function ($q) use ($validated, $masterJbt) {
+                if ($masterJbt) {
+                    $q->where('id_master_jabatan', $masterJbt->id)
+                      ->orWhereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
+                } else {
+                    $q->whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
+                }
+            })
             ->first();
         if ($formasiUnit) {
             $validated['id_formasi_jabatan'] = $formasiUnit->id;
@@ -147,13 +161,13 @@ class AsnController extends Controller
 
     public function show(int $id): View
     {
-        $asn = AsnMaster::with('unitSaatIni', 'rekomendasi.unitTujuan')->findOrFail($id);
+        $asn = AsnMaster::with(['unitSaatIni', 'masterJabatan', 'formasiJabatan.unitKerja', 'rekomendasi.unitTujuan'])->findOrFail($id);
         return view('asn.show', compact('asn'));
     }
 
     public function edit(int $id): View
     {
-        $asn = AsnMaster::with('unitSaatIni')->findOrFail($id);
+        $asn = AsnMaster::with(['unitSaatIni', 'masterJabatan', 'formasiJabatan'])->findOrFail($id);
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
         $jabatanList = MasterJabatan::orderBy('nama_jabatan')->get();
@@ -190,16 +204,24 @@ class AsnController extends Controller
             'alamat_detail' => 'nullable|string',
         ]);
 
-        // Korelasi otomatis ke master_jabatan
-        $masterJbt = MasterJabatan::where('nama_jabatan', $validated['jabatan'])->first();
+        // Korelasi otomatis ke master_jabatan (case-insensitive)
+        $masterJbt = MasterJabatan::whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))])->first();
         if ($masterJbt) {
             $validated['id_master_jabatan'] = $masterJbt->id;
+            $validated['jabatan'] = $masterJbt->nama_jabatan;
             $validated['jenis_jabatan'] = $validated['jenis_jabatan'] ?? $masterJbt->jenis_jabatan;
         }
 
         // Korelasi otomatis ke formasi_jabatan pada unit kerja terpilih
         $formasiUnit = FormasiJabatan::where('id_unit_kerja', $validated['id_unit_saat_ini'])
-            ->where('nama_jabatan', $validated['jabatan'])
+            ->where(function ($q) use ($validated, $masterJbt) {
+                if ($masterJbt) {
+                    $q->where('id_master_jabatan', $masterJbt->id)
+                      ->orWhereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
+                } else {
+                    $q->whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
+                }
+            })
             ->first();
         if ($formasiUnit) {
             $validated['id_formasi_jabatan'] = $formasiUnit->id;

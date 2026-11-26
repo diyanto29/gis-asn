@@ -45,6 +45,18 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Referensi Master Jabatan (Standar SIASN)</label>
+                <select name="id_master_jabatan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">-- Pilih dari Master Jabatan (opsional) --</option>
+                    @foreach ($masterJabatans as $mj)
+                        <option value="{{ $mj->id }}" {{ old('id_master_jabatan', $formasi->id_master_jabatan) == $mj->id ? 'selected' : '' }}>
+                            [{{ strtoupper($mj->jenis_jabatan) }}{{ $mj->kelas_jabatan ? ' - Kls ' . $mj->kelas_jabatan : '' }}] {{ $mj->nama_jabatan }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan <span class="text-rose-500">*</span></label>
@@ -62,14 +74,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Jabatan</label>
-                    <select name="jenjang_jabatan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">-- Pilih Jenjang --</option>
-                        <option value="Ahli Pertama (III/a - III/b)" {{ old('jenjang_jabatan', $formasi->jenjang_jabatan) == 'Ahli Pertama (III/a - III/b)' ? 'selected' : '' }}>Ahli Pertama (III/a - III/b)</option>
-                        <option value="Ahli Muda (III/c - III/d)" {{ old('jenjang_jabatan', $formasi->jenjang_jabatan) == 'Ahli Muda (III/c - III/d)' ? 'selected' : '' }}>Ahli Muda (III/c - III/d)</option>
-                        <option value="Ahli Madya (IV/a - IV/c)" {{ old('jenjang_jabatan', $formasi->jenjang_jabatan) == 'Ahli Madya (IV/a - IV/c)' ? 'selected' : '' }}>Ahli Madya (IV/a - IV/c)</option>
-                        <option value="Pelaksana / Mahir (II/c - III/a)" {{ old('jenjang_jabatan', $formasi->jenjang_jabatan) == 'Pelaksana / Mahir (II/c - III/a)' ? 'selected' : '' }}>Pelaksana / Mahir (II/c - III/a)</option>
-                        <option value="Pelaksana (II/a - II/c)" {{ old('jenjang_jabatan', $formasi->jenjang_jabatan) == 'Pelaksana (II/a - II/c)' ? 'selected' : '' }}>Pelaksana (II/a - II/c)</option>
-                    </select>
+                    <input type="text" name="jenjang_jabatan" value="{{ old('jenjang_jabatan', $formasi->jenjang_jabatan) }}" placeholder="Contoh: Ahli Pertama, Ahli Muda, Pelaksana" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                 </div>
             </div>
 

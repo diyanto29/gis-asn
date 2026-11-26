@@ -114,6 +114,26 @@
                 </div>
             </div>
 
+            <!-- Atribut Standar SIASN BKN -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kelas Jabatan</label>
+                    <input type="number" name="kelas_jabatan" value="{{ old('kelas_jabatan') }}" min="1" max="17" placeholder="1 - 14" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">BUP (Usia Pensiun)</label>
+                    <input type="number" name="bup_usia" value="{{ old('bup_usia', 58) }}" min="50" max="70" placeholder="58 / 60 / 65" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Cepat (Pelaksana)</label>
+                    <input type="text" name="kode_cepat" value="{{ old('kode_cepat') }}" placeholder="Opsional" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ID SIASN BKN</label>
+                    <input type="text" name="siasn_id" value="{{ old('siasn_id') }}" placeholder="Opsional" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+
             <!-- Kualifikasi Pendidikan Linier -->
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Kualifikasi Pendidikan Linier</label>

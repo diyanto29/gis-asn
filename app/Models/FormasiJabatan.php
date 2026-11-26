@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model FormasiJabatan
@@ -20,6 +21,7 @@ class FormasiJabatan extends Model
 
     protected $fillable = [
         'id_unit_kerja',
+        'id_master_jabatan',
         'tahun_anggaran',
         'periode',
         'nama_jabatan',
@@ -43,6 +45,16 @@ class FormasiJabatan extends Model
     public function unitKerja(): BelongsTo
     {
         return $this->belongsTo(UnitKerja::class, 'id_unit_kerja');
+    }
+
+    public function masterJabatan(): BelongsTo
+    {
+        return $this->belongsTo(MasterJabatan::class, 'id_master_jabatan');
+    }
+
+    public function asns(): HasMany
+    {
+        return $this->hasMany(AsnMaster::class, 'id_formasi_jabatan');
     }
 
     public function scopeTahun($query, int $tahun)

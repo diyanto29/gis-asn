@@ -41,27 +41,60 @@
                     </div>
                     <div>
                         <div class="font-bold text-slate-900 text-base leading-tight">{{ $asn->nama_lengkap }}</div>
-                        <div class="text-xs text-slate-500">{{ $asn->jabatan }}</div>
+                        <div class="text-xs text-slate-600 mt-0.5">{{ $asn->jabatan }}</div>
+                        <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                            @if ($asn->jenis_jabatan === 'fungsional')
+                                <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-semibold rounded">Fungsional</span>
+                            @elseif ($asn->jenis_jabatan === 'pelaksana')
+                                <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold rounded">Pelaksana</span>
+                            @else
+                                <span class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold rounded">Struktural</span>
+                            @endif
+                            @if ($asn->masterJabatan?->kelas_jabatan)
+                                <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-mono font-semibold rounded">Kelas {{ $asn->masterJabatan->kelas_jabatan }}</span>
+                            @endif
+                            @if ($asn->masterJabatan?->bup_usia)
+                                <span class="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-mono rounded">BUP {{ $asn->masterJabatan->bup_usia }} th</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
                 <div class="space-y-2.5 text-xs text-slate-600">
+                    @if ($asn->masterJabatan)
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-400">Kode Master SIASN:</span>
+                            <span class="font-mono font-semibold text-slate-800">{{ $asn->masterJabatan->kode_jabatan }}{{ $asn->masterJabatan->jenjang_jabatan ? ' (' . $asn->masterJabatan->jenjang_jabatan . ')' : '' }}</span>
+                        </div>
+                    @endif
                     <div class="flex justify-between py-1 border-b border-slate-50">
                         <span class="text-slate-400">Pangkat / Golongan:</span>
-                        <span class="font-bold text-slate-800">{{ $asn->pangkat_golongan }}</span>
+                        <span class="font-bold text-slate-800">{{ $asn->pangkat_golongan }}{{ $asn->tmt_golongan ? ' (TMT ' . $asn->tmt_golongan->format('d/m/Y') . ')' : '' }}</span>
                     </div>
                     <div class="flex justify-between py-1 border-b border-slate-50">
-                        <span class="text-slate-400">Masa Kerja di Unit:</span>
+                        <span class="text-slate-400">TMT Jabatan / CPNS:</span>
+                        <span class="font-mono text-slate-800">{{ $asn->tgl_jabatan ? $asn->tgl_jabatan->format('d/m/Y') : '-' }} &bull; {{ $asn->tgl_cpns ? $asn->tgl_cpns->format('d/m/Y') : '-' }}</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-50">
+                        <span class="text-slate-400">Masa Kerja:</span>
                         <span class="font-bold text-slate-800">{{ $asn->masa_kerja_tahun }} Tahun</span>
                     </div>
                     <div class="flex justify-between py-1 border-b border-slate-50">
-                        <span class="text-slate-400">TMT Kerja:</span>
-                        <span class="font-medium text-slate-800">{{ $asn->tmt_kerja_unit ? $asn->tmt_kerja_unit->format('d M Y') : '-' }}</span>
+                        <span class="text-slate-400">Pendidikan Terakhir:</span>
+                        <span class="font-medium text-slate-800 text-right">{{ $asn->pendidikan_terakhir ?? $asn->tingkat_pendidikan ?? '-' }}</span>
                     </div>
                     <div class="flex justify-between py-1 border-b border-slate-50">
                         <span class="text-slate-400">Unit Kerja Saat Ini:</span>
                         <span class="font-bold text-slate-900 text-right">{{ $asn->unitSaatIni->nama_unit ?? '-' }}</span>
                     </div>
+                    @if ($asn->formasiJabatan)
+                        <div class="flex justify-between py-1 border-b border-slate-50">
+                            <span class="text-slate-400">Formasi ABK ({{ $asn->formasiJabatan->tahun_anggaran }}):</span>
+                            <span class="font-mono font-semibold text-teal-700 text-right">
+                                ABK {{ $asn->formasiJabatan->kebutuhan_abk }} / Bez {{ $asn->formasiJabatan->bezetting_riil }} (Lowong {{ $asn->formasiJabatan->kuota_lowong }})
+                            </span>
+                        </div>
+                    @endif
                     <div class="flex justify-between py-1 border-b border-slate-50">
                         <span class="text-slate-400">Status Permohonan:</span>
                         @if ($asn->status_permohonan_mutasi)
@@ -175,7 +208,7 @@
                 <div class="text-xs text-slate-500 space-y-1">
                     <div>Estimasi Perjalanan Pulang-Pergi: <strong class="text-slate-700">{{ number_format($asn->jarak_ke_kantor_km * 2, 2) }} km/hari</strong></div>
                     <div>Koordinat Rumah: <span class="font-mono text-slate-700">{{ $asn->domisili_lat }}, {{ $asn->domisili_lng }}</span></div>
-                    <div>Alamat: <span class="text-slate-700">{{ $asn->alamat_detail ?? '-' }}, {{ $asn->kelurahan_desa }}, Kec. {{ $asn->kecamatan }}</span></div>
+                    <div>Alamat: <span class="text-slate-700">{{ $asn->alamat_detail ?? '-' }}{{ $asn->kelurahan_desa ? ', ' . $asn->kelurahan_desa : '' }}{{ $asn->kecamatan ? ', Kec. ' . $asn->kecamatan : '' }}</span></div>
                 </div>
 
                 @if ($asn->domisili_lat && $asn->domisili_lng && $asn->unitSaatIni)

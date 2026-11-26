@@ -102,11 +102,11 @@
                 <thead>
                     <tr>
                         <th class="w-12 text-center">No</th>
-                        <th>Kode Jabatan</th>
+                        <th>Kode / SIASN</th>
                         <th>Nama Jabatan Standar</th>
                         <th>Jenis Jabatan</th>
-                        <th>Jenjang / Rumpun</th>
-                        <th class="text-center">PNS Terhubung</th>
+                        <th>Jenjang / Kelas &amp; BUP</th>
+                        <th class="text-center">Relasi (Formasi / PNS)</th>
                         <th class="text-right no-sort">Aksi</th>
                     </tr>
                 </thead>
@@ -115,9 +115,14 @@
                         <tr>
                             <td class="text-center font-mono text-xs text-slate-400">{{ $index + 1 }}</td>
                             <td>
-                                <span class="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                <span class="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                                     {{ $item->kode_jabatan ?? 'JBT-' . str_pad($item->id, 4, '0', STR_PAD_LEFT) }}
                                 </span>
+                                @if ($item->kode_cepat)
+                                    <div class="text-[10px] font-mono text-slate-400 mt-1">Kode Cepat: {{ $item->kode_cepat }}</div>
+                                @elseif ($item->siasn_id)
+                                    <div class="text-[10px] font-mono text-slate-400 mt-1 truncate max-w-[130px]" title="{{ $item->siasn_id }}">SIASN: {{ \Illuminate\Support\Str::limit($item->siasn_id, 12, '…') }}</div>
+                                @endif
                             </td>
                             <td>
                                 <div class="font-bold text-slate-900 text-sm">{{ $item->nama_jabatan }}</div>
@@ -142,16 +147,31 @@
                             </td>
                             <td>
                                 <div class="text-xs text-slate-700 font-medium">{{ $item->jenjang_jabatan ?? '-' }}</div>
-                                <div class="text-[11px] text-slate-400">{{ $item->rumpun_jabatan ?? 'Umum' }}</div>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    @if ($item->kelas_jabatan)
+                                        <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">Kelas {{ $item->kelas_jabatan }}</span>
+                                    @endif
+                                    @if ($item->bup_usia)
+                                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">BUP {{ $item->bup_usia }} th</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="text-center">
-                                @if ($item->asns_count > 0)
-                                    <span class="inline-flex items-center gap-1 font-bold text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                                        <i data-lucide="user" class="w-3 h-3"></i> {{ $item->asns_count }} PNS
-                                    </span>
-                                @else
-                                    <span class="text-xs text-slate-400 font-mono">-</span>
-                                @endif
+                                <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                    @if (($item->formasis_count ?? 0) > 0)
+                                        <span class="inline-flex items-center gap-1 font-semibold text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                                            {{ $item->formasis_count }} Formasi
+                                        </span>
+                                    @endif
+                                    @if ($item->asns_count > 0)
+                                        <span class="inline-flex items-center gap-1 font-bold text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                                            <i data-lucide="user" class="w-3 h-3"></i> {{ $item->asns_count }} PNS
+                                        </span>
+                                    @endif
+                                    @if (($item->formasis_count ?? 0) === 0 && $item->asns_count === 0)
+                                        <span class="text-xs text-slate-400 font-mono">-</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="text-right">
                                 <div class="inline-flex items-center gap-1.5">

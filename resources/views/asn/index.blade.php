@@ -22,10 +22,20 @@
 
     <!-- Filters & Search -->
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('asn.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <form method="GET" action="{{ route('asn.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama / NIP</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik nama atau NIP..." class="w-full text-sm rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama / NIP / Jabatan</label>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama, NIP, jabatan, kode..." class="w-full text-sm rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Jabatan</label>
+                <select name="jenis_jabatan" class="w-full text-sm rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+                    <option value="">Semua Jenis</option>
+                    <option value="fungsional" {{ request('jenis_jabatan') === 'fungsional' ? 'selected' : '' }}>Fungsional</option>
+                    <option value="pelaksana" {{ request('jenis_jabatan') === 'pelaksana' ? 'selected' : '' }}>Pelaksana</option>
+                    <option value="struktural" {{ request('jenis_jabatan') === 'struktural' ? 'selected' : '' }}>Struktural</option>
+                </select>
             </div>
 
             <div>
@@ -96,19 +106,38 @@
                             <td class="px-5 py-3.5">
                                 <div class="font-semibold text-slate-900 text-xs">{{ $asn->jabatan }}</div>
                                 <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                    <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded">{{ $asn->pangkat_golongan }}</span>
-                                    <span class="text-[10px] text-slate-500 font-mono">TMT Gol: {{ $asn->tmt_golongan ? $asn->tmt_golongan->format('d/m/Y') : '-' }}</span>
+                                    @if ($asn->jenis_jabatan === 'fungsional')
+                                        <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-semibold rounded">Fungsional</span>
+                                    @elseif ($asn->jenis_jabatan === 'pelaksana')
+                                        <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold rounded">Pelaksana</span>
+                                    @else
+                                        <span class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold rounded">Struktural</span>
+                                    @endif
+                                    @if ($asn->masterJabatan?->kelas_jabatan)
+                                        <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-mono font-semibold rounded">Kls {{ $asn->masterJabatan->kelas_jabatan }}</span>
+                                    @endif
+                                    <span class="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded">{{ $asn->pangkat_golongan }}</span>
                                 </div>
-                                <div class="text-[10px] text-slate-400 mt-0.5">
-                                    TMT Jbt: {{ $asn->tgl_jabatan ? $asn->tgl_jabatan->format('d/m/Y') : '-' }} &bull; Kerja: {{ $asn->masa_kerja_tahun }} Thn
+                                <div class="text-[10px] text-slate-400 mt-0.5 font-mono">
+                                    {{ $asn->masterJabatan->kode_jabatan ?? '-' }} &bull; TMT Jbt: {{ $asn->tgl_jabatan ? $asn->tgl_jabatan->format('d/m/Y') : '-' }} &bull; MK: {{ $asn->masa_kerja_tahun }} Thn
                                 </div>
                             </td>
-                            <td class="px-5 py-3.5 font-medium text-slate-800">
-                                {{ $asn->unitSaatIni->nama_unit ?? '-' }}
+                            <td class="px-5 py-3.5 font-medium text-slate-800 text-xs">
+                                <div>{{ $asn->unitSaatIni->nama_unit ?? '-' }}</div>
+                                @if ($asn->formasiJabatan)
+                                    <div class="text-[10px] text-teal-700 mt-0.5 font-mono">
+                                        Formasi {{ $asn->formasiJabatan->tahun_anggaran }} &bull; {{ ucfirst($asn->formasiJabatan->status) }}
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-5 py-3.5 text-xs text-slate-500">
                                 @if ($asn->domisili_lat)
-                                    <div>{{ $asn->kelurahan_desa ?? '' }}, Kec. {{ $asn->kecamatan ?? '' }}</div>
+                                    <div class="font-medium text-slate-700">
+                                        {{ $asn->kelurahan_desa ? $asn->kelurahan_desa . ', ' : '' }}Kec. {{ $asn->kecamatan ?? '-' }}
+                                    </div>
+                                    @if ($asn->alamat_detail)
+                                        <div class="text-[10px] text-slate-400 truncate max-w-[180px]" title="{{ $asn->alamat_detail }}">{{ $asn->alamat_detail }}</div>
+                                    @endif
                                     <div class="text-[10px] text-slate-400 font-mono">{{ number_format($asn->domisili_lat, 4) }}, {{ number_format($asn->domisili_lng, 4) }}</div>
                                 @else
                                     <span class="text-rose-500 italic">Belum ada titik koordinat</span>

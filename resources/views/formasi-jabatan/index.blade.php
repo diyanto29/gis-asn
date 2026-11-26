@@ -155,6 +155,11 @@
                                     @elseif ($formasi->jenis_jabatan === 'pelaksana')
                                         <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">Pelaksana</span>
                                     @endif
+                                    @if ($formasi->masterJabatan)
+                                        <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 text-slate-700 border border-slate-200 rounded">
+                                            {{ $formasi->masterJabatan->kode_jabatan }}{{ $formasi->masterJabatan->kelas_jabatan ? ' • Kls ' . $formasi->masterJabatan->kelas_jabatan : '' }}
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="text-xs text-slate-500 mt-0.5">Syarat: {{ $formasi->kualifikasi_pendidikan ?? 'Kesesuaian rumpun ilmu' }}</div>
                                 @if ($formasi->keterangan)

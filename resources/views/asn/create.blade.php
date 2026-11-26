@@ -63,8 +63,8 @@
                             <select id="jabatanSelect" name="jabatan" class="searchable-select-jabatan w-full text-sm" required data-placeholder="-- Pilih atau Ketik Nama Jabatan --">
                                 <option value="">-- Pilih atau Ketik Nama Jabatan --</option>
                                 @foreach ($jabatanList as $jbt)
-                                    <option value="{{ $jbt->nama_jabatan }}" data-jenis="{{ $jbt->jenis_jabatan }}" {{ old('jabatan') == $jbt->nama_jabatan ? 'selected' : '' }}>
-                                        {{ $jbt->nama_jabatan }} [{{ ucfirst($jbt->jenis_jabatan) }}]
+                                    <option value="{{ $jbt->nama_jabatan }}" data-jenis="{{ $jbt->jenis_jabatan }}" data-kelas="{{ $jbt->kelas_jabatan }}" data-bup="{{ $jbt->bup_usia }}" {{ old('jabatan') == $jbt->nama_jabatan ? 'selected' : '' }}>
+                                        {{ $jbt->nama_jabatan }} [{{ ucfirst($jbt->jenis_jabatan) }}{{ $jbt->kelas_jabatan ? ' • Kls ' . $jbt->kelas_jabatan : '' }}]
                                     </option>
                                 @endforeach
                                 @if(old('jabatan') && !$jabatanList->contains('nama_jabatan', old('jabatan')))
@@ -93,23 +93,30 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Pangkat / Golongan <span class="text-rose-500">*</span></label>
                             <select name="pangkat_golongan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                                <option value="Juru Muda (I/a)" {{ old('pangkat_golongan') == 'Juru Muda (I/a)' ? 'selected' : '' }}>Juru Muda (I/a)</option>
-                                <option value="Juru Muda Tk. I (I/b)" {{ old('pangkat_golongan') == 'Juru Muda Tk. I (I/b)' ? 'selected' : '' }}>Juru Muda Tk. I (I/b)</option>
-                                <option value="Juru (I/c)" {{ old('pangkat_golongan') == 'Juru (I/c)' ? 'selected' : '' }}>Juru (I/c)</option>
-                                <option value="Juru Tk. I (I/d)" {{ old('pangkat_golongan') == 'Juru Tk. I (I/d)' ? 'selected' : '' }}>Juru Tk. I (I/d)</option>
-                                <option value="Pengatur Muda (II/a)" {{ old('pangkat_golongan') == 'Pengatur Muda (II/a)' ? 'selected' : '' }}>Pengatur Muda (II/a)</option>
-                                <option value="Pengatur Muda Tk. I (II/b)" {{ old('pangkat_golongan') == 'Pengatur Muda Tk. I (II/b)' ? 'selected' : '' }}>Pengatur Muda Tk. I (II/b)</option>
-                                <option value="Pengatur (II/c)" {{ old('pangkat_golongan') == 'Pengatur (II/c)' ? 'selected' : '' }}>Pengatur (II/c)</option>
-                                <option value="Pengatur Tk. I (II/d)" {{ old('pangkat_golongan') == 'Pengatur Tk. I (II/d)' ? 'selected' : '' }}>Pengatur Tk. I (II/d)</option>
-                                <option value="Penata Muda (III/a)" {{ old('pangkat_golongan') == 'Penata Muda (III/a)' ? 'selected' : '' }}>Penata Muda (III/a)</option>
-                                <option value="Penata Muda Tk. I (III/b)" {{ old('pangkat_golongan') == 'Penata Muda Tk. I (III/b)' ? 'selected' : '' }}>Penata Muda Tk. I (III/b)</option>
-                                <option value="Penata (III/c)" {{ old('pangkat_golongan', 'Penata (III/c)') == 'Penata (III/c)' ? 'selected' : '' }}>Penata (III/c)</option>
-                                <option value="Penata Tk. I (III/d)" {{ old('pangkat_golongan') == 'Penata Tk. I (III/d)' ? 'selected' : '' }}>Penata Tk. I (III/d)</option>
-                                <option value="Pembina (IV/a)" {{ old('pangkat_golongan') == 'Pembina (IV/a)' ? 'selected' : '' }}>Pembina (IV/a)</option>
-                                <option value="Pembina Tk. I (IV/b)" {{ old('pangkat_golongan') == 'Pembina Tk. I (IV/b)' ? 'selected' : '' }}>Pembina Tk. I (IV/b)</option>
-                                <option value="Pembina Utama Muda (IV/c)" {{ old('pangkat_golongan') == 'Pembina Utama Muda (IV/c)' ? 'selected' : '' }}>Pembina Utama Muda (IV/c)</option>
-                                <option value="Pembina Utama Madya (IV/d)" {{ old('pangkat_golongan') == 'Pembina Utama Madya (IV/d)' ? 'selected' : '' }}>Pembina Utama Madya (IV/d)</option>
-                                <option value="Pembina Utama (IV/e)" {{ old('pangkat_golongan') == 'Pembina Utama (IV/e)' ? 'selected' : '' }}>Pembina Utama (IV/e)</option>
+                                @php
+                                    $golOptions = [
+                                        'I/a' => 'Juru Muda (I/a)',
+                                        'I/b' => 'Juru Muda Tk. I (I/b)',
+                                        'I/c' => 'Juru (I/c)',
+                                        'I/d' => 'Juru Tk. I (I/d)',
+                                        'II/a' => 'Pengatur Muda (II/a)',
+                                        'II/b' => 'Pengatur Muda Tk. I (II/b)',
+                                        'II/c' => 'Pengatur (II/c)',
+                                        'II/d' => 'Pengatur Tk. I (II/d)',
+                                        'III/a' => 'Penata Muda (III/a)',
+                                        'III/b' => 'Penata Muda Tk. I (III/b)',
+                                        'III/c' => 'Penata (III/c)',
+                                        'III/d' => 'Penata Tk. I (III/d)',
+                                        'IV/a' => 'Pembina (IV/a)',
+                                        'IV/b' => 'Pembina Tk. I (IV/b)',
+                                        'IV/c' => 'Pembina Utama Muda (IV/c)',
+                                        'IV/d' => 'Pembina Utama Madya (IV/d)',
+                                        'IV/e' => 'Pembina Utama (IV/e)',
+                                    ];
+                                @endphp
+                                @foreach ($golOptions as $kodeGol => $labelGol)
+                                    <option value="{{ $kodeGol }}" {{ old('pangkat_golongan', 'III/a') == $kodeGol ? 'selected' : '' }}>{{ $labelGol }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -149,10 +156,11 @@
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Pendidikan</label>
                             <select name="tingkat_pendidikan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">-- Pilih Jenjang --</option>
-                                <option value="SLTA" {{ old('tingkat_pendidikan') == 'SLTA' ? 'selected' : '' }}>SLTA / Sederajat</option>
-                                <option value="D-III" {{ old('tingkat_pendidikan') == 'D-III' ? 'selected' : '' }}>Diploma III (D-III)</option>
-                                <option value="D-IV" {{ old('tingkat_pendidikan') == 'D-IV' ? 'selected' : '' }}>Diploma IV (D-IV)</option>
-                                <option value="S-1" {{ old('tingkat_pendidikan', 'S-1') == 'S-1' ? 'selected' : '' }}>Strata 1 (S-1)</option>
+                                <option value="SLTA/SMA Sederajat" {{ old('tingkat_pendidikan') == 'SLTA/SMA Sederajat' ? 'selected' : '' }}>SLTA / SMA Sederajat</option>
+                                <option value="Diploma III/Sarjana Muda" {{ old('tingkat_pendidikan') == 'Diploma III/Sarjana Muda' ? 'selected' : '' }}>Diploma III (D-III)</option>
+                                <option value="Diploma IV" {{ old('tingkat_pendidikan') == 'Diploma IV' ? 'selected' : '' }}>Diploma IV (D-IV)</option>
+                                <option value="S-1/Sarjana" {{ old('tingkat_pendidikan', 'S-1/Sarjana') == 'S-1/Sarjana' ? 'selected' : '' }}>Strata 1 (S-1 / Sarjana)</option>
+                                <option value="Profesi" {{ old('tingkat_pendidikan') == 'Profesi' ? 'selected' : '' }}>Profesi</option>
                                 <option value="S-2" {{ old('tingkat_pendidikan') == 'S-2' ? 'selected' : '' }}>Strata 2 (S-2)</option>
                                 <option value="S-3" {{ old('tingkat_pendidikan') == 'S-3' ? 'selected' : '' }}>Strata 3 (S-3)</option>
                             </select>

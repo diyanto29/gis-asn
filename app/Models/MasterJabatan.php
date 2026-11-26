@@ -14,11 +14,20 @@ class MasterJabatan extends Model
 
     protected $fillable = [
         'kode_jabatan',
+        'siasn_id',
+        'kode_cepat',
         'nama_jabatan',
         'jenis_jabatan',
         'jenjang_jabatan',
+        'kelas_jabatan',
+        'bup_usia',
         'rumpun_jabatan',
         'kualifikasi_pendidikan',
+    ];
+
+    protected $casts = [
+        'kelas_jabatan' => 'integer',
+        'bup_usia' => 'integer',
     ];
 
     public function asns(): HasMany
@@ -28,6 +37,6 @@ class MasterJabatan extends Model
 
     public function formasis(): HasMany
     {
-        return $this->hasMany(FormasiJabatan::class, 'nama_jabatan', 'nama_jabatan');
+        return $this->hasMany(FormasiJabatan::class, 'id_master_jabatan');
     }
 }

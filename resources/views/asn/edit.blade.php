@@ -64,14 +64,25 @@
                             <select id="jabatanSelect" name="jabatan" class="searchable-select-jabatan w-full text-sm" required data-placeholder="-- Pilih atau Ketik Nama Jabatan --">
                                 <option value="">-- Pilih atau Ketik Nama Jabatan --</option>
                                 @foreach ($jabatanList as $jbt)
-                                    <option value="{{ $jbt->nama_jabatan }}" data-jenis="{{ $jbt->jenis_jabatan }}" {{ old('jabatan', $asn->jabatan) == $jbt->nama_jabatan ? 'selected' : '' }}>
-                                        {{ $jbt->nama_jabatan }} [{{ ucfirst($jbt->jenis_jabatan) }}]
+                                    <option value="{{ $jbt->nama_jabatan }}" data-jenis="{{ $jbt->jenis_jabatan }}" data-kelas="{{ $jbt->kelas_jabatan }}" data-bup="{{ $jbt->bup_usia }}" {{ strcasecmp(old('jabatan', $asn->jabatan), $jbt->nama_jabatan) === 0 ? 'selected' : '' }}>
+                                        {{ $jbt->nama_jabatan }} [{{ ucfirst($jbt->jenis_jabatan) }}{{ $jbt->kelas_jabatan ? ' • Kls ' . $jbt->kelas_jabatan : '' }}]
                                     </option>
                                 @endforeach
-                                @if(old('jabatan', $asn->jabatan) && !$jabatanList->contains('nama_jabatan', old('jabatan', $asn->jabatan)))
+                                @if(old('jabatan', $asn->jabatan) && !$jabatanList->contains(fn($j) => strcasecmp($j->nama_jabatan, old('jabatan', $asn->jabatan)) === 0))
                                     <option value="{{ old('jabatan', $asn->jabatan) }}" selected>{{ old('jabatan', $asn->jabatan) }}</option>
                                 @endif
                             </select>
+                            @if ($asn->masterJabatan)
+                                <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-slate-500">
+                                    <span class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">{{ $asn->masterJabatan->kode_jabatan }}</span>
+                                    @if ($asn->masterJabatan->kelas_jabatan)
+                                        <span class="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100 text-blue-700">Kelas {{ $asn->masterJabatan->kelas_jabatan }}</span>
+                                    @endif
+                                    @if ($asn->masterJabatan->bup_usia)
+                                        <span class="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700">BUP {{ $asn->masterJabatan->bup_usia }} th</span>
+                                    @endif
+                                </div>
+                            @endif
                             @error('jabatan')
                                 <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
@@ -95,28 +106,29 @@
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Pangkat / Golongan <span class="text-rose-500">*</span></label>
                             <select name="pangkat_golongan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                                 @php
-                                    $golongans = [
-                                        'Juru Muda (I/a)',
-                                        'Juru Muda Tk. I (I/b)',
-                                        'Juru (I/c)',
-                                        'Juru Tk. I (I/d)',
-                                        'Pengatur Muda (II/a)',
-                                        'Pengatur Muda Tk. I (II/b)',
-                                        'Pengatur (II/c)',
-                                        'Pengatur Tk. I (II/d)',
-                                        'Penata Muda (III/a)',
-                                        'Penata Muda Tk. I (III/b)',
-                                        'Penata (III/c)',
-                                        'Penata Tk. I (III/d)',
-                                        'Pembina (IV/a)',
-                                        'Pembina Tk. I (IV/b)',
-                                        'Pembina Utama Muda (IV/c)',
-                                        'Pembina Utama Madya (IV/d)',
-                                        'Pembina Utama (IV/e)',
+                                    $golOptions = [
+                                        'I/a' => 'Juru Muda (I/a)',
+                                        'I/b' => 'Juru Muda Tk. I (I/b)',
+                                        'I/c' => 'Juru (I/c)',
+                                        'I/d' => 'Juru Tk. I (I/d)',
+                                        'II/a' => 'Pengatur Muda (II/a)',
+                                        'II/b' => 'Pengatur Muda Tk. I (II/b)',
+                                        'II/c' => 'Pengatur (II/c)',
+                                        'II/d' => 'Pengatur Tk. I (II/d)',
+                                        'III/a' => 'Penata Muda (III/a)',
+                                        'III/b' => 'Penata Muda Tk. I (III/b)',
+                                        'III/c' => 'Penata (III/c)',
+                                        'III/d' => 'Penata Tk. I (III/d)',
+                                        'IV/a' => 'Pembina (IV/a)',
+                                        'IV/b' => 'Pembina Tk. I (IV/b)',
+                                        'IV/c' => 'Pembina Utama Muda (IV/c)',
+                                        'IV/d' => 'Pembina Utama Madya (IV/d)',
+                                        'IV/e' => 'Pembina Utama (IV/e)',
                                     ];
+                                    $currentGol = old('pangkat_golongan', $asn->pangkat_golongan);
                                 @endphp
-                                @foreach ($golongans as $gol)
-                                    <option value="{{ $gol }}" {{ old('pangkat_golongan', $asn->pangkat_golongan) == $gol ? 'selected' : '' }}>{{ $gol }}</option>
+                                @foreach ($golOptions as $kodeGol => $labelGol)
+                                    <option value="{{ $kodeGol }}" {{ ($currentGol === $kodeGol || $currentGol === $labelGol) ? 'selected' : '' }}>{{ $labelGol }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -156,13 +168,25 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Pendidikan</label>
                             <select name="tingkat_pendidikan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                                @php
+                                    $pendOptions = [
+                                        'SLTA/SMA Sederajat' => 'SLTA / SMA Sederajat',
+                                        'Diploma III/Sarjana Muda' => 'Diploma III (D-III)',
+                                        'Diploma IV' => 'Diploma IV (D-IV)',
+                                        'S-1/Sarjana' => 'Strata 1 (S-1 / Sarjana)',
+                                        'Profesi' => 'Profesi',
+                                        'S-2' => 'Strata 2 (S-2)',
+                                        'S-3' => 'Strata 3 (S-3)',
+                                    ];
+                                    $currentPend = old('tingkat_pendidikan', $asn->tingkat_pendidikan);
+                                @endphp
                                 <option value="">-- Pilih Jenjang --</option>
-                                <option value="SLTA" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'SLTA' ? 'selected' : '' }}>SLTA / Sederajat</option>
-                                <option value="D-III" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'D-III' ? 'selected' : '' }}>Diploma III (D-III)</option>
-                                <option value="D-IV" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'D-IV' ? 'selected' : '' }}>Diploma IV (D-IV)</option>
-                                <option value="S-1" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan ?? 'S-1') == 'S-1' ? 'selected' : '' }}>Strata 1 (S-1)</option>
-                                <option value="S-2" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'S-2' ? 'selected' : '' }}>Strata 2 (S-2)</option>
-                                <option value="S-3" {{ old('tingkat_pendidikan', $asn->tingkat_pendidikan) == 'S-3' ? 'selected' : '' }}>Strata 3 (S-3)</option>
+                                @foreach ($pendOptions as $valPend => $lblPend)
+                                    <option value="{{ $valPend }}" {{ $currentPend == $valPend ? 'selected' : '' }}>{{ $lblPend }}</option>
+                                @endforeach
+                                @if ($currentPend && !array_key_exists($currentPend, $pendOptions))
+                                    <option value="{{ $currentPend }}" selected>{{ $currentPend }}</option>
+                                @endif
                             </select>
                         </div>
                         <div class="sm:col-span-2">

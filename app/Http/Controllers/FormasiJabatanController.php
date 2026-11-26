@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FormasiJabatan;
+use App\Models\MasterJabatan;
 use App\Models\UnitKerja;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class FormasiJabatanController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = FormasiJabatan::with('unitKerja');
+        $query = FormasiJabatan::with(['unitKerja', 'masterJabatan']);
 
         // Filter Tahun Anggaran (Tracing Riwayat)
         $selectedYear = $request->input('tahun', 2026);
@@ -86,7 +87,8 @@ class FormasiJabatanController extends Controller
     public function create(): View
     {
         $units = UnitKerja::orderBy('nama_unit')->get();
-        return view('formasi-jabatan.create', compact('units'));
+        $masterJabatans = MasterJabatan::orderBy('nama_jabatan')->get();
+        return view('formasi-jabatan.create', compact('units', 'masterJabatans'));
     }
 
     /**
@@ -96,6 +98,7 @@ class FormasiJabatanController extends Controller
     {
         $validated = $request->validate([
             'id_unit_kerja' => 'required|exists:unit_kerja,id',
+            'id_master_jabatan' => 'nullable|exists:master_jabatan,id',
             'tahun_anggaran' => 'required|integer|min:2020|max:2035',
             'periode' => 'required|string|max:50',
             'nama_jabatan' => 'required|string|max:150',
@@ -108,6 +111,14 @@ class FormasiJabatanController extends Controller
             'status' => 'required|in:terbuka,terisi,ditutup',
             'keterangan' => 'nullable|string',
         ]);
+
+        // Korelasi otomatis ke master_jabatan jika belum dipilih langsung
+        if (empty($validated['id_master_jabatan'])) {
+            $master = MasterJabatan::whereRaw('LOWER(nama_jabatan) = ?', [strtolower(trim($validated['nama_jabatan']))])->first();
+            if ($master) {
+                $validated['id_master_jabatan'] = $master->id;
+            }
+        }
 
         // Standar Regulasi: Kuota lowong = max(0, Kebutuhan ABK - Bezetting Riil)
         // Jika status ditutup / terisi, kuota efektif menjadi 0
@@ -134,9 +145,10 @@ class FormasiJabatanController extends Controller
      */
     public function edit(int $id): View
     {
-        $formasi = FormasiJabatan::with('unitKerja')->findOrFail($id);
+        $formasi = FormasiJabatan::with(['unitKerja', 'masterJabatan'])->findOrFail($id);
         $units = UnitKerja::orderBy('nama_unit')->get();
-        return view('formasi-jabatan.edit', compact('formasi', 'units'));
+        $masterJabatans = MasterJabatan::orderBy('nama_jabatan')->get();
+        return view('formasi-jabatan.edit', compact('formasi', 'units', 'masterJabatans'));
     }
 
     /**
@@ -148,6 +160,7 @@ class FormasiJabatanController extends Controller
 
         $validated = $request->validate([
             'id_unit_kerja' => 'required|exists:unit_kerja,id',
+            'id_master_jabatan' => 'nullable|exists:master_jabatan,id',
             'tahun_anggaran' => 'required|integer|min:2020|max:2035',
             'periode' => 'required|string|max:50',
             'nama_jabatan' => 'required|string|max:150',
@@ -160,6 +173,14 @@ class FormasiJabatanController extends Controller
             'status' => 'required|in:terbuka,terisi,ditutup',
             'keterangan' => 'nullable|string',
         ]);
+
+        // Korelasi otomatis ke master_jabatan jika belum dipilih langsung
+        if (empty($validated['id_master_jabatan'])) {
+            $master = MasterJabatan::whereRaw('LOWER(nama_jabatan) = ?', [strtolower(trim($validated['nama_jabatan']))])->first();
+            if ($master) {
+                $validated['id_master_jabatan'] = $master->id;
+            }
+        }
 
         // Standar Regulasi: Kuota lowong = max(0, Kebutuhan ABK - Bezetting Riil)
         if ($validated['status'] === 'terbuka') {

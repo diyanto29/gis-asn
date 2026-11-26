@@ -23,17 +23,19 @@ class MasterJabatanController extends Controller
             $query->where('jenis_jabatan', $request->jenis);
         }
 
-        // Pencarian Nama Jabatan / Kode
+        // Pencarian Nama Jabatan / Kode / SIASN
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_jabatan', 'like', "%{$search}%")
                   ->orWhere('kode_jabatan', 'like', "%{$search}%")
+                  ->orWhere('kode_cepat', 'like', "%{$search}%")
+                  ->orWhere('siasn_id', 'like', "%{$search}%")
                   ->orWhere('jenjang_jabatan', 'like', "%{$search}%");
             });
         }
 
-        $jabatanList = $query->withCount('asns')
+        $jabatanList = $query->withCount(['asns', 'formasis'])
             ->orderBy('nama_jabatan')
             ->get();
 
@@ -68,8 +70,12 @@ class MasterJabatanController extends Controller
         $validated = $request->validate([
             'nama_jabatan' => 'required|string|max:255|unique:master_jabatan,nama_jabatan',
             'kode_jabatan' => 'nullable|string|max:50|unique:master_jabatan,kode_jabatan',
+            'siasn_id' => 'nullable|string|max:64|unique:master_jabatan,siasn_id',
+            'kode_cepat' => 'nullable|string|max:30',
             'jenis_jabatan' => 'required|in:pelaksana,fungsional,struktural',
             'jenjang_jabatan' => 'nullable|string|max:100',
+            'kelas_jabatan' => 'nullable|integer|min:1|max:17',
+            'bup_usia' => 'nullable|integer|min:50|max:70',
             'rumpun_jabatan' => 'nullable|string|max:150',
             'kualifikasi_pendidikan' => 'nullable|string',
         ]);
@@ -99,8 +105,12 @@ class MasterJabatanController extends Controller
         $validated = $request->validate([
             'nama_jabatan' => 'required|string|max:255|unique:master_jabatan,nama_jabatan,' . $id,
             'kode_jabatan' => 'nullable|string|max:50|unique:master_jabatan,kode_jabatan,' . $id,
+            'siasn_id' => 'nullable|string|max:64|unique:master_jabatan,siasn_id,' . $id,
+            'kode_cepat' => 'nullable|string|max:30',
             'jenis_jabatan' => 'required|in:pelaksana,fungsional,struktural',
             'jenjang_jabatan' => 'nullable|string|max:100',
+            'kelas_jabatan' => 'nullable|integer|min:1|max:17',
+            'bup_usia' => 'nullable|integer|min:50|max:70',
             'rumpun_jabatan' => 'nullable|string|max:150',
             'kualifikasi_pendidikan' => 'nullable|string',
         ]);
@@ -108,10 +118,12 @@ class MasterJabatanController extends Controller
         $oldName = $jabatan->nama_jabatan;
         $jabatan->update($validated);
 
-        // Jika nama jabatan diperbarui, sinkronkan nama di asn_master yang berelasi
+        // Jika nama jabatan diperbarui, sinkronkan nama di asn_master & formasi_jabatan yang berelasi
         if ($oldName !== $validated['nama_jabatan']) {
             AsnMaster::where('id_master_jabatan', $id)
                 ->update(['jabatan' => $validated['nama_jabatan'], 'jenis_jabatan' => $validated['jenis_jabatan']]);
+            FormasiJabatan::where('id_master_jabatan', $id)
+                ->update(['nama_jabatan' => $validated['nama_jabatan'], 'jenis_jabatan' => $validated['jenis_jabatan']]);
         }
 
         return redirect()->route('master-jabatan.index')
