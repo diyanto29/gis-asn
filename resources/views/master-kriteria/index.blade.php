@@ -157,6 +157,23 @@
                                     <div class="font-bold text-slate-900">{{ $k->nama_kriteria }}</div>
                                     <div class="text-[11px] text-slate-400 font-mono">Parameter Key: <code>{{ $k->parameter_key ?? '-' }}</code></div>
                                     <div class="text-xs text-slate-500 mt-0.5">{{ $k->keterangan ?? '-' }}</div>
+                                    @if (str_contains((string)$k->parameter_key, 'masa_jabatan'))
+                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-semibold">
+                                            <i data-lucide="git-branch" class="w-3 h-3"></i>
+                                            Subkriteria Aktif: TMT Jabatan &ge; {{ $mutasiRules['min_masa_jabatan_tahun'] ?? 2 }} Tahun (Mutlak, Dinamis)
+                                        </div>
+                                    @elseif (str_contains((string)$k->parameter_key, 'masa_kerja'))
+                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-semibold">
+                                            <i data-lucide="git-branch" class="w-3 h-3"></i>
+                                            Subkriteria Aktif: TMT CPNS &gt; {{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }} Tahun untuk Keluar Kabupaten XYZ (Dinamis)
+                                        </div>
+                                    @elseif (str_contains((string)$k->parameter_key, 'kebutuhan_unit_asal'))
+                                        <div class="mt-1.5 inline-flex flex-wrap items-center gap-1.5 text-[10px] font-semibold">
+                                            <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Lengkap (100% / Skor 3)</span>
+                                            <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">Cukup (&ge;50% / Skor 2)</span>
+                                            <span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">Kurang (&lt;50% / Skor 1)</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
                                     @if ($k->atribut === 'cost')

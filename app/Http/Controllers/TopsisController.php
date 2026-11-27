@@ -268,17 +268,20 @@ class TopsisController extends Controller
                     'hemat_jarak_km' => $hematJarak,
                     'masa_jabatan_tahun' => $kelayakan['masa_jabatan_tahun'],
                     'masa_kerja_tahun' => $kelayakan['masa_kerja_tahun'],
+                    'masa_kerja_keluar_ok' => $kelayakan['masa_kerja_keluar_ok'],
+                    'min_masa_kerja_keluar_tahun' => $kelayakan['min_masa_kerja_keluar_tahun'],
                     'kuota_cocok' => $kuotaCocok,
                     'formasi_cocok' => $formasiLabels,
                     'unit_asal_eval' => $unitAsalEval,
                     'kondisi_unit_asal_skor' => $unitAsalEval['skor'],
 
-                    // Matriks 5 Kriteria TOPSIS
+                    // Matriks 4 Kriteria TOPSIS Mode 2 (Dinas to PNS):
+                    // Syarat mutlak Poin 1-3 (matching jabatan/pendidikan, formasi tersedia, masa jabatan >= min)
+                    // sudah disaring ketat di atas sebelum masuk matriks TOPSIS.
                     'C1' => (float)$jarakKeDinas,                    // Cost: Jarak
-                    'C2' => (float)$kelayakan['masa_jabatan_tahun'], // Benefit: Masa Jabatan
-                    'C3' => (float)$kelayakan['masa_kerja_tahun'],   // Benefit: Masa Kerja
-                    'C4' => (float)$kuotaCocok,                      // Benefit: Formasi Jabatan Cocok
-                    'C5' => (float)$unitAsalEval['skor'],            // Benefit: Kebutuhan Pegawai Unit Asal
+                    'C2' => (float)$kelayakan['masa_jabatan_tahun'], // Benefit: Masa Jabatan (TMT Jabatan)
+                    'C3' => (float)$kelayakan['masa_kerja_tahun'],   // Benefit: Masa Kerja (TMT CPNS)
+                    'C4' => (float)$unitAsalEval['skor'],            // Benefit: Kebutuhan Pegawai Unit Saat Ini (Unit Asal)
                 ];
 
                 $asnDetails[$asn->id] = $asn;
