@@ -189,9 +189,10 @@
                                 <span>Lihat Rute</span>
                             </button>
 
+                            {{-- HIDE SEMENTARA TOMBOL AJUKAN MUTASI SESUAI INSTRUKSI --}}
                             <button type="button"
                                 onclick="openModalAjukan({{ $unit['id'] }}, '{{ addslashes($unit['nama']) }}', {{ $item['rank'] }}, {{ $item['v_value'] }}, {{ $unit['c1_jarak'] }}, {{ $unit['c3_hemat'] }}, {{ $unit['kuota'] }})"
-                                class="px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                                class="hidden px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold transition items-center gap-1.5 shadow-xs">
                                 <i data-lucide="send" class="w-3.5 h-3.5"></i>
                                 <span>Ajukan Mutasi</span>
                             </button>
