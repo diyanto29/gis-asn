@@ -5,7 +5,7 @@ title SIMUTASI-GIS - Laragon Launcher
 cd /d "%~dp0"
 
 echo ============================================================
-echo   SIMUTASI-GIS (Pemetaan Spasial ^& Rekomendasi Mutasi PNS)
+echo   SIMUTASI-GIS - Pemetaan Spasial ^& Rekomendasi Mutasi PNS
 echo   Auto Setup ^& Runner untuk Windows Laragon
 echo ============================================================
 echo.
@@ -23,7 +23,6 @@ for %%D in (C D E F) do (
 if defined LARAGON_DIR (
     echo [INFO] Laragon terdeteksi di: !LARAGON_DIR!
 
-    :: Tambahkan PHP terbaru dari Laragon jika php belum ada di PATH
     where php >nul 2>&1
     if errorlevel 1 (
         set "PHP_DIR="
@@ -33,13 +32,11 @@ if defined LARAGON_DIR (
         if defined PHP_DIR set "PATH=!PHP_DIR!;!PATH!"
     )
 
-    :: Tambahkan Composer dari Laragon jika belum ada di PATH
     where composer >nul 2>&1
     if errorlevel 1 (
         if exist "!LARAGON_DIR!\bin\composer" set "PATH=!LARAGON_DIR!\bin\composer;!PATH!"
     )
 
-    :: Tambahkan MySQL / MariaDB dari Laragon jika belum ada di PATH
     where mysql >nul 2>&1
     if errorlevel 1 (
         set "MYSQL_BIN="
@@ -67,10 +64,9 @@ if errorlevel 1 (
 for /f "tokens=2 delims= " %%V in ('php -v ^| findstr /b "PHP "') do set "PHP_VER=%%V"
 echo [OK]   PHP terdeteksi: v!PHP_VER!
 
-:: Cek minimal PHP 8.3
 php -r "exit(version_compare(PHP_VERSION, '8.3.0', '>=') ? 0 : 1);"
 if errorlevel 1 (
-    echo [WARN] Project ini membutuhkan PHP ^>= 8.3 (saat ini: v!PHP_VER!).
+    echo [WARN] Project ini membutuhkan PHP ^>= 8.3 - versi saat ini: v!PHP_VER!
     echo        Di Laragon: klik kanan tray icon ^> PHP ^> pilih versi 8.3 / 8.4.
     echo.
 )
@@ -115,7 +111,7 @@ if not exist ".env" (
         echo.
         echo MAIL_MAILER=log
     ) > .env
-    echo [OK]   File .env berhasil dibuat (DB: simutasi_asn, user: root, pass: kosong).
+    echo [OK]   File .env berhasil dibuat - DB: simutasi_asn, user: root, pass: kosong.
 ) else (
     echo [OK]   File .env sudah tersedia.
 )
@@ -153,7 +149,7 @@ if errorlevel 1 (
 :: ------------------------------------------------------------
 :: 6. Cek koneksi MySQL Laragon & auto-create / import database
 :: ------------------------------------------------------------
-echo [INFO] Mengecek koneksi MySQL/MariaDB Laragon (127.0.0.1:3306)...
+echo [INFO] Mengecek koneksi MySQL/MariaDB Laragon di 127.0.0.1:3306...
 
 :CHECK_MYSQL
 php -r "$fp=@fsockopen('127.0.0.1', 3306, $e, $s, 2); if($fp){fclose($fp); exit(0);} exit(1);"
@@ -173,7 +169,7 @@ if errorlevel 1 (
 echo [OK]   MySQL/MariaDB aktif di 127.0.0.1:3306.
 
 :: Baca konfigurasi DB dari .env, buat database jika belum ada, dan cek apakah masih kosong
-php -r "$e=[]; foreach(file('.env',6) as $l){ $l=trim($l); if($l==='' or $l[0]==='#' or strpos($l,'=')===false) continue; list($k,$v)=explode('=',$l,2); $e[trim($k)]=trim($v,' \"\''); } $h=$e['DB_HOST']??'127.0.0.1'; $p=$e['DB_PORT']??'3306'; $d=$e['DB_DATABASE']??'simutasi_asn'; $u=$e['DB_USERNAME']??'root'; $pw=$e['DB_PASSWORD']??''; try { $pdo=new PDO('mysql:host='.$h.';port='.$p.';charset=utf8mb4',$u,$pw,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]); $pdo->exec('CREATE DATABASE IF NOT EXISTS `'.$d.'` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); $pdo->exec('USE `'.$d.'`'); echo count($pdo->query('SHOW TABLES')->fetchAll())===0 ? 'EMPTY_DB' : 'HAS_TABLES'; } catch(Throwable $ex) { fwrite(STDERR, $ex->getMessage()); exit(2); }" > "%TEMP%\simutasi_db_state.tmp"
+php -r "$e=[]; foreach(file('.env',6) as $l){ $l=trim($l); if($l==='' or $l[0]==='#' or strpos($l,'=')===false) continue; list($k,$v)=explode('=',$l,2); $e[trim($k)]=trim($v,' '.chr(34).chr(39)); } $h=$e['DB_HOST']??'127.0.0.1'; $p=$e['DB_PORT']??'3306'; $d=$e['DB_DATABASE']??'simutasi_asn'; $u=$e['DB_USERNAME']??'root'; $pw=$e['DB_PASSWORD']??''; try { $pdo=new PDO('mysql:host='.$h.';port='.$p.';charset=utf8mb4',$u,$pw,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]); $pdo->exec('CREATE DATABASE IF NOT EXISTS `'.$d.'` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); $pdo->exec('USE `'.$d.'`'); echo count($pdo->query('SHOW TABLES')->fetchAll())===0 ? 'EMPTY_DB' : 'HAS_TABLES'; } catch(Throwable $ex) { fwrite(STDERR, $ex->getMessage()); exit(2); }" > "%TEMP%\simutasi_db_state.tmp"
 
 if errorlevel 1 (
     echo [ERROR] Gagal konek ke MySQL! Cek DB_USERNAME / DB_PASSWORD di file .env.
@@ -185,31 +181,35 @@ if errorlevel 1 (
 set /p DB_STATE=<"%TEMP%\simutasi_db_state.tmp"
 del "%TEMP%\simutasi_db_state.tmp" >nul 2>&1
 
-if "!DB_STATE!"=="EMPTY_DB" (
-    if exist "database\simutasi_asn_full.sql" (
-        echo [INFO] Database baru/kosong. Mengimpor database\simutasi_asn_full.sql...
-        where mysql >nul 2>&1
-        if not errorlevel 1 (
-            php -r "$e=[]; foreach(file('.env',6) as $l){ $l=trim($l); if($l==='' or $l[0]==='#' or strpos($l,'=')===false) continue; list($k,$v)=explode('=',$l,2); $e[trim($k)]=trim($v,' \"\''); } $h=$e['DB_HOST']??'127.0.0.1'; $p=$e['DB_PORT']??'3306'; $d=$e['DB_DATABASE']??'simutasi_asn'; $u=$e['DB_USERNAME']??'root'; $pw=$e['DB_PASSWORD']??''; $pwArg=strlen($pw)>0 ? '-p'.escapeshellarg($pw) : ''; passthru('mysql -h '.escapeshellarg($h).' -P '.escapeshellarg($p).' -u '.escapeshellarg($u).' '.$pwArg.' '.escapeshellarg($d).' < database\\simutasi_asn_full.sql', $rc); exit($rc);"
-            if not errorlevel 1 (
-                echo [OK]   Import SQL selesai!
-            ) else (
-                echo [WARN] Import via mysql CLI gagal, fallback ke php artisan migrate...
-                php artisan migrate --force
-            )
-        ) else (
-            echo [INFO] mysql CLI tidak ditemukan, menjalankan php artisan migrate --force...
-            php artisan migrate --force
-        )
-    ) else (
-        echo [INFO] Menjalankan migrasi database...
-        php artisan migrate --force
-    )
-) else (
-    echo [OK]   Database sudah berisi tabel. Mengecek migrasi terbaru...
+if "!DB_STATE!"=="EMPTY_DB" goto IMPORT_SQL
+echo [OK]   Database sudah berisi tabel. Mengecek migrasi terbaru...
+php artisan migrate --force
+goto CLEAR_CACHE
+
+:IMPORT_SQL
+if not exist "database\simutasi_asn_full.sql" (
+    echo [INFO] File SQL dump tidak ditemukan, menjalankan migrasi database...
     php artisan migrate --force
+    goto CLEAR_CACHE
 )
 
+echo [INFO] Database baru/kosong. Mengimpor database\simutasi_asn_full.sql...
+where mysql >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] mysql CLI tidak ditemukan, menjalankan php artisan migrate --force...
+    php artisan migrate --force
+    goto CLEAR_CACHE
+)
+
+php -r "$e=[]; foreach(file('.env',6) as $l){ $l=trim($l); if($l==='' or $l[0]==='#' or strpos($l,'=')===false) continue; list($k,$v)=explode('=',$l,2); $e[trim($k)]=trim($v,' '.chr(34).chr(39)); } $h=$e['DB_HOST']??'127.0.0.1'; $p=$e['DB_PORT']??'3306'; $d=$e['DB_DATABASE']??'simutasi_asn'; $u=$e['DB_USERNAME']??'root'; $pw=$e['DB_PASSWORD']??''; $pwArg=strlen($pw)>0 ? '-p'.escapeshellarg($pw) : ''; passthru('mysql -h '.escapeshellarg($h).' -P '.escapeshellarg($p).' -u '.escapeshellarg($u).' '.$pwArg.' '.escapeshellarg($d).' < database\\simutasi_asn_full.sql', $rc); exit($rc);"
+if errorlevel 1 (
+    echo [WARN] Import via mysql CLI gagal, fallback ke php artisan migrate...
+    php artisan migrate --force
+) else (
+    echo [OK]   Import SQL selesai!
+)
+
+:CLEAR_CACHE
 :: ------------------------------------------------------------
 :: 7. Bersihkan cache Laravel agar tidak bentrok antar OS
 :: ------------------------------------------------------------
