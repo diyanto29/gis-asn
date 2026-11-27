@@ -460,6 +460,19 @@
                         <i data-lucide="user-cog" class="w-4 h-4 shrink-0 {{ request()->routeIs('users.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span>Manajemen User</span>
                     </a>
+
+                    @php
+                        $pendingLokasiCount = \Illuminate\Support\Facades\Schema::hasTable('pengajuan_ubah_lokasi')
+                            ? \App\Models\PengajuanUbahLokasi::where('status', 'pending')->count()
+                            : 0;
+                    @endphp
+                    <a href="{{ route('verifikasi-lokasi.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('verifikasi-lokasi.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="map-pin-check" class="w-4 h-4 shrink-0 {{ request()->routeIs('verifikasi-lokasi.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Verifikasi Lokasi</span>
+                        @if($pendingLokasiCount > 0)
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white">{{ $pendingLokasiCount }}</span>
+                        @endif
+                    </a>
                 </div>
             </div>
             @elseif(Auth::check() && Auth::user()->isAsn())

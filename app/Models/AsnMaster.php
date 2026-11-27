@@ -83,6 +83,11 @@ class AsnMaster extends Model
         return $this->hasMany(RekomendasiMutasi::class, 'id_asn');
     }
 
+    public function pengajuanLokasi(): HasMany
+    {
+        return $this->hasMany(PengajuanUbahLokasi::class, 'id_asn');
+    }
+
     public function getNamaLengkapAttribute(): string
     {
         $depan = $this->gelar_depan ? $this->gelar_depan . ' ' : '';

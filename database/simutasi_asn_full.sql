@@ -801,7 +801,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -829,7 +829,8 @@ INSERT INTO `migrations` VALUES
 (15,'2026_11_26_000001_enhance_master_jabatan_and_formasi_relations',6),
 (16,'2026_11_27_000001_update_master_jabatan_unique_nama_jenjang',7),
 (17,'2026_11_27_000002_sync_topsis_kriteria_five_criteria',8),
-(18,'2026_11_27_000003_align_mode1_five_and_mode2_four_topsis_criteria',9);
+(18,'2026_11_27_000003_align_mode1_five_and_mode2_four_topsis_criteria',9),
+(19,'2026_11_27_000004_create_pengajuan_ubah_lokasi_table',10);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -858,6 +859,60 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `password_reset_tokens` WRITE;
 /*!40000 ALTER TABLE `password_reset_tokens` DISABLE KEYS */;
 /*!40000 ALTER TABLE `password_reset_tokens` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `pengajuan_ubah_lokasi`
+--
+
+DROP TABLE IF EXISTS `pengajuan_ubah_lokasi`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pengajuan_ubah_lokasi` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_asn` bigint(20) unsigned NOT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `lat_lama` decimal(10,7) DEFAULT NULL,
+  `lng_lama` decimal(10,7) DEFAULT NULL,
+  `alamat_lama` text DEFAULT NULL,
+  `jarak_lama_km` decimal(8,2) DEFAULT NULL,
+  `lat_baru` decimal(10,7) NOT NULL,
+  `lng_baru` decimal(10,7) NOT NULL,
+  `provinsi_baru` varchar(100) DEFAULT NULL,
+  `kabupaten_kota_baru` varchar(100) DEFAULT NULL,
+  `kecamatan_baru` varchar(100) DEFAULT NULL,
+  `kelurahan_desa_baru` varchar(100) DEFAULT NULL,
+  `alamat_detail_baru` text DEFAULT NULL,
+  `jarak_baru_km` decimal(8,2) DEFAULT NULL,
+  `zona_baru` varchar(20) DEFAULT NULL,
+  `ktp_path` varchar(255) DEFAULT NULL,
+  `status` enum('pending','disetujui','ditolak') NOT NULL DEFAULT 'pending',
+  `catatan_admin` text DEFAULT NULL,
+  `verified_by` bigint(20) unsigned DEFAULT NULL,
+  `verified_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `pengajuan_ubah_lokasi_user_id_foreign` (`user_id`),
+  KEY `pengajuan_ubah_lokasi_verified_by_foreign` (`verified_by`),
+  KEY `pengajuan_ubah_lokasi_id_asn_status_index` (`id_asn`,`status`),
+  KEY `pengajuan_ubah_lokasi_status_index` (`status`),
+  CONSTRAINT `pengajuan_ubah_lokasi_id_asn_foreign` FOREIGN KEY (`id_asn`) REFERENCES `asn_master` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `pengajuan_ubah_lokasi_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `pengajuan_ubah_lokasi_verified_by_foreign` FOREIGN KEY (`verified_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `pengajuan_ubah_lokasi`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `pengajuan_ubah_lokasi` WRITE;
+/*!40000 ALTER TABLE `pengajuan_ubah_lokasi` DISABLE KEYS */;
+/*!40000 ALTER TABLE `pengajuan_ubah_lokasi` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -1153,4 +1208,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-11-27 23:20:23
+-- Dump completed on 2026-11-27 23:37:02

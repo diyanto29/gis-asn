@@ -13,6 +13,7 @@ use App\Http\Controllers\SwapMatchController;
 use App\Http\Controllers\TopsisController;
 use App\Http\Controllers\UnitKerjaController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VerifikasiLokasiController;
 use App\Http\Controllers\WilayahController;
 use Illuminate\Support\Facades\Route;
 
@@ -85,6 +86,16 @@ Route::middleware('auth')->group(function () {
         // Pembaruan Titik Domisili (Admin atau ASN yang bersangkutan)
         Route::get('/{id}/edit-lokasi', [AsnController::class, 'editLokasi'])->name('edit-lokasi');
         Route::put('/{id}/update-lokasi', [AsnController::class, 'updateLokasi'])->name('update-lokasi');
+    });
+
+    // Akses Dokumen KTP Pengajuan Lokasi (Terproteksi RBAC: Admin atau PNS pemilik)
+    Route::get('/verifikasi-lokasi/{id}/ktp', [VerifikasiLokasiController::class, 'showKtp'])->name('verifikasi-lokasi.ktp');
+
+    // Modul Verifikasi & Approval Perubahan Pin Titik Lokasi (Khusus Role: Admin BKPSDM)
+    Route::prefix('verifikasi-lokasi')->name('verifikasi-lokasi.')->middleware('role:admin')->group(function () {
+        Route::get('/', [VerifikasiLokasiController::class, 'index'])->name('index');
+        Route::post('/{id}/approve', [VerifikasiLokasiController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [VerifikasiLokasiController::class, 'reject'])->name('reject');
     });
 
     // Modul Unit Kerja & Kuota Formasi

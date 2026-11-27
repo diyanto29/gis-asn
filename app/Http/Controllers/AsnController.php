@@ -6,6 +6,7 @@ use App\Models\AsnMaster;
 use App\Models\FormasiJabatan;
 use App\Models\MasterJabatan;
 use App\Models\MasterLokasi;
+use App\Models\PengajuanUbahLokasi;
 use App\Models\UnitKerja;
 use App\Models\User;
 use App\Services\HaversineService;
@@ -333,7 +334,13 @@ class AsnController extends Controller
         }
 
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
-        return view('asn.edit-lokasi', compact('asn', 'kecamatans'));
+        $riwayatLokasi = PengajuanUbahLokasi::with('verifikator')
+            ->where('id_asn', $asn->id)
+            ->latest()
+            ->get();
+        $pendingPengajuan = $riwayatLokasi->firstWhere('status', 'pending');
+
+        return view('asn.edit-lokasi', compact('asn', 'kecamatans', 'riwayatLokasi', 'pendingPengajuan'));
     }
 
     public function updateLokasi(Request $request, int $id): RedirectResponse
@@ -346,7 +353,7 @@ class AsnController extends Controller
             abort(403, 'Akses Ditolak: Anda hanya memiliki izin memperbarui koordinat domisili profil Anda sendiri.');
         }
 
-        $validated = $request->validate([
+        $rules = [
             'domisili_lat' => 'required|numeric|between:-90,90',
             'domisili_lng' => 'required|numeric|between:-180,180',
             'provinsi' => 'nullable|string|max:100',
@@ -357,29 +364,108 @@ class AsnController extends Controller
             'alamat_detail' => 'nullable|string',
             'status_permohonan_mutasi' => 'nullable|boolean',
             'alasan_mutasi' => 'nullable|string',
+            'ktp_file' => $user->isAsn()
+                ? 'required|file|mimes:jpg,jpeg,png,pdf|max:5120'
+                : 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ];
+
+        $validated = $request->validate($rules, [
+            'ktp_file.required' => 'Upload foto/scan KTP wajib dilampirkan untuk verifikasi perubahan titik lokasi.',
+            'ktp_file.mimes' => 'Format file KTP harus JPG, PNG, atau PDF.',
+            'ktp_file.max' => 'Ukuran file KTP maksimal 5 MB.',
         ]);
 
         // Hitung jarak baru ke unit kerja saat ini
         $jarak = $this->haversine->calculateDistance(
-            $validated['domisili_lat'],
-            $validated['domisili_lng'],
-            $asn->unitSaatIni->kantor_lat,
-            $asn->unitSaatIni->kantor_lng
+            (float)$validated['domisili_lat'],
+            (float)$validated['domisili_lng'],
+            (float)$asn->unitSaatIni->kantor_lat,
+            (float)$asn->unitSaatIni->kantor_lng
         );
 
         $zona = $this->haversine->classifyZone($jarak);
 
-        $asn->update(array_merge($validated, [
-            'jarak_ke_kantor_km' => $jarak,
-            'zona_jarak' => $zona,
-        ]));
-
-        if ($user->isAsn()) {
-            return redirect()->route('asn.edit-lokasi', $asn->id)
-                ->with('success', 'Titik domisili dan kalkulasi jarak spasial berhasil diperbarui.');
+        // Simpan file KTP ke storage lokal privat (hanya bisa diakses Admin & pemilik via route terproteksi)
+        $ktpPath = null;
+        if ($request->hasFile('ktp_file')) {
+            $ktpPath = $request->file('ktp_file')->store('ktp_lokasi', 'local');
         }
 
+        // Snapshot alamat lama sebelum perubahan
+        $alamatLamaParts = array_filter([
+            $asn->alamat_detail,
+            $asn->kelurahan_desa,
+            $asn->kecamatan ? 'Kec. ' . $asn->kecamatan : null,
+            $asn->kabupaten_kota,
+            $asn->provinsi,
+        ]);
+        $alamatLama = implode(', ', $alamatLamaParts) ?: '-';
+
+        // FLOW PNS: Masuk antrean approval Admin BKPSDM (koordinat asn_master belum berubah sampai disetujui)
+        if ($user->isAsn()) {
+            PengajuanUbahLokasi::create([
+                'id_asn' => $asn->id,
+                'user_id' => $user->id,
+                'lat_lama' => $asn->domisili_lat,
+                'lng_lama' => $asn->domisili_lng,
+                'alamat_lama' => $alamatLama,
+                'jarak_lama_km' => $asn->jarak_ke_kantor_km,
+                'lat_baru' => (float)$validated['domisili_lat'],
+                'lng_baru' => (float)$validated['domisili_lng'],
+                'provinsi_baru' => $validated['provinsi'] ?? $asn->provinsi,
+                'kabupaten_kota_baru' => $validated['kabupaten_kota'] ?? $asn->kabupaten_kota,
+                'kecamatan_baru' => $validated['kecamatan'] ?? $asn->kecamatan,
+                'kelurahan_desa_baru' => $validated['kelurahan_desa'] ?? $asn->kelurahan_desa,
+                'alamat_detail_baru' => $validated['alamat_detail'] ?? $asn->alamat_detail,
+                'jarak_baru_km' => $jarak,
+                'zona_baru' => $zona,
+                'ktp_path' => $ktpPath,
+                'status' => 'pending',
+            ]);
+
+            return redirect()->route('asn.edit-lokasi', $asn->id)
+                ->with('success', 'Pengajuan perubahan pin titik lokasi beserta bukti KTP berhasil dikirim! Menunggu verifikasi Admin BKPSDM.');
+        }
+
+        // FLOW ADMIN: Langsung perbarui koordinat & catat otomatis di riwayat sebagai disetujui
+        DB::transaction(function () use ($asn, $user, $validated, $jarak, $zona, $alamatLama, $ktpPath) {
+            PengajuanUbahLokasi::create([
+                'id_asn' => $asn->id,
+                'user_id' => $user->id,
+                'lat_lama' => $asn->domisili_lat,
+                'lng_lama' => $asn->domisili_lng,
+                'alamat_lama' => $alamatLama,
+                'jarak_lama_km' => $asn->jarak_ke_kantor_km,
+                'lat_baru' => (float)$validated['domisili_lat'],
+                'lng_baru' => (float)$validated['domisili_lng'],
+                'provinsi_baru' => $validated['provinsi'] ?? $asn->provinsi,
+                'kabupaten_kota_baru' => $validated['kabupaten_kota'] ?? $asn->kabupaten_kota,
+                'kecamatan_baru' => $validated['kecamatan'] ?? $asn->kecamatan,
+                'kelurahan_desa_baru' => $validated['kelurahan_desa'] ?? $asn->kelurahan_desa,
+                'alamat_detail_baru' => $validated['alamat_detail'] ?? $asn->alamat_detail,
+                'jarak_baru_km' => $jarak,
+                'zona_baru' => $zona,
+                'ktp_path' => $ktpPath,
+                'status' => 'disetujui',
+                'catatan_admin' => 'Diperbarui langsung oleh Admin BKPSDM.',
+                'verified_by' => $user->id,
+                'verified_at' => now(),
+            ]);
+
+            $asn->update([
+                'domisili_lat' => (float)$validated['domisili_lat'],
+                'domisili_lng' => (float)$validated['domisili_lng'],
+                'provinsi' => $validated['provinsi'] ?? $asn->provinsi,
+                'kabupaten_kota' => $validated['kabupaten_kota'] ?? $asn->kabupaten_kota,
+                'kecamatan' => $validated['kecamatan'] ?? $asn->kecamatan,
+                'kelurahan_desa' => $validated['kelurahan_desa'] ?? $asn->kelurahan_desa,
+                'alamat_detail' => $validated['alamat_detail'] ?? $asn->alamat_detail,
+                'jarak_ke_kantor_km' => $jarak,
+                'zona_jarak' => $zona,
+            ]);
+        });
+
         return redirect()->route('asn.show', $asn->id)
-            ->with('success', 'Titik domisili dan kalkulasi jarak spasial berhasil diperbarui.');
+            ->with('success', 'Titik domisili dan kalkulasi jarak spasial berhasil diperbarui dan dicatat di riwayat.');
     }
 }
