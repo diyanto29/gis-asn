@@ -156,6 +156,11 @@ class TopsisController extends Controller
                         $altInfo = $alternatives['unit_' . $altId] ?? null;
                         $item['jarak_baru_km'] = $altInfo['jarak_baru_km'] ?? 0;
                         $item['hemat_jarak_km'] = $altInfo['hemat_jarak_km'] ?? 0;
+                        $item['masa_jabatan_tahun'] = $kelayakan['masa_jabatan_tahun'];
+                        $item['masa_kerja_tahun'] = $kelayakan['masa_kerja_tahun'];
+                        $item['masa_kerja_keluar_ok'] = $kelayakan['masa_kerja_keluar_ok'];
+                        $item['min_masa_jabatan_tahun'] = $kelayakan['min_masa_jabatan_tahun'];
+                        $item['min_masa_kerja_keluar_tahun'] = $kelayakan['min_masa_kerja_keluar_tahun'];
                         $item['kebutuhan_staf'] = $altInfo['kuota_cocok'] ?? 0;
                         $item['has_formasi'] = ($altInfo['kuota_cocok'] ?? 0) > 0 ? 1 : 0;
                         $item['formasi_cocok'] = $altInfo['formasi_cocok'] ?? [];
@@ -180,9 +185,13 @@ class TopsisController extends Controller
 
     /**
      * =========================================================================
-     * MODE 2: REKOMENDASI SPK "DINAS TO PNS"
-     * Skenario: Suatu Dinas/Unit Kerja mencari kandidat ASN terbaik se-kabupaten
-     * yang memenuhi syarat mutlak (Poin 1-3) dan dirangking dengan 5 kriteria TOPSIS.
+     * MODE 2: REKOMENDASI SPK "DINAS TO PNS" (4 KRITERIA TOPSIS)
+     * Skenario: Pilih Dinas A -> Menampilkan & merangking PNS yang bertugas di
+     *           Dinas A (id_unit_saat_ini = Dinas A) berdasarkan 4 kriteria:
+     *           C1: Jarak Domisili PNS A ke Kantor Dinas A
+     *           C2: Masa Jabatan (TMT Jabatan, syarat mutlak >= batas minimal)
+     *           C3: Masa Kerja (TMT CPNS, subkriteria batas keluar Kab. XYZ)
+     *           C4: Kebutuhan Pegawai Unit Kerja Saat Ini (Dinas A: Lengkap/Cukup/Kurang)
      * =========================================================================
      */
     public function dinasToPns(Request $request): View
@@ -201,62 +210,48 @@ class TopsisController extends Controller
         $unitTujuanEval = null;
         $openFormasiUnit = collect();
         $filterSummary = null;
+        $rules = MutasiRuleService::getRules();
 
         if ($selectedUnitId) {
             $selectedUnit = UnitKerja::findOrFail($selectedUnitId);
             $unitStats = $this->mutasiRule->getAllUnitStats();
             $unitTujuanEval = $this->mutasiRule->evaluasiUnitAsal($selectedUnit, $unitStats);
 
-            // Formasi terbuka di Dinas yang dipilih
+            // Formasi terbuka di Dinas ini (untuk informasi kapasitas unit)
             $openFormasiUnit = FormasiJabatan::with('masterJabatan')
                 ->where('id_unit_kerja', $selectedUnit->id)
                 ->where('kuota_lowong', '>', 0)
                 ->get();
 
-            // Kandidat awal: seluruh ASN dari unit lain yang punya koordinat domisili
+            // PERBAIKAN: Ambil PNS yang SAAT INI BERTUGAS DI DINAS TERPILIH (Dinas A -> PNS A)
             $candidateAsns = AsnMaster::with(['unitSaatIni', 'masterJabatan'])
-                ->where('id_unit_saat_ini', '!=', $selectedUnit->id)
+                ->where('id_unit_saat_ini', $selectedUnit->id)
                 ->whereNotNull('domisili_lat')
                 ->whereNotNull('domisili_lng')
+                ->orderBy('nama')
                 ->get();
 
             $alternatives = [];
             $asnDetails = [];
             $skippedMasaJabatan = 0;
-            $skippedFormasi = 0;
 
             foreach ($candidateAsns as $asn) {
-                // POIN 3 MUTLAK: Masa jabatan >= 2 tahun
+                // POIN 3 MUTLAK: Masa jabatan wajib >= batas minimal (default 2 tahun, dinamis)
                 $kelayakan = $this->mutasiRule->cekKelayakanAsn($asn);
                 if (!$kelayakan['masa_jabatan_ok']) {
                     $skippedMasaJabatan++;
                     continue;
                 }
 
-                // POIN 1 & 2 MUTLAK: Kecocokan jabatan (Fungsional exact / Pelaksana sama kelas) & kuota > 0
-                $matchingFormasi = $this->mutasiRule->cariFormasiCocok($asn, $openFormasiUnit);
-                if ($matchingFormasi->isEmpty()) {
-                    $skippedFormasi++;
-                    continue;
-                }
-
-                $jarakKeDinas = $this->haversine->calculateDistance(
-                    (float)$asn->domisili_lat,
-                    (float)$asn->domisili_lng,
-                    (float)$selectedUnit->kantor_lat,
-                    (float)$selectedUnit->kantor_lng
-                );
-
-                $jarakLama = (float)($asn->jarak_ke_kantor_km ?: 15.0);
-                $hematJarak = round(max(0, $jarakLama - $jarakKeDinas), 2);
-                $kuotaCocok = (int)$matchingFormasi->sum('kuota_lowong');
-                $formasiLabels = $matchingFormasi->map(function ($f) {
-                    $kls = $f->masterJabatan?->kelas_jabatan ? " [Kls {$f->masterJabatan->kelas_jabatan}]" : '';
-                    return "{$f->nama_jabatan}{$kls} ({$f->kuota_lowong} lowong)";
-                })->values()->toArray();
-
-                // POIN 4 (Hak Prerogatif Pimpinan — C5): Kebutuhan Pegawai Unit Kerja Asal (%)
-                $unitAsalEval = $this->mutasiRule->evaluasiUnitAsal($asn->unitSaatIni, $unitStats);
+                // C1: Jarak domisili PNS A ke kantor Dinas A saat ini
+                $jarakKeDinas = ($selectedUnit->kantor_lat && $selectedUnit->kantor_lng)
+                    ? $this->haversine->calculateDistance(
+                        (float)$asn->domisili_lat,
+                        (float)$asn->domisili_lng,
+                        (float)$selectedUnit->kantor_lat,
+                        (float)$selectedUnit->kantor_lng
+                    )
+                    : (float)($asn->jarak_ke_kantor_km ?: 0.0);
 
                 $asnKey = 'asn_' . $asn->id;
                 $alternatives[$asnKey] = [
@@ -265,37 +260,33 @@ class TopsisController extends Controller
                     'nip' => $asn->nip,
                     'jabatan' => $asn->jabatan,
                     'jarak_ke_dinas_km' => $jarakKeDinas,
-                    'hemat_jarak_km' => $hematJarak,
+                    'hemat_jarak_km' => 0.0,
                     'masa_jabatan_tahun' => $kelayakan['masa_jabatan_tahun'],
                     'masa_kerja_tahun' => $kelayakan['masa_kerja_tahun'],
                     'masa_kerja_keluar_ok' => $kelayakan['masa_kerja_keluar_ok'],
+                    'min_masa_jabatan_tahun' => $kelayakan['min_masa_jabatan_tahun'],
                     'min_masa_kerja_keluar_tahun' => $kelayakan['min_masa_kerja_keluar_tahun'],
-                    'kuota_cocok' => $kuotaCocok,
-                    'formasi_cocok' => $formasiLabels,
-                    'unit_asal_eval' => $unitAsalEval,
-                    'kondisi_unit_asal_skor' => $unitAsalEval['skor'],
+                    'unit_asal_eval' => $unitTujuanEval,
+                    'kondisi_unit_asal_skor' => $unitTujuanEval['skor'],
 
-                    // Matriks 4 Kriteria TOPSIS Mode 2 (Dinas to PNS):
-                    // Syarat mutlak Poin 1-3 (matching jabatan/pendidikan, formasi tersedia, masa jabatan >= min)
-                    // sudah disaring ketat di atas sebelum masuk matriks TOPSIS.
-                    'C1' => (float)$jarakKeDinas,                    // Cost: Jarak
-                    'C2' => (float)$kelayakan['masa_jabatan_tahun'], // Benefit: Masa Jabatan (TMT Jabatan)
-                    'C3' => (float)$kelayakan['masa_kerja_tahun'],   // Benefit: Masa Kerja (TMT CPNS)
-                    'C4' => (float)$unitAsalEval['skor'],            // Benefit: Kebutuhan Pegawai Unit Saat Ini (Unit Asal)
+                    // Matriks 4 Kriteria TOPSIS Mode 2 (Dinas -> PNS):
+                    'C1' => (float)$jarakKeDinas,                    // C1: Jarak Domisili ke Dinas A
+                    'C2' => (float)$kelayakan['masa_jabatan_tahun'], // C2: Masa Jabatan (TMT Jabatan)
+                    'C3' => (float)$kelayakan['masa_kerja_tahun'],   // C3: Masa Kerja (TMT CPNS)
+                    'C4' => (float)$unitTujuanEval['skor'],          // C4: Kebutuhan Pegawai Unit Saat Ini (Dinas A)
                 ];
 
                 $asnDetails[$asn->id] = $asn;
             }
 
             $filterSummary = [
-                'total_pns_lain' => $candidateAsns->count(),
+                'total_pns_unit' => $candidateAsns->count(),
                 'lolos_syarat_mutlak' => count($alternatives),
                 'gugur_masa_jabatan' => $skippedMasaJabatan,
-                'gugur_formasi' => $skippedFormasi,
-                'formasi_terbuka_dinas' => $openFormasiUnit->count(),
+                'min_masa_jabatan_tahun' => $rules['min_masa_jabatan_tahun'],
             ];
 
-            // Bobot kriteria dinamis dari database
+            // Bobot 4 kriteria dinamis dari database
             $criteriaWeights = [];
             foreach ($kriteriaModels as $k) {
                 $criteriaWeights[$k->kode_kriteria] = [
@@ -318,9 +309,10 @@ class TopsisController extends Controller
                     $item['hemat_jarak_km'] = $altInfo['hemat_jarak_km'] ?? 0;
                     $item['masa_jabatan_tahun'] = $altInfo['masa_jabatan_tahun'] ?? 0;
                     $item['masa_kerja_tahun'] = $altInfo['masa_kerja_tahun'] ?? 0;
-                    $item['kuota_cocok'] = $altInfo['kuota_cocok'] ?? 0;
-                    $item['formasi_cocok'] = $altInfo['formasi_cocok'] ?? [];
-                    $item['unit_asal_eval'] = $altInfo['unit_asal_eval'] ?? null;
+                    $item['masa_kerja_keluar_ok'] = $altInfo['masa_kerja_keluar_ok'] ?? false;
+                    $item['min_masa_jabatan_tahun'] = $altInfo['min_masa_jabatan_tahun'] ?? 2;
+                    $item['min_masa_kerja_keluar_tahun'] = $altInfo['min_masa_kerja_keluar_tahun'] ?? 5;
+                    $item['unit_asal_eval'] = $altInfo['unit_asal_eval'] ?? $unitTujuanEval;
                     $item['kondisi_unit_asal_skor'] = $altInfo['kondisi_unit_asal_skor'] ?? 2;
                 }
                 unset($item);

@@ -144,16 +144,14 @@
         @endif
     </div>
 
-    {{-- HIDE SEMENTARA PANEL KRITERIA AKTIF SESUAI INSTRUKSI KLIEN --}}
-    @if(false)
-    <!-- Panel Kriteria Aktif (Foto 2) -->
+    <!-- Panel 5 Kriteria Aktif Mode 1 -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
         <div class="flex items-center justify-between mb-3">
             <div class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i> Kriteria Penilaian SPK PNS ➔ Dinas (Total Bobot: {{ round($kriteriaModels->sum('bobot') * 100) }}%)
+                <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i> 5 Kriteria Penilaian SPK PNS ➔ Dinas (Total Bobot: {{ round($kriteriaModels->sum('bobot') * 100) }}%)
             </div>
             <a href="{{ route('master-kriteria.index', ['mode' => 'pns_to_dinas']) }}" class="text-xs text-blue-700 hover:underline font-semibold flex items-center gap-1">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Ubah Bobot
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Atur Kriteria &amp; Subkriteria
             </a>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -171,7 +169,6 @@
             @endforeach
         </div>
     </div>
-    @endif
 
     @if ($selectedAsn && count($ranked) > 0)
     <!-- Peta Spasial Rekomendasi PNS -> Dinas (Show Map) -->
@@ -212,11 +209,11 @@
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 no-sort">Rank</th>
                         <th class="px-4 py-3.5">Unit Kerja Tujuan</th>
-                        <th class="px-4 py-3.5">Kategori</th>
-                        <th class="px-4 py-3.5 text-right">Jarak Baru</th>
-                        <th class="px-4 py-3.5 text-right">Hemat Jarak</th>
-                        <th class="px-4 py-3.5 text-center">Kebutuhan Staf</th>
-                        <th class="px-4 py-3.5 text-center">Formasi Linier</th>
+                        <th class="px-4 py-3.5 text-right">C1: Jarak</th>
+                        <th class="px-4 py-3.5 text-center">C2: Masa Jabatan</th>
+                        <th class="px-4 py-3.5 text-center">C3: Masa Kerja</th>
+                        <th class="px-4 py-3.5 text-center">C4: Formasi Jabatan</th>
+                        <th class="px-4 py-3.5 text-center">C5: Unit Saat Ini</th>
                         <th class="px-4 py-3.5 text-center font-mono font-bold text-blue-900">Nilai V<sub>i</sub></th>
                         <th class="px-4 py-3.5 text-center no-sort">Peta</th>
                     </tr>
@@ -235,28 +232,31 @@
                                     <span class="text-xs text-slate-500 font-mono">{{ $item['rank'] }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3.5 font-bold text-slate-900 group-hover:text-blue-700 transition">
-                                {{ $item['unit']->nama_unit ?? 'Unit Kerja' }}
-                            </td>
-                            <td class="px-4 py-3.5 text-xs">
-                                <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-medium">
+                            <td class="px-4 py-3.5">
+                                <div class="font-bold text-slate-900 group-hover:text-blue-700 transition">
+                                    {{ $item['unit']->nama_unit ?? 'Unit Kerja' }}
+                                </div>
+                                <span class="inline-block mt-0.5 px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[10px] font-medium">
                                     {{ $item['unit']->kategori ?? 'OPD' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3.5 text-right font-bold text-slate-800 text-xs">
-                                {{ number_format($item['jarak_baru_km'], 2) }} km
-                            </td>
-                            <td class="px-4 py-3.5 text-right font-extrabold text-xs {{ $item['hemat_jarak_km'] > 0 ? 'text-emerald-600' : 'text-slate-400' }}">
-                                {{ $item['hemat_jarak_km'] > 0 ? '+' . number_format($item['hemat_jarak_km'], 2) . ' km' : '0.00 km' }}
-                            </td>
-                            <td class="px-4 py-3.5 text-center text-xs">
-                                @if ($item['kebutuhan_staf'] > 0)
-                                    <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        {{ $item['kebutuhan_staf'] }} Kursi
-                                    </span>
-                                @else
-                                    <span class="text-slate-400">Cukup (0)</span>
+                            <td class="px-4 py-3.5 text-right whitespace-nowrap text-xs">
+                                <div class="font-bold text-slate-800">{{ number_format($item['jarak_baru_km'], 2) }} km</div>
+                                @if ($item['hemat_jarak_km'] > 0)
+                                    <div class="text-[10px] font-bold text-emerald-600">+{{ number_format($item['hemat_jarak_km'], 2) }} km hemat</div>
                                 @endif
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                <div class="font-bold text-slate-800">{{ number_format($item['masa_jabatan_tahun'] ?? 0, 1) }} Thn</div>
+                                <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    &ge; {{ $item['min_masa_jabatan_tahun'] ?? 2 }} Thn
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                <div class="font-bold text-slate-800">{{ number_format($item['masa_kerja_tahun'] ?? 0, 1) }} Thn</div>
+                                <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold {{ !empty($item['masa_kerja_keluar_ok']) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                    {{ !empty($item['masa_kerja_keluar_ok']) ? 'Bisa Keluar (>'.$item['min_masa_kerja_keluar_tahun'].' Th)' : 'Dalam Daerah' }}
+                                </span>
                             </td>
                             <td class="px-4 py-3.5 text-center text-xs">
                                 @if (!empty($item['formasi_cocok']))
@@ -266,6 +266,19 @@
                                                 {{ $fl }}
                                             </span>
                                         @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-slate-400">-</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-xs">
+                                @php $ue = $item['unit_asal_eval'] ?? null; @endphp
+                                @if ($ue)
+                                    <span class="px-2 py-0.5 rounded-full font-bold border text-[10px] {{ $ue['badge_class'] }}">
+                                        {{ $ue['status'] }} ({{ $ue['persentase'] }}%)
+                                    </span>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">
+                                        Bez {{ $ue['bezetting'] }} / ABK {{ $ue['abk'] }} ({{ $ue['lowong'] }})
                                     </div>
                                 @else
                                     <span class="text-slate-400">-</span>

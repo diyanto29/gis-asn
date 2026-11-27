@@ -9,11 +9,11 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 mb-2">
-                <i data-lucide="building-2" class="w-3.5 h-3.5"></i> Mode 2 &bull; Dinas Mencari Pegawai
+                <i data-lucide="building-2" class="w-3.5 h-3.5"></i> Mode 2 &bull; 4 Kriteria TOPSIS (Dinas &rarr; PNS)
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Rekomendasi Mutasi: Dinas ke PNS</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Pilih suatu Dinas atau Unit Kerja yang membutuhkan aparatur untuk menghitung peringkat Pegawai PNS se-kabupaten yang paling tepat ditarik ke dinas tersebut.
+                Pilih suatu Dinas / Unit Kerja untuk menampilkan dan merangking Pegawai PNS pada dinas tersebut berdasarkan 4 kriteria TOPSIS (Jarak, Masa Jabatan, Masa Kerja, dan Kebutuhan Pegawai Unit Saat Ini).
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -104,10 +104,10 @@
             <div class="flex items-center gap-2">
                 <i data-lucide="filter" class="w-4 h-4 shrink-0"></i>
                 <span>
-                    <strong>Filter Syarat Mutlak (Poin 1-3):</strong>
-                    Dari {{ $filterSummary['total_pns_lain'] }} PNS unit lain &rarr;
-                    <strong>{{ $filterSummary['lolos_syarat_mutlak'] }} PNS lolos</strong>
-                    (Gugur Masa Jabatan &lt; 2 Thn: {{ $filterSummary['gugur_masa_jabatan'] }}, Formasi/Kelas Tidak Cocok: {{ $filterSummary['gugur_formasi'] }}).
+                    <strong>Pegawai PNS di {{ $selectedUnit->nama_unit }}:</strong>
+                    Total <strong>{{ $filterSummary['total_pns_unit'] }} PNS</strong> &rarr;
+                    <strong>{{ $filterSummary['lolos_syarat_mutlak'] }} PNS lolos</strong> syarat mutlak Masa Jabatan &ge; {{ $filterSummary['min_masa_jabatan_tahun'] }} Thn
+                    (Belum memenuhi &lt; {{ $filterSummary['min_masa_jabatan_tahun'] }} Thn: {{ $filterSummary['gugur_masa_jabatan'] }} PNS).
                 </span>
             </div>
         </div>
@@ -115,16 +115,14 @@
         @endif
     </div>
 
-    {{-- HIDE SEMENTARA PANEL KRITERIA AKTIF SESUAI INSTRUKSI KLIEN --}}
-    @if(false)
-    <!-- Panel Kriteria Aktif Mode 2 (Foto 2) -->
+    <!-- Panel 4 Kriteria Aktif Mode 2 -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
         <div class="flex items-center justify-between mb-3">
             <div class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i> Kriteria Penilaian SPK Dinas ➔ PNS (Total Bobot: {{ round($kriteriaModels->sum('bobot') * 100) }}%)
+                <i data-lucide="check-square" class="w-4 h-4 text-indigo-600"></i> 4 Kriteria Penilaian SPK Dinas ➔ PNS (Total Bobot: {{ round($kriteriaModels->sum('bobot') * 100) }}%)
             </div>
             <a href="{{ route('master-kriteria.index', ['mode' => 'dinas_to_pns']) }}" class="text-xs text-blue-700 hover:underline font-semibold flex items-center gap-1">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Ubah Bobot
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Atur Kriteria &amp; Subkriteria
             </a>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -142,7 +140,6 @@
             @endforeach
         </div>
     </div>
-    @endif
 
     @if ($selectedUnit && count($ranked) > 0)
     <!-- Peta Spasial Rekomendasi Dinas -> PNS (Show Map) -->
@@ -165,14 +162,14 @@
         <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                    <i data-lucide="award" class="w-4 h-4 text-amber-500"></i> Rekomendasi Kandidat Pegawai PNS untuk {{ $selectedUnit->nama_unit }}
+                    <i data-lucide="award" class="w-4 h-4 text-amber-500"></i> Pemeringkatan Pegawai PNS pada {{ $selectedUnit->nama_unit }}
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Kandidat diurutkan berdasarkan kedekatan domisili ke kantor ini, kematangan masa jabatan, masa kerja, dan keamanan kondisi unit kerja asal.
+                    Pegawai PNS pada unit ini diurutkan menggunakan 4 kriteria TOPSIS: Jarak (C1), Masa Jabatan (C2), Masa Kerja (C3), dan Kebutuhan Pegawai Unit Saat Ini (C4).
                 </p>
             </div>
             <div class="text-xs text-slate-500">
-                Total Kandidat Teranalisis: <strong>{{ count($ranked) }}</strong> Pegawai
+                Total PNS Lolos Syarat: <strong>{{ count($ranked) }}</strong> Pegawai
             </div>
         </div>
 
@@ -182,13 +179,13 @@
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 no-sort">Rank</th>
                         <th class="px-4 py-3.5">Pegawai PNS</th>
-                        <th class="px-4 py-3.5">Jabatan & Jenis</th>
-                        <th class="px-4 py-3.5">Unit Kerja Asal</th>
-                        <th class="px-4 py-3.5 text-right">Jarak Rumah ke Dinas</th>
-                        <th class="px-4 py-3.5 text-center">Masa Jabatan / Kerja</th>
-                        <th class="px-4 py-3.5 text-center">Kondisi Unit Asal</th>
+                        <th class="px-4 py-3.5">Jabatan &amp; Kelas</th>
+                        <th class="px-4 py-3.5 text-right">C1: Jarak</th>
+                        <th class="px-4 py-3.5 text-center">C2: Masa Jabatan</th>
+                        <th class="px-4 py-3.5 text-center">C3: Masa Kerja</th>
+                        <th class="px-4 py-3.5 text-center">C4: Unit Saat Ini</th>
                         <th class="px-4 py-3.5 text-center font-mono font-bold text-indigo-900">Nilai V<sub>i</sub></th>
-                        <th class="px-4 py-3.5 text-center no-sort">Peta</th>
+                        <th class="px-4 py-3.5 text-center no-sort">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -215,20 +212,31 @@
                             </td>
                             <td class="px-4 py-3.5">
                                 <div class="font-medium text-slate-800 text-xs">{{ $item['asn']->jabatan ?? '-' }}</div>
-                                <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold uppercase {{ ($item['asn']->jenis_jabatan ?? '') === 'fungsional' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-700' }}">
-                                    {{ $item['asn']->jenis_jabatan ?? 'Pelaksana' }}
-                                </span>
+                                <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                                    <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold uppercase {{ ($item['asn']->jenis_jabatan ?? '') === 'fungsional' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-700' }}">
+                                        {{ $item['asn']->jenis_jabatan ?? 'Pelaksana' }}
+                                    </span>
+                                    @if ($item['asn']->masterJabatan?->kelas_jabatan)
+                                        <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                            Kls {{ $item['asn']->masterJabatan->kelas_jabatan }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-4 py-3.5 text-xs">
-                                <div class="font-medium text-slate-700">{{ $item['asn']->unitSaatIni->nama_unit ?? '-' }}</div>
-                                <div class="text-[10px] text-slate-400">{{ $item['asn']->unit_kerja_induk ?? '' }}</div>
-                            </td>
-                            <td class="px-4 py-3.5 text-right font-bold text-slate-800 text-xs">
+                            <td class="px-4 py-3.5 text-right font-bold text-slate-800 text-xs whitespace-nowrap">
                                 {{ number_format($item['jarak_ke_dinas_km'], 2) }} km
                             </td>
-                            <td class="px-4 py-3.5 text-center text-xs">
-                                <div>Jabatan: <strong>{{ number_format($item['masa_jabatan_tahun'], 1) }} Thn</strong></div>
-                                <div class="text-[10px] text-slate-400">Kerja: {{ number_format($item['masa_kerja_tahun'], 0) }} Thn</div>
+                            <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                <div class="font-bold text-slate-800">{{ number_format($item['masa_jabatan_tahun'], 1) }} Thn</div>
+                                <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    &ge; {{ $item['min_masa_jabatan_tahun'] ?? 2 }} Thn
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                <div class="font-bold text-slate-800">{{ number_format($item['masa_kerja_tahun'], 1) }} Thn</div>
+                                <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold {{ !empty($item['masa_kerja_keluar_ok']) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                    {{ !empty($item['masa_kerja_keluar_ok']) ? 'Bisa Keluar (>'.$item['min_masa_kerja_keluar_tahun'].' Th)' : 'Dalam Daerah (<'.$item['min_masa_kerja_keluar_tahun'].' Th)' }}
+                                </span>
                             </td>
                             <td class="px-4 py-3.5 text-center text-xs">
                                 @php $ue = $item['unit_asal_eval'] ?? null; @endphp
@@ -246,13 +254,20 @@
                             <td class="px-4 py-3.5 text-center font-mono font-bold text-xs text-indigo-900">
                                 {{ number_format($item['vi'], 4) }}
                             </td>
-                            <td class="px-4 py-3.5 text-center">
-                                <button type="button"
-                                    onclick="focusPnsOnMap({{ $item['asn']->domisili_lat ?? 0 }}, {{ $item['asn']->domisili_lng ?? 0 }}, {{ json_encode($item['asn']->nama ?? 'Pegawai PNS') }}, {{ $item['rank'] }}, '{{ number_format($item['jarak_ke_dinas_km'], 2) }}', '{{ number_format($item['vi'], 4) }}')"
-                                    class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs"
-                                    title="Tampilkan lokasi domisili PNS ini pada peta">
-                                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Lihat Peta
-                                </button>
+                            <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <button type="button"
+                                        onclick="focusPnsOnMap({{ $item['asn']->domisili_lat ?? 0 }}, {{ $item['asn']->domisili_lng ?? 0 }}, {{ json_encode($item['asn']->nama ?? 'Pegawai PNS') }}, {{ $item['rank'] }}, '{{ number_format($item['jarak_ke_dinas_km'], 2) }}', '{{ number_format($item['vi'], 4) }}')"
+                                        class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs"
+                                        title="Tampilkan lokasi domisili PNS ini pada peta">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Peta
+                                    </button>
+                                    <a href="{{ route('topsis.pns-to-dinas', ['asn_id' => $item['id']]) }}"
+                                        class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-700 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-700 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs"
+                                        title="Cari rekomendasi dinas tujuan untuk PNS ini (Mode 1)">
+                                        <i data-lucide="compass" class="w-3.5 h-3.5"></i> Cari Dinas
+                                    </a>
+                                </div>
 
                                 {{-- HIDE SEMENTARA TARIK PEGAWAI / BAPERJAKAT SESUAI INSTRUKSI KLIEN --}}
                                 @if(false)
