@@ -801,7 +801,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -827,7 +827,8 @@ INSERT INTO `migrations` VALUES
 (13,'2026_11_21_000001_add_client_revision_fields_to_asn_and_formasi',4),
 (14,'2026_11_21_000002_create_master_jabatan_table',5),
 (15,'2026_11_26_000001_enhance_master_jabatan_and_formasi_relations',6),
-(16,'2026_11_27_000001_update_master_jabatan_unique_nama_jenjang',7);
+(16,'2026_11_27_000001_update_master_jabatan_unique_nama_jenjang',7),
+(17,'2026_11_27_000002_sync_topsis_kriteria_five_criteria',8);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -996,7 +997,7 @@ CREATE TABLE `topsis_kriteria` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `topsis_kriteria_mode_kode_unique` (`kategori_mode`,`kode_kriteria`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1007,15 +1008,16 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `topsis_kriteria` WRITE;
 /*!40000 ALTER TABLE `topsis_kriteria` DISABLE KEYS */;
 INSERT INTO `topsis_kriteria` VALUES
-(1,'C1','pns_to_dinas','jarak_dinas','Jarak Domisili ke Dinas Tujuan (Km)',0.30,'cost',1,'Makin dekat jarak tempuh dari rumah ke dinas sasaran, semakin prioritas.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(2,'C2','pns_to_dinas','masa_jabatan','Masa Jabatan ASN Saat Ini (Tahun)',0.20,'benefit',1,'Dihitung dari Tanggal SK Jabatan. Semakin lama menjabat, semakin matang untuk rotasi.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(3,'C3','pns_to_dinas','masa_kerja','Masa Kerja Pengabdian CPNS (Tahun)',0.15,'benefit',1,'Dihitung sejak TMT SK CPNS, mencerminkan jam terbang dan senioritas ASN.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(4,'C4','pns_to_dinas','kebutuhan_dinas','Kebutuhan Staf Dinas Tujuan (ABK - Bezetting)',0.20,'benefit',1,'Makin besar kekurangan pegawai di dinas tujuan, makin diprioritaskan diisi.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(5,'C5','pns_to_dinas','formasi_jabatan','Ketersediaan Formasi Jabatan Linier',0.15,'benefit',1,'Ketersediaan kuota lowong formasi jabatan yang sesuai (1 = Ada Kuota, 0 = Penuh).','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(6,'C1','dinas_to_pns','jarak_pns','Jarak Domisili PNS ke Dinas (Km)',0.35,'cost',1,'Mencari pegawai yang domisilinya terdekat dengan dinas pemohon.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(7,'C2','dinas_to_pns','masa_jabatan_pns','Masa Jabatan PNS di Unit Asal (Tahun)',0.25,'benefit',1,'Pegawai yang sudah lama di posisi lamanya lebih siap untuk penyegaran karir.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(8,'C3','dinas_to_pns','masa_kerja_pns','Masa Kerja PNS sejak CPNS (Tahun)',0.20,'benefit',1,'Pengalaman kerja dan masa pengabdian aparatur.','2026-11-20 23:37:50','2026-11-20 23:37:50'),
-(9,'C4','dinas_to_pns','kondisi_unit_asal','Kondisi Pegawai Unit Asal (Beban ABK)',0.20,'benefit',1,'Memastikan unit asal dalam kondisi surplus/cukup pegawai (3 = Surplus, 2 = Cukup, 1 = Kurang).','2026-11-20 23:37:50','2026-11-20 23:37:50');
+(1,'C1','pns_to_dinas','jarak_dinas','Jarak Domisili ke Unit Tujuan (Km)',0.35,'cost',1,'Program mendekatkan penugasan dengan domisili PNS (bobot prioritas terbesar).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(2,'C2','pns_to_dinas','masa_jabatan','Masa Jabatan Saat Ini (Tahun)',0.20,'benefit',1,'Syarat mutlak minimal > 2 tahun (dihitung dari TMT SK Jabatan).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(3,'C3','pns_to_dinas','masa_kerja','Masa Kerja PNS (Tahun)',0.15,'benefit',1,'Pembanding senioritas dalam daerah; untuk mutasi keluar daerah wajib > 5 tahun (dinamis).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(4,'C4','pns_to_dinas','formasi_jabatan','Formasi Jabatan (Kesesuaian & Kuota)',0.15,'benefit',1,'Mutlak: Fungsional wajib cocok nama jabatan; Pelaksana cocok kelas jabatan; kuota lowong > 0.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(5,'C5','pns_to_dinas','kebutuhan_unit_asal','Kebutuhan Pegawai Unit Kerja Saat Ini (%)',0.15,'benefit',1,'Persentase Bezetting/ABK unit asal: >=100% Lengkap (3), >=50% Cukup (2), <50% Kurang (1).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(6,'C1','dinas_to_pns','jarak_pns','Jarak Domisili PNS ke Dinas (Km)',0.35,'cost',1,'Program mendekatkan penugasan dengan domisili PNS (bobot prioritas terbesar).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(7,'C2','dinas_to_pns','masa_jabatan_pns','Masa Jabatan PNS (Tahun)',0.20,'benefit',1,'Syarat mutlak minimal > 2 tahun pada jabatan saat ini.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(8,'C3','dinas_to_pns','masa_kerja_pns','Masa Kerja PNS (Tahun)',0.15,'benefit',1,'Senioritas masa kerja PNS sejak TMT CPNS.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(9,'C4','dinas_to_pns','formasi_jabatan_dinas','Formasi Jabatan Tersedia di Dinas',0.15,'benefit',1,'Kesesuaian jabatan (Fungsional exact / Pelaksana sama kelas) dan jumlah kuota lowong.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(10,'C5','dinas_to_pns','kebutuhan_unit_asal','Kebutuhan Pegawai Unit Kerja Asal (%)',0.15,'benefit',1,'Persentase Bezetting/ABK unit asal: >=100% Lengkap (3), >=50% Cukup (2), <50% Kurang (1).','2026-11-27 08:28:19','2026-11-27 08:28:19');
 /*!40000 ALTER TABLE `topsis_kriteria` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -1151,4 +1153,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-11-27 20:41:44
+-- Dump completed on 2026-11-27 22:28:39

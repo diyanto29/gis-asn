@@ -42,10 +42,13 @@ Route::middleware('auth')->group(function () {
 
     // Root Redirect
     Route::get('/', function () {
+        if (auth()->check() && auth()->user()->isAsn()) {
+            return redirect()->route('asn.simulasi-mandiri');
+        }
         return redirect()->route('dashboard');
     });
 
-    // Dashboard Peta Spasial GIS & Statistik
+    // Dashboard Peta Spasial GIS & Statistik (Khusus Admin BKPSDM)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Smart Swap Match (Tukar Guling Simetris Zero-ABK)
@@ -142,6 +145,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('master-kriteria')->name('master-kriteria.')->middleware('role:admin')->group(function () {
         Route::get('/', [KriteriaController::class, 'index'])->name('index');
         Route::post('/', [KriteriaController::class, 'store'])->name('store');
+        Route::post('/aturan', [KriteriaController::class, 'updateAturan'])->name('update-aturan');
         Route::put('/{id}', [KriteriaController::class, 'update'])->name('update');
         Route::post('/bobot', [KriteriaController::class, 'updateBobot'])->name('update-bobot');
         Route::post('/{id}/toggle', [KriteriaController::class, 'toggle'])->name('toggle');

@@ -19,9 +19,11 @@
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                             NIP: {{ $asn->nip }}
                         </span>
+                        @if(Auth::user()->isAdmin())
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $statusKomitmen['badge_color'] }} border">
                             {{ $statusKomitmen['status_label'] }}
                         </span>
+                        @endif
                         @if($asn->status_permohonan_mutasi)
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-300 flex items-center gap-1">
                             <i data-lucide="clock" class="w-3 h-3"></i>
@@ -30,9 +32,15 @@
                         @endif
                     </div>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-y-1 gap-x-4">
-                        <span><strong>Jabatan:</strong> {{ $asn->jabatan }} ({{ $asn->pangkat_golongan }})</span>
+                        <span><strong>Jabatan:</strong> {{ $asn->jabatan }} ({{ ucfirst($asn->jenis_jabatan) }}@if($asn->masterJabatan?->kelas_jabatan), Kelas {{ $asn->masterJabatan->kelas_jabatan }}@endif)</span>
                         <span><strong>Kantor Saat Ini:</strong> {{ $asn->unitSaatIni->nama_unit ?? '-' }}</span>
                         <span><strong>Jarak Lama:</strong> <span class="text-rose-600 font-bold">{{ $asn->jarak_ke_kantor_km }} km</span> ({{ ucfirst($asn->zona_jarak) }})</span>
+                        @if(isset($kelayakan))
+                        <span><strong>Masa Jabatan:</strong> <span class="font-bold {{ $kelayakan['masa_jabatan_ok'] ? 'text-emerald-700' : 'text-rose-600' }}">{{ number_format($kelayakan['masa_jabatan_tahun'], 1) }} Thn</span></span>
+                        @endif
+                        @if(isset($unitAsalEval))
+                        <span><strong>Unit Saat Ini:</strong> <span class="px-1.5 py-0.5 rounded border text-[10px] font-bold {{ $unitAsalEval['badge_class'] }}">{{ $unitAsalEval['status'] }} {{ $unitAsalEval['persentase'] }}%</span> <span class="text-[11px] text-slate-400">(Bez {{ $unitAsalEval['bezetting'] }}/ABK {{ $unitAsalEval['abk'] }}, Lowong {{ $unitAsalEval['lowong'] }})</span></span>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -55,7 +63,7 @@
 
         </div>
 
-        @if($statusKomitmen['is_bound'] && $statusKomitmen['is_locked_external'])
+        @if(Auth::user()->isAdmin() && $statusKomitmen['is_bound'] && $statusKomitmen['is_locked_external'])
         <div class="mt-4 p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5">
             <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
             <div>

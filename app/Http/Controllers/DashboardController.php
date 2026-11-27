@@ -4,13 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\AsnMaster;
 use App\Models\UnitKerja;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        if (Auth::check() && Auth::user()->isAsn()) {
+            return redirect()->route('asn.simulasi-mandiri');
+        }
         $totalAsn = AsnMaster::count();
         $totalUnit = UnitKerja::count();
         $totalFormasi = UnitKerja::sum('kuota_formasi_kosong');

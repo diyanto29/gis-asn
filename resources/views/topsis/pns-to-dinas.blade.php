@@ -75,23 +75,72 @@
                 <span class="font-mono text-slate-500 text-[11px]">{{ $selectedAsn->nip }} &bull; Gol. {{ $selectedAsn->pangkat_golongan }}</span>
             </div>
             <div>
-                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Jabatan & Jenis</span>
+                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Jabatan, Jenis &amp; Kelas</span>
                 <span class="font-semibold text-slate-800 block mt-0.5">{{ $selectedAsn->jabatan }}</span>
-                <span class="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-bold uppercase {{ $selectedAsn->jenis_jabatan === 'fungsional' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : ($selectedAsn->jenis_jabatan === 'struktural' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-700') }}">
-                    {{ $selectedAsn->jenis_jabatan }}
-                </span>
+                <div class="flex flex-wrap items-center gap-1 mt-1">
+                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $selectedAsn->jenis_jabatan === 'fungsional' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-700 border border-slate-200' }}">
+                        {{ $selectedAsn->jenis_jabatan }}
+                    </span>
+                    @if($selectedAsn->masterJabatan?->kelas_jabatan)
+                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        Kelas {{ $selectedAsn->masterJabatan->kelas_jabatan }}
+                    </span>
+                    @endif
+                </div>
             </div>
             <div>
-                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Unit Kerja Asal & Jarak Riil</span>
+                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Unit Kerja Saat Ini (C5 &bull; Hak Prerogatif)</span>
                 <span class="font-bold text-blue-900 block mt-0.5">{{ $selectedAsn->unitSaatIni->nama_unit ?? '-' }}</span>
-                <span class="text-slate-600 text-[11px]">Jarak saat ini: <strong>{{ number_format($selectedAsn->jarak_ke_kantor_km, 2) }} km</strong></span>
+                @if($unitAsalEval)
+                <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span class="px-1.5 py-0.5 rounded border font-bold text-[10px] {{ $unitAsalEval['badge_class'] }}">
+                        {{ $unitAsalEval['status'] }} ({{ $unitAsalEval['persentase'] }}%)
+                    </span>
+                    <span class="text-slate-500">Bez: <strong>{{ $unitAsalEval['bezetting'] }}</strong> / ABK: <strong>{{ $unitAsalEval['abk'] }}</strong> / Lowong: <strong>{{ $unitAsalEval['lowong'] }}</strong></span>
+                </div>
+                @endif
             </div>
             <div>
-                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Masa Jabatan & Masa Kerja</span>
-                <span class="font-semibold text-slate-800 block mt-0.5">Masa Jabatan: {{ $selectedAsn->tgl_jabatan ? date('d/m/Y', strtotime($selectedAsn->tgl_jabatan)) : '-' }}</span>
-                <span class="text-slate-500 text-[11px]">Masa Kerja: {{ $selectedAsn->masa_kerja_tahun }} Tahun (TMT CPNS {{ $selectedAsn->tgl_cpns ? date('Y', strtotime($selectedAsn->tgl_cpns)) : '-' }})</span>
+                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Syarat Mutlak Masa Jabatan &amp; Masa Kerja</span>
+                <div class="mt-0.5 flex items-center gap-1.5">
+                    <span class="font-semibold text-slate-800">Jabatan: <strong>{{ number_format($kelayakan['masa_jabatan_tahun'] ?? 0, 1) }} Thn</strong></span>
+                    @if($kelayakan && $kelayakan['masa_jabatan_ok'])
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Memenuhi (&ge;{{ $kelayakan['min_masa_jabatan_tahun'] }} Th)</span>
+                    @else
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Belum (&lt;{{ $kelayakan['min_masa_jabatan_tahun'] ?? 2 }} Th)</span>
+                    @endif
+                </div>
+                <span class="text-slate-500 text-[11px] block mt-0.5">Masa Kerja: <strong>{{ number_format($kelayakan['masa_kerja_tahun'] ?? 0, 1) }} Thn</strong> &bull; Jarak: {{ number_format($selectedAsn->jarak_ke_kantor_km, 1) }} km</span>
             </div>
         </div>
+
+        @if($kelayakan && !$kelayakan['masa_jabatan_ok'])
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></i>
+            <div>
+                <div class="font-bold">Tidak Memenuhi Syarat Mutlak Sistem (Poin 3 — Masa Jabatan):</div>
+                <div class="mt-0.5">{{ $kelayakan['alasan_tidak_layak'] }}</div>
+            </div>
+        </div>
+        @elseif($filterSummary && $filterSummary['unit_cocok_formasi'] === 0)
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+            <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+            <div>
+                <div class="font-bold">Belum Ada Formasi Jabatan Cocok &amp; Tersedia di Unit Kerja Lain:</div>
+                <div class="mt-0.5">Aturan matching aktif: <strong>{{ $filterSummary['aturan_match'] }}</strong> (kuota lowong &gt; 0). Tidak ada unit kerja lain yang saat ini memiliki formasi lowong yang sesuai.</div>
+            </div>
+        </div>
+        @elseif($filterSummary)
+        <div class="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i data-lucide="filter" class="w-4 h-4 text-blue-700 shrink-0"></i>
+                <span><strong>Filter Mutlak Aktif:</strong> {{ $filterSummary['aturan_match'] }} &bull; Kuota Lowong &gt; 0 &bull; Masa Jabatan &ge; {{ $kelayakan['min_masa_jabatan_tahun'] ?? 2 }} Thn</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-blue-700 text-white font-bold text-[11px]">
+                {{ $filterSummary['unit_cocok_formasi'] }} dari {{ $filterSummary['total_unit_lain'] }} Unit Lolos
+            </span>
+        </div>
+        @endif
         @endif
     </div>
 
@@ -210,10 +259,14 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3.5 text-center text-xs">
-                                @if ($item['has_formasi'] > 0)
-                                    <span class="px-2 py-0.5 rounded font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                        Tersedia
-                                    </span>
+                                @if (!empty($item['formasi_cocok']))
+                                    <div class="flex flex-wrap justify-center gap-1">
+                                        @foreach ($item['formasi_cocok'] as $fl)
+                                            <span class="px-2 py-0.5 rounded font-semibold bg-blue-50 text-blue-700 border border-blue-200 text-[10px]">
+                                                {{ $fl }}
+                                            </span>
+                                        @endforeach
+                                    </div>
                                 @else
                                     <span class="text-slate-400">-</span>
                                 @endif

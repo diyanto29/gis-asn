@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\AsnMaster;
+use App\Models\FormasiJabatan;
 use App\Models\RekomendasiMutasi;
+use App\Models\TopsisKriteria;
 use App\Models\UnitKerja;
 use App\Services\HaversineService;
+use App\Services\MutasiRuleService;
 use App\Services\TopsisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,8 +18,9 @@ use Illuminate\View\View;
 /**
  * Class SimulasiMandiriController
  *
- * Mengelola SPK TOPSIS Tahap 2 (Bottom-Up): Rekomendasi Lokasi Penempatan Optimal
- * bagi Pegawai ASN ke Unit-Unit Kerja yang Membuka Formasi Lowong (ABK > 0).
+ * Mengelola SPK TOPSIS Portal PNS: Rekomendasi Lokasi Penempatan Optimal
+ * bagi Pegawai ASN ke Unit Kerja dengan formasi jabatan yang cocok & tersedia,
+ * menggunakan 5 kriteria standar BKPSDM dan syarat mutlak (Poin 1-3).
  *
  * @package App\Http\Controllers
  */
@@ -24,67 +28,87 @@ class SimulasiMandiriController extends Controller
 {
     public function __construct(
         protected HaversineService $haversine,
-        protected TopsisService $topsis
+        protected TopsisService $topsis,
+        protected MutasiRuleService $mutasiRule
     ) {}
 
     /**
-     * Menampilkan dashboard simulasi rekomendasi mandiri ASN (Tahap 2).
+     * Menampilkan dashboard simulasi rekomendasi mandiri ASN (Portal PNS).
      */
     public function index(Request $request): View|RedirectResponse
     {
         $user = Auth::user();
 
-        // Tentukan ASN target: Jika role ASN gunakan profilnya, jika Admin bisa memilih via dropdown
         if ($user->isAsn() && $user->asn) {
-            $asn = $user->asn->load('unitSaatIni');
+            $asn = $user->asn->load(['unitSaatIni', 'masterJabatan']);
         } else {
             $targetAsnId = $request->query('asn_id');
-            $asn = $targetAsnId 
-                ? AsnMaster::with('unitSaatIni')->findOrFail($targetAsnId)
-                : AsnMaster::with('unitSaatIni')->whereNotNull('domisili_lat')->first();
+            $asn = $targetAsnId
+                ? AsnMaster::with(['unitSaatIni', 'masterJabatan'])->findOrFail($targetAsnId)
+                : AsnMaster::with(['unitSaatIni', 'masterJabatan'])->whereNotNull('domisili_lat')->first();
         }
 
         if (!$asn) {
-            return redirect()->route('dashboard')
+            return redirect()->route('login')
                 ->with('error', 'Profil data ASN Anda belum tertaut. Silakan hubungi Administrator BKPSDM.');
         }
 
-        // Ambil daftar ASN untuk dropdown pemilih (jika Admin yang mengakses)
-        $asnList = $user->isAdmin() 
-            ? AsnMaster::orderBy('nama')->get(['id', 'nip', 'nama']) 
+        $asnList = $user->isAdmin()
+            ? AsnMaster::orderBy('nama')->get(['id', 'nip', 'nama'])
             : collect([$asn]);
 
-        // =========================================================================
-        // TAHAP 2 TOPSIS: KANDIDAT ALTERNATIF ADALAH UNIT KERJA BERFORMASI (ABK > 0)
-        // Unit kerja saat ini dari ASN dieksklusi untuk mencegah rekomendasi sirkular.
-        // =========================================================================
-        $unitAlternatif = UnitKerja::with(['formasiJabatan' => function($q) {
-                $q->where('status', 'terbuka')->orderBy('nama_jabatan');
-            }])
-            ->where('kuota_formasi_kosong', '>', 0)
-            ->where('id', '!=', $asn->id_unit_saat_ini)
-            ->get();
+        $unitStats = $this->mutasiRule->getAllUnitStats();
+        $kelayakan = $this->mutasiRule->cekKelayakanAsn($asn);
+        $unitAsalEval = $this->mutasiRule->evaluasiUnitAsal($asn->unitSaatIni, $unitStats);
 
-        if ($unitAlternatif->isEmpty()) {
+        // POIN 3 MUTLAK: Masa jabatan wajib >= batas minimal (default 2 tahun)
+        if (!$kelayakan['masa_jabatan_ok']) {
             return view('asn.simulasi-mandiri', [
                 'asn' => $asn,
                 'asnList' => $asnList,
                 'ranked' => [],
                 'details' => [],
                 'statusKomitmen' => $asn->status_komitmen_10_tahun,
-                'message' => 'Saat ini belum ada Unit Kerja yang membuka kuota formasi lowong (ABK > 0).',
+                'kelayakan' => $kelayakan,
+                'unitAsalEval' => $unitAsalEval,
+                'message' => $kelayakan['alasan_tidak_layak'],
             ]);
         }
 
-        // =========================================================================
-        // LANGKAH 1: Pembentukan Matriks Keputusan Alternatif Unit Kerja
-        // Kriteria Mode 2 (Atribut Unit Kerja terhadap ASN):
-        // - C1: Jarak Rute dari Rumah ASN ke Kantor Unit Baru (Cost)
-        // - C2: Sisa Kuota Formasi ABK (Benefit)
-        // - C3: Efisiensi Penghematan Jarak (Benefit)
-        // =========================================================================
+        // POIN 1 & 2 MUTLAK: Ambil formasi terbuka (kuota_lowong > 0) di unit lain yang cocok
+        $openFormasiLain = FormasiJabatan::with(['masterJabatan', 'unitKerja'])
+            ->where('kuota_lowong', '>', 0)
+            ->where('id_unit_kerja', '!=', $asn->id_unit_saat_ini)
+            ->get();
+
+        $matchingFormasis = $this->mutasiRule->cariFormasiCocok($asn, $openFormasiLain);
+        $matchingByUnit = $matchingFormasis->groupBy('id_unit_kerja');
+
+        if ($matchingByUnit->isEmpty()) {
+            $aturanMatch = strtolower((string)$asn->jenis_jabatan) === 'pelaksana'
+                ? 'Jabatan Pelaksana Kelas ' . ($asn->masterJabatan?->kelas_jabatan ?? '-')
+                : "Jabatan Fungsional {$asn->jabatan}";
+
+            return view('asn.simulasi-mandiri', [
+                'asn' => $asn,
+                'asnList' => $asnList,
+                'ranked' => [],
+                'details' => [],
+                'statusKomitmen' => $asn->status_komitmen_10_tahun,
+                'kelayakan' => $kelayakan,
+                'unitAsalEval' => $unitAsalEval,
+                'message' => "Saat ini belum ada Unit Kerja tujuan yang memiliki formasi lowong yang cocok untuk {$aturanMatch}.",
+            ]);
+        }
+
+        // Bentuk matriks 5 kriteria TOPSIS (C1-C5)
         $alternatives = [];
-        foreach ($unitAlternatif as $unit) {
+        foreach ($matchingByUnit as $unitId => $formasiList) {
+            $unit = $formasiList->first()->unitKerja;
+            if (!$unit || !$unit->kantor_lat || !$unit->kantor_lng) {
+                continue;
+            }
+
             $jarakBaru = $this->haversine->calculateDistance(
                 (float)$asn->domisili_lat,
                 (float)$asn->domisili_lng,
@@ -92,12 +116,13 @@ class SimulasiMandiriController extends Controller
                 (float)$unit->kantor_lng
             );
 
-            $hematJarak = max(0.0, (float)$asn->jarak_ke_kantor_km - $jarakBaru);
+            $hematJarak = round(max(0.0, (float)$asn->jarak_ke_kantor_km - $jarakBaru), 2);
+            $kuotaCocok = (int)$formasiList->sum('kuota_lowong');
 
-            $formasiTersedia = $unit->formasiJabatan
-                ->map(fn($f) => "{$f->nama_jabatan} ({$f->kuota_lowong} kursi)")
-                ->values()
-                ->toArray();
+            $formasiTersedia = $formasiList->map(function ($f) {
+                $kls = $f->masterJabatan?->kelas_jabatan ? " [Kls {$f->masterJabatan->kelas_jabatan}]" : '';
+                return "{$f->nama_jabatan}{$kls} ({$f->kuota_lowong} kursi)";
+            })->values()->toArray();
 
             $alternatives[] = [
                 'id' => $unit->id,
@@ -105,25 +130,44 @@ class SimulasiMandiriController extends Controller
                 'kategori' => $unit->kategori,
                 'kantor_lat' => (float)$unit->kantor_lat,
                 'kantor_lng' => (float)$unit->kantor_lng,
-                'kuota' => (int)$unit->kuota_formasi_kosong,
+                'kuota' => $kuotaCocok,
                 'c1_jarak' => (float)$jarakBaru,
-                'c2_kuota' => (float)$unit->kuota_formasi_kosong,
                 'c3_hemat' => (float)$hematJarak,
                 'formasi_tersedia' => $formasiTersedia,
+
+                // 5 Kriteria TOPSIS standar BKPSDM
+                'C1' => (float)$jarakBaru,
+                'C2' => (float)$kelayakan['masa_jabatan_tahun'],
+                'C3' => (float)$kelayakan['masa_kerja_tahun'],
+                'C4' => (float)$kuotaCocok,
+                'C5' => (float)$unitAsalEval['skor'],
             ];
         }
 
-        // =========================================================================
-        // LANGKAH 2: Konfigurasi Bobot Dinamis Berdasarkan Kebijakan Kepegawaian (Non-AHP)
-        // Total Bobot Wajib = 1.00 (100%)
-        // =========================================================================
-        $criteria = [
-            'c1_jarak' => ['bobot' => 0.40, 'atribut' => 'cost'],
-            'c2_kuota' => ['bobot' => 0.30, 'atribut' => 'benefit'],
-            'c3_hemat' => ['bobot' => 0.30, 'atribut' => 'benefit'],
-        ];
+        // Ambil bobot kriteria dinamis dari database (mode pns_to_dinas)
+        $kriteriaModels = TopsisKriteria::where('kategori_mode', 'pns_to_dinas')
+            ->where('is_active', true)
+            ->orderBy('kode_kriteria')
+            ->get();
 
-        // Jalankan Komputasi TOPSIS
+        $criteria = [];
+        foreach ($kriteriaModels as $k) {
+            $criteria[$k->kode_kriteria] = [
+                'bobot' => (float)$k->bobot,
+                'atribut' => $k->atribut,
+            ];
+        }
+
+        if (empty($criteria)) {
+            $criteria = [
+                'C1' => ['bobot' => 0.35, 'atribut' => 'cost'],
+                'C2' => ['bobot' => 0.20, 'atribut' => 'benefit'],
+                'C3' => ['bobot' => 0.15, 'atribut' => 'benefit'],
+                'C4' => ['bobot' => 0.15, 'atribut' => 'benefit'],
+                'C5' => ['bobot' => 0.15, 'atribut' => 'benefit'],
+            ];
+        }
+
         $topsisResult = $this->topsis->calculate($alternatives, $criteria);
 
         return view('asn.simulasi-mandiri', [
@@ -132,6 +176,8 @@ class SimulasiMandiriController extends Controller
             'ranked' => $topsisResult['ranked'],
             'details' => $topsisResult['details'],
             'statusKomitmen' => $asn->status_komitmen_10_tahun,
+            'kelayakan' => $kelayakan,
+            'unitAsalEval' => $unitAsalEval,
             'message' => null,
         ]);
     }

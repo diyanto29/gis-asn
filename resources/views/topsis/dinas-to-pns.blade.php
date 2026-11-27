@@ -77,24 +77,20 @@
                 </span>
             </div>
             <div>
-                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Kapasitas ABK vs Bezetting</span>
+                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Bezetting vs ABK (Agregat Formasi)</span>
                 <span class="font-semibold text-slate-800 block mt-0.5">
-                    Bezetting: <strong>{{ $selectedUnit->bezetting_saat_ini }} orang</strong>
+                    Bezetting: <strong>{{ $unitTujuanEval['bezetting'] ?? 0 }}</strong> &bull; ABK: <strong>{{ $unitTujuanEval['abk'] ?? 0 }}</strong>
                 </span>
-                <span class="text-slate-500 text-[11px]">Kebutuhan ABK: {{ $selectedUnit->kebutuhan_abk }} orang</span>
+                <span class="text-slate-500 text-[11px]">Lowong: <strong>{{ $unitTujuanEval['lowong'] ?? 0 }}</strong> ({{ $unitTujuanEval['persentase'] ?? 0 }}%)</span>
             </div>
             <div>
-                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Status Kebutuhan Pegawai</span>
-                @if ($selectedUnit->kuota_formasi_kosong > 0 || $selectedUnit->bezetting_saat_ini < $selectedUnit->kebutuhan_abk)
-                    <span class="font-bold text-rose-700 block mt-0.5 flex items-center gap-1">
-                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-600"></i>
-                        Kekurangan {{ max($selectedUnit->kuota_formasi_kosong, $selectedUnit->kebutuhan_abk - $selectedUnit->bezetting_saat_ini) }} Staf
-                    </span>
-                    <span class="text-[11px] text-slate-500">Sangat butuh mutasi masuk</span>
-                @else
-                    <span class="font-semibold text-emerald-700 block mt-0.5">Kapasitas Cukup / Terpenuhi</span>
-                    <span class="text-[11px] text-slate-500">Bezetting seimbang</span>
+                <span class="text-slate-400 block font-semibold text-[10px] uppercase">Status Kebutuhan &amp; Formasi Terbuka</span>
+                @if($unitTujuanEval)
+                <span class="inline-block px-2 py-0.5 mt-0.5 rounded border font-bold text-[10px] {{ $unitTujuanEval['badge_class'] }}">
+                    {{ $unitTujuanEval['status'] }} ({{ $unitTujuanEval['persentase'] }}%)
+                </span>
                 @endif
+                <span class="text-[11px] text-slate-500 block mt-1">Formasi Lowong Terbuka: <strong>{{ $openFormasiUnit->count() }} Jabatan</strong> ({{ $openFormasiUnit->sum('kuota_lowong') }} kursi)</span>
             </div>
             <div>
                 <span class="text-slate-400 block font-semibold text-[10px] uppercase">Titik Koordinat Kantor</span>
@@ -102,6 +98,20 @@
                 <span class="font-mono text-slate-700 block">Lng: {{ number_format($selectedUnit->kantor_lng, 5) }}</span>
             </div>
         </div>
+
+        @if($filterSummary)
+        <div class="p-3 rounded-xl {{ $filterSummary['lolos_syarat_mutlak'] > 0 ? 'bg-indigo-50/70 border-indigo-200 text-indigo-900' : 'bg-amber-50 border-amber-200 text-amber-900' }} border text-xs flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i data-lucide="filter" class="w-4 h-4 shrink-0"></i>
+                <span>
+                    <strong>Filter Syarat Mutlak (Poin 1-3):</strong>
+                    Dari {{ $filterSummary['total_pns_lain'] }} PNS unit lain &rarr;
+                    <strong>{{ $filterSummary['lolos_syarat_mutlak'] }} PNS lolos</strong>
+                    (Gugur Masa Jabatan &lt; 2 Thn: {{ $filterSummary['gugur_masa_jabatan'] }}, Formasi/Kelas Tidak Cocok: {{ $filterSummary['gugur_formasi'] }}).
+                </span>
+            </div>
+        </div>
+        @endif
         @endif
     </div>
 
@@ -221,18 +231,16 @@
                                 <div class="text-[10px] text-slate-400">Kerja: {{ number_format($item['masa_kerja_tahun'], 0) }} Thn</div>
                             </td>
                             <td class="px-4 py-3.5 text-center text-xs">
-                                @if ($item['kondisi_unit_asal_skor'] >= 3)
-                                    <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Unit asal kelebihan staf, sangat aman dimutasi">
-                                        Surplus Staf
+                                @php $ue = $item['unit_asal_eval'] ?? null; @endphp
+                                @if ($ue)
+                                    <span class="px-2 py-0.5 rounded-full font-bold border text-[10px] {{ $ue['badge_class'] }}">
+                                        {{ $ue['status'] }} ({{ $ue['persentase'] }}%)
                                     </span>
-                                @elseif ($item['kondisi_unit_asal_skor'] == 2)
-                                    <span class="px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-700">
-                                        Cukup (Normal)
-                                    </span>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">
+                                        Bez {{ $ue['bezetting'] }} / ABK {{ $ue['abk'] }} ({{ $ue['lowong'] }})
+                                    </div>
                                 @else
-                                    <span class="px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200" title="Unit asal juga kekurangan staf">
-                                        Kurang Staf
-                                    </span>
+                                    <span class="text-slate-400">-</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3.5 text-center font-mono font-bold text-xs text-indigo-900">

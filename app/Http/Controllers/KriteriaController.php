@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TopsisKriteria;
+use App\Services\MutasiRuleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -26,6 +27,7 @@ class KriteriaController extends Controller
         // Statistik ringkas kedua mode untuk tabs
         $countPnsToDinas = TopsisKriteria::where('kategori_mode', 'pns_to_dinas')->count();
         $countDinasToPns = TopsisKriteria::where('kategori_mode', 'dinas_to_pns')->count();
+        $mutasiRules = MutasiRuleService::getRules();
 
         return view('master-kriteria.index', compact(
             'kriteria',
@@ -33,8 +35,27 @@ class KriteriaController extends Controller
             'totalBobot',
             'currentMode',
             'countPnsToDinas',
-            'countDinasToPns'
+            'countDinasToPns',
+            'mutasiRules'
         ));
+    }
+
+    /**
+     * Memperbarui aturan dinamis mutasi (minimal masa jabatan & minimal masa kerja keluar daerah).
+     */
+    public function updateAturan(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'min_masa_jabatan_tahun' => 'required|numeric|min:0|max:20',
+            'min_masa_kerja_keluar_tahun' => 'required|integer|min:1|max:30',
+        ]);
+
+        MutasiRuleService::saveRules(
+            (float)$validated['min_masa_jabatan_tahun'],
+            (int)$validated['min_masa_kerja_keluar_tahun']
+        );
+
+        return back()->with('success', "Aturan mutasi berhasil diperbarui: Minimal Masa Jabatan {$validated['min_masa_jabatan_tahun']} tahun & Minimal Masa Kerja Keluar Daerah {$validated['min_masa_kerja_keluar_tahun']} tahun.");
     }
 
     /**

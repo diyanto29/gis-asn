@@ -413,7 +413,8 @@
         <!-- Navigation Links (Scrollable) -->
         <nav class="flex-1 px-3 py-4 space-y-6 overflow-y-auto text-xs">
             
-            <!-- Menu Utama / Dasbor -->
+            @if(Auth::check() && Auth::user()->isAdmin())
+            <!-- Menu Utama / Dasbor (Khusus Admin BKPSDM) -->
             <div>
                 <div class="px-3 mb-2 font-bold uppercase tracking-wider text-[10px] text-slate-400">
                     Dasbor Utama
@@ -425,6 +426,7 @@
                     </a>
                 </div>
             </div>
+            @endif
 
             <!-- Master Data Pengelolaan (Khusus Admin BKPSDM) -->
             @if(Auth::check() && Auth::user()->isAdmin())

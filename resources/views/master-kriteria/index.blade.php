@@ -20,6 +20,39 @@
         </div>
     </div>
 
+    <!-- Pengaturan Aturan Mutasi Dinamis (Syarat Mutlak & Keluar Daerah) -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <form method="POST" action="{{ route('master-kriteria.update-aturan') }}" class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            @csrf
+            <div class="flex-1">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-blue-700"></i>
+                    Aturan Mutasi Dinamis (Syarat Mutlak Sistem &amp; Keluar Daerah)
+                </h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">
+                    Mutasi dalam instansi mewajibkan kesesuaian jabatan (Fungsional exact / Pelaksana sama kelas), formasi tersedia (lowong &gt; 0), dan masa jabatan minimal. Aturan keluar daerah dapat diubah sewaktu-waktu.
+                </p>
+            </div>
+            <div class="flex flex-wrap items-end gap-3 shrink-0">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Min. Masa Jabatan (Thn)</label>
+                    <input type="number" step="0.5" min="0" max="20" name="min_masa_jabatan_tahun"
+                        value="{{ $mutasiRules['min_masa_jabatan_tahun'] ?? 2 }}"
+                        class="w-28 px-2.5 py-1.5 text-xs font-bold text-slate-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Min. Masa Kerja Keluar (Thn)</label>
+                    <input type="number" step="1" min="1" max="30" name="min_masa_kerja_keluar_tahun"
+                        value="{{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }}"
+                        class="w-32 px-2.5 py-1.5 text-xs font-bold text-slate-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600">
+                </div>
+                <button type="submit" class="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition shadow-xs h-[32px] inline-flex items-center gap-1.5">
+                    <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Aturan
+                </button>
+            </div>
+        </form>
+    </div>
+
     <!-- Mode Switcher Tabs -->
     <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <a href="{{ route('master-kriteria.index', ['mode' => 'pns_to_dinas']) }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition {{ $currentMode === 'pns_to_dinas' ? 'bg-blue-700 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">

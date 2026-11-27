@@ -113,28 +113,31 @@ class AsnMaster extends Model
     }
 
     /**
-     * Status Regulasi Komitmen Mutasi Keluar Daerah (Aturan Baru: Minimal 5 Tahun Pengabdian).
+     * Status Regulasi Komitmen Mutasi Keluar Daerah (Aturan Dinamis, Default: Minimal 5 Tahun Pengabdian).
      */
     public function getStatusKomitmen10TahunAttribute(): array
     {
+        $rules = \App\Services\MutasiRuleService::getRules();
+        $minTahunKeluar = (int)($rules['min_masa_kerja_keluar_tahun'] ?? 5);
         $tahun = $this->tahun_cpns;
         $masaPengabdian = $this->masa_pengabdian_tahun;
 
-        if ($masaPengabdian < 5) {
-            $sisa = 5 - $masaPengabdian;
+        if ($masaPengabdian < $minTahunKeluar) {
+            $sisa = $minTahunKeluar - $masaPengabdian;
             return [
                 'is_bound' => true,
                 'is_locked_external' => true,
                 'tahun_cpns' => $tahun,
                 'masa_pengabdian' => $masaPengabdian,
                 'sisa_tahun' => $sisa,
+                'min_tahun_keluar' => $minTahunKeluar,
                 'status_label' => "Ikatan Dinas {$tahun} (Sisa {$sisa} Th)",
                 'badge_color' => 'bg-amber-100 text-amber-800 border-amber-300',
                 'pill_short' => "Ikatan {$sisa} Th",
                 'hak_rotasi_internal' => true,
                 'hak_mutasi_keluar' => false,
-                'dasar_hukum' => 'Aturan Baru Mutasi Keluar Daerah (Minimal 5 Tahun)',
-                'notice' => "Wajib mengabdi minimal 5 tahun (TMT CPNS {$tahun}). Rotasi internal antar-SKPD Kabupaten XYZ DIIZINKAN, namun permohonan mutasi keluar daerah TERKUNCI (Sisa {$sisa} tahun)."
+                'dasar_hukum' => "Aturan Mutasi Keluar Daerah (Minimal {$minTahunKeluar} Tahun)",
+                'notice' => "Wajib mengabdi minimal {$minTahunKeluar} tahun (TMT CPNS {$tahun}). Rotasi internal antar-SKPD Kabupaten XYZ DIIZINKAN, namun permohonan mutasi keluar daerah TERKUNCI (Sisa {$sisa} tahun)."
             ];
         }
 
@@ -144,13 +147,14 @@ class AsnMaster extends Model
             'tahun_cpns' => $tahun,
             'masa_pengabdian' => $masaPengabdian,
             'sisa_tahun' => 0,
-            'status_label' => 'Memenuhi Syarat 5 Th',
+            'min_tahun_keluar' => $minTahunKeluar,
+            'status_label' => "Memenuhi Syarat {$minTahunKeluar} Th",
             'badge_color' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
-            'pill_short' => 'Syarat 5 Th Terpenuhi',
+            'pill_short' => "Syarat {$minTahunKeluar} Th Terpenuhi",
             'hak_rotasi_internal' => true,
             'hak_mutasi_keluar' => true,
-            'dasar_hukum' => 'Aturan Baru Mutasi Keluar Daerah (Minimal 5 Tahun)',
-            'notice' => "Masa pengabdian telah memenuhi syarat minimal 5 tahun ({$masaPengabdian} tahun). Berhak mengajukan rotasi internal maupun usulan mutasi keluar daerah."
+            'dasar_hukum' => "Aturan Mutasi Keluar Daerah (Minimal {$minTahunKeluar} Tahun)",
+            'notice' => "Masa pengabdian telah memenuhi syarat minimal {$minTahunKeluar} tahun ({$masaPengabdian} tahun). Berhak mengajukan rotasi internal maupun usulan mutasi keluar daerah."
         ];
     }
 

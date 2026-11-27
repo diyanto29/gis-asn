@@ -158,8 +158,9 @@ class TopsisService
             $dNegative = sqrt($distNegativeSq);
 
             // Perhitungan Vi dengan perlindungan jika denominator nol
+            // Jika hanya terdapat 1 alternatif yang lolos syarat mutlak, nilai Vi = 1.0 (optimal tunggal)
             $denominator = $dPositive + $dNegative;
-            $vi = ($denominator > 0) ? ($dNegative / $denominator) : 0.0;
+            $vi = ($denominator > 0) ? ($dNegative / $denominator) : ($m === 1 ? 1.0 : 0.0);
 
             $results[] = [
                 'alternative' => $alt,
