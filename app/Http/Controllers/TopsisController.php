@@ -85,9 +85,7 @@ class TopsisController extends Controller
             $filterSummary = [
                 'total_unit_lain' => UnitKerja::where('id', '!=', $selectedAsn->id_unit_saat_ini)->count(),
                 'unit_cocok_formasi' => $matchingByUnit->count(),
-                'aturan_match' => strtolower((string)$selectedAsn->jenis_jabatan) === 'pelaksana'
-                    ? 'Jabatan Pelaksana — Cocok Kelas Jabatan ' . ($selectedAsn->masterJabatan?->kelas_jabatan ?? '-')
-                    : 'Jabatan Fungsional — Cocok Nama Jabatan (' . $selectedAsn->jabatan . ')',
+                'aturan_match' => $this->mutasiRule->deskripsiAturanMatch($selectedAsn),
             ];
 
             // POIN 3 MUTLAK: Hanya hitung peringkat jika masa jabatan >= batas minimal (default 2 tahun)

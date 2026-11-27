@@ -218,11 +218,74 @@ class MutasiRuleService
     }
 
     /**
+     * Memetakan string tingkat/kualifikasi pendidikan ke level numerik standar (1 s/d 9).
+     *
+     * Level Pendidikan:
+     *   1 = SD, 2 = SMP/SLTP, 3 = SMA/SLTA/SMK/STM/SMEA,
+     *   4 = D-I, 5 = D-II, 6 = D-III, 7 = D-IV/S-1/Profesi, 8 = S-2, 9 = S-3.
+     *
+     * Jika string kualifikasi memuat beberapa pilihan (misal "D-III / S-1 ..."),
+     * mengembalikan level MINIMUM yang dipersyaratkan jabatan ($mode = 'min'),
+     * sedangkan untuk profil ASN mengembalikan level TERTINGGI ($mode = 'max').
+     */
+    public function deteksiLevelPendidikan(?string $teks, string $mode = 'max'): int
+    {
+        $str = strtoupper(trim((string)$teks));
+        if ($str === '') {
+            return 0;
+        }
+
+        $patterns = [
+            9 => '/\b(S-?3|DOKTOR|STRATA\s*3)\b/',
+            8 => '/\b(S-?2|MAGISTER|PASCASARJANA|STRATA\s*2)\b/',
+            7 => '/\b(S-?1|D-?IV|D4|DIPLOMA\s*IV|SARJANA(?!\s*MUDA)|PROFESI|NERS|DOKTER|APOTEKER)\b/',
+            6 => '/\b(D-?III|D3|DIPLOMA\s*III|SARJANA\s*MUDA)\b/',
+            5 => '/\b(D-?II|A-?II|D2|DIPLOMA\s*II)\b/',
+            4 => '/\b(D-?I|D1|DIPLOMA\s*I)\b/',
+            3 => '/\b(SLTA|SMA|SMU|SMK|STM|SMEA|PAKET\s*C|SEKOLAH\s*MENENGAH\s*ATAS)\b/',
+            2 => '/\b(SLTP|SMP|MTS)\b/',
+            1 => '/\b(SD|SEKOLAH\s*DASAR)\b/',
+        ];
+
+        $matched = [];
+        foreach ($patterns as $level => $regex) {
+            if (preg_match($regex, $str)) {
+                $matched[] = $level;
+            }
+        }
+
+        if (empty($matched)) {
+            return 0;
+        }
+
+        return $mode === 'min' ? min($matched) : max($matched);
+    }
+
+    /**
+     * Menghasilkan deskripsi ringkas aturan matching jabatan yang aktif untuk seorang ASN.
+     */
+    public function deskripsiAturanMatch(AsnMaster $asn): string
+    {
+        $jenis = strtolower(trim((string)$asn->jenis_jabatan));
+        if ($jenis === 'pelaksana') {
+            $kls = $asn->masterJabatan?->kelas_jabatan ?? '-';
+            $pend = $asn->tingkat_pendidikan ?: ($asn->pendidikan_terakhir ?: '-');
+            return "Jabatan Pelaksana (Kelas {$kls}, Pend. {$pend}) — Fleksibel (Sama/Turun/Naik dengan Tingkat Pendidikan Sesuai)";
+        }
+
+        $jenjang = $asn->masterJabatan?->jenjang_jabatan;
+        $labelJenjang = $jenjang ? " — Jenjang {$jenjang}" : '';
+        return "Jabatan Fungsional — Wajib Sama Nama Jabatan ({$asn->jabatan}){$labelJenjang}";
+    }
+
+    /**
      * Mencari formasi terbuka (kuota_lowong > 0) yang COCOK untuk seorang PNS.
      *
      * Aturan Matching Mutlak (Poin 1 & 2):
-     * - Jabatan Fungsional : Nama/Master Jabatan wajib sama persis + kuota_lowong > 0.
-     * - Jabatan Pelaksana  : Kelas Jabatan wajib sama (contoh: Kelas 6 -> Kelas 6) + kuota_lowong > 0.
+     * - Jabatan Fungsional : Wajib sama NAMA JABATAN dan JENJANG JABATAN + kuota_lowong > 0.
+     * - Jabatan Pelaksana  : Fleksibel pada jabatan pelaksana (kelas jabatan bisa sama, turun, atau naik),
+     *                        NAMUN jika NAIK kelas jabatan maka tingkat pendidikan PNS wajib sesuai
+     *                        dengan kualifikasi pendidikan jabatan tujuan + kuota_lowong > 0.
      *
      * @param AsnMaster $asn
      * @param Collection<int, FormasiJabatan> $openFormasis Formasi terbuka (harus sudah eager-load masterJabatan)
@@ -233,34 +296,76 @@ class MutasiRuleService
         $jenisAsn = strtolower(trim((string)$asn->jenis_jabatan));
         $kelasAsn = $asn->masterJabatan?->kelas_jabatan;
         $namaJabatanAsn = strtolower(trim((string)$asn->jabatan));
+        $jenjangAsn = strtolower(trim((string)($asn->masterJabatan?->jenjang_jabatan ?? '')));
 
-        return $openFormasis->filter(function (FormasiJabatan $f) use ($asn, $jenisAsn, $kelasAsn, $namaJabatanAsn) {
+        $eduAsn = max(
+            $this->deteksiLevelPendidikan($asn->tingkat_pendidikan, 'max'),
+            $this->deteksiLevelPendidikan($asn->pendidikan_terakhir, 'max')
+        );
+
+        return $openFormasis->filter(function (FormasiJabatan $f) use ($asn, $jenisAsn, $kelasAsn, $namaJabatanAsn, $jenjangAsn, $eduAsn) {
             if ((int)$f->kuota_lowong <= 0) {
                 return false;
             }
 
             $jenisFormasi = strtolower(trim((string)($f->jenis_jabatan ?: ($f->masterJabatan?->jenis_jabatan ?? ''))));
 
-            // Khusus Jabatan Pelaksana: cukup cocok pada Kelas Jabatan yang sama
+            // -----------------------------------------------------------------
+            // JABATAN PELAKSANA: Fleksibel (Sama / Turun / Naik + Pendidikan Sesuai)
+            // -----------------------------------------------------------------
             if ($jenisAsn === 'pelaksana') {
                 if ($jenisFormasi !== 'pelaksana') {
                     return false;
                 }
+
                 $kelasFormasi = $f->masterJabatan?->kelas_jabatan;
+
+                // Level pendidikan minimum yang dipersyaratkan formasi tujuan
+                $kualifFormasi = trim((string)($f->kualifikasi_pendidikan ?: ($f->masterJabatan?->kualifikasi_pendidikan ?? '')));
+                $eduFormasiMin = $this->deteksiLevelPendidikan($kualifFormasi, 'min');
+
                 if ($kelasAsn !== null && $kelasFormasi !== null) {
-                    return (int)$kelasFormasi === (int)$kelasAsn;
+                    // Sama atau Turun kelas jabatan: diperbolehkan langsung (fleksibel)
+                    if ((int)$kelasFormasi <= (int)$kelasAsn) {
+                        return true;
+                    }
+
+                    // Naik kelas jabatan: tingkat pendidikan PNS wajib memenuhi kualifikasi jabatan tujuan
+                    if ($eduFormasiMin > 0 && $eduAsn > 0) {
+                        return $eduAsn >= $eduFormasiMin;
+                    }
+
+                    // Jika data kualifikasi belum terisi, tidak boleh naik tanpa verifikasi pendidikan
+                    return false;
                 }
-                // Fallback jika kelas belum terisi
+
+                // Fallback jika kelas jabatan tidak tersedia: pastikan pendidikan sesuai
+                if ($eduFormasiMin > 0 && $eduAsn > 0) {
+                    return $eduAsn >= $eduFormasiMin;
+                }
+
                 return ($asn->id_master_jabatan && (int)$f->id_master_jabatan === (int)$asn->id_master_jabatan)
                     || strtolower(trim((string)$f->nama_jabatan)) === $namaJabatanAsn;
             }
 
-            // Jabatan Fungsional: wajib exact match Master Jabatan atau Nama Jabatan
-            if ($asn->id_master_jabatan && $f->id_master_jabatan) {
-                return (int)$f->id_master_jabatan === (int)$asn->id_master_jabatan;
+            // -----------------------------------------------------------------
+            // JABATAN FUNGSIONAL: Wajib SAMA Nama Jabatan DAN Jenjang Jabatan
+            // -----------------------------------------------------------------
+            if ($jenisFormasi !== '' && $jenisFormasi !== 'fungsional') {
+                return false;
             }
 
-            return strtolower(trim((string)$f->nama_jabatan)) === $namaJabatanAsn;
+            $namaFormasi = strtolower(trim((string)($f->nama_jabatan ?: ($f->masterJabatan?->nama_jabatan ?? ''))));
+            $jenjangFormasi = strtolower(trim((string)($f->jenjang_jabatan ?: ($f->masterJabatan?->jenjang_jabatan ?? ''))));
+
+            if ($asn->id_master_jabatan && $f->id_master_jabatan && (int)$f->id_master_jabatan === (int)$asn->id_master_jabatan) {
+                return true;
+            }
+
+            $namaSama = ($namaFormasi !== '' && $namaFormasi === $namaJabatanAsn);
+            $jenjangSama = ($jenjangAsn === '' || $jenjangFormasi === '' || $jenjangFormasi === $jenjangAsn);
+
+            return $namaSama && $jenjangSama;
         })->values();
     }
 

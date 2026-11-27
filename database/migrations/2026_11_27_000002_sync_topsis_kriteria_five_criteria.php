@@ -50,7 +50,7 @@ return new class extends Migration
                     'nama_kriteria' => 'Formasi Jabatan (Kesesuaian & Kuota)',
                     'bobot' => 0.15,
                     'atribut' => 'benefit',
-                    'keterangan' => 'Mutlak: Fungsional wajib cocok nama jabatan; Pelaksana cocok kelas jabatan; kuota lowong > 0.',
+                    'keterangan' => 'Mutlak: Fungsional wajib sama nama & jenjang jabatan; Pelaksana fleksibel sama/turun/naik (jika naik tingkat pendidikan wajib sesuai); kuota lowong > 0.',
                 ],
                 [
                     'kode_kriteria' => 'C5',
@@ -92,7 +92,7 @@ return new class extends Migration
                     'nama_kriteria' => 'Formasi Jabatan Tersedia di Dinas',
                     'bobot' => 0.15,
                     'atribut' => 'benefit',
-                    'keterangan' => 'Kesesuaian jabatan (Fungsional exact / Pelaksana sama kelas) dan jumlah kuota lowong.',
+                    'keterangan' => 'Fungsional wajib sama nama & jenjang jabatan; Pelaksana fleksibel sama/turun/naik (jika naik tingkat pendidikan wajib sesuai); kuota lowong > 0.',
                 ],
                 [
                     'kode_kriteria' => 'C5',

@@ -30,7 +30,7 @@
                     Aturan Mutasi Dinamis (Syarat Mutlak Sistem &amp; Keluar Daerah)
                 </h3>
                 <p class="text-[11px] text-slate-500 mt-0.5">
-                    Mutasi dalam instansi mewajibkan kesesuaian jabatan (Fungsional exact / Pelaksana sama kelas), formasi tersedia (lowong &gt; 0), dan masa jabatan minimal. Aturan keluar daerah dapat diubah sewaktu-waktu.
+                    Mutasi dalam instansi mewajibkan kesesuaian jabatan (Fungsional wajib sama nama &amp; jenjang; Pelaksana fleksibel sama/turun/naik dengan tingkat pendidikan sesuai), formasi tersedia (lowong &gt; 0), dan masa jabatan minimal. Aturan batas tahun dapat diubah dinamis.
                 </p>
             </div>
             <div class="flex flex-wrap items-end gap-3 shrink-0">

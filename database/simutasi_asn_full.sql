@@ -1011,12 +1011,12 @@ INSERT INTO `topsis_kriteria` VALUES
 (1,'C1','pns_to_dinas','jarak_dinas','Jarak Domisili ke Unit Tujuan (Km)',0.35,'cost',1,'Program mendekatkan penugasan dengan domisili PNS (bobot prioritas terbesar).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
 (2,'C2','pns_to_dinas','masa_jabatan','Masa Jabatan Saat Ini (Tahun)',0.20,'benefit',1,'Syarat mutlak minimal > 2 tahun (dihitung dari TMT SK Jabatan).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
 (3,'C3','pns_to_dinas','masa_kerja','Masa Kerja PNS (Tahun)',0.15,'benefit',1,'Pembanding senioritas dalam daerah; untuk mutasi keluar daerah wajib > 5 tahun (dinamis).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
-(4,'C4','pns_to_dinas','formasi_jabatan','Formasi Jabatan (Kesesuaian & Kuota)',0.15,'benefit',1,'Mutlak: Fungsional wajib cocok nama jabatan; Pelaksana cocok kelas jabatan; kuota lowong > 0.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(4,'C4','pns_to_dinas','formasi_jabatan','Formasi Jabatan (Kesesuaian & Kuota)',0.15,'benefit',1,'Mutlak: Fungsional wajib sama nama & jenjang jabatan; Pelaksana fleksibel sama/turun/naik (jika naik tingkat pendidikan wajib sesuai); kuota lowong > 0.','2026-11-27 08:28:19','2026-11-27 08:44:21'),
 (5,'C5','pns_to_dinas','kebutuhan_unit_asal','Kebutuhan Pegawai Unit Kerja Saat Ini (%)',0.15,'benefit',1,'Persentase Bezetting/ABK unit asal: >=100% Lengkap (3), >=50% Cukup (2), <50% Kurang (1).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
 (6,'C1','dinas_to_pns','jarak_pns','Jarak Domisili PNS ke Dinas (Km)',0.35,'cost',1,'Program mendekatkan penugasan dengan domisili PNS (bobot prioritas terbesar).','2026-11-27 08:28:19','2026-11-27 08:28:19'),
 (7,'C2','dinas_to_pns','masa_jabatan_pns','Masa Jabatan PNS (Tahun)',0.20,'benefit',1,'Syarat mutlak minimal > 2 tahun pada jabatan saat ini.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
 (8,'C3','dinas_to_pns','masa_kerja_pns','Masa Kerja PNS (Tahun)',0.15,'benefit',1,'Senioritas masa kerja PNS sejak TMT CPNS.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
-(9,'C4','dinas_to_pns','formasi_jabatan_dinas','Formasi Jabatan Tersedia di Dinas',0.15,'benefit',1,'Kesesuaian jabatan (Fungsional exact / Pelaksana sama kelas) dan jumlah kuota lowong.','2026-11-27 08:28:19','2026-11-27 08:28:19'),
+(9,'C4','dinas_to_pns','formasi_jabatan_dinas','Formasi Jabatan Tersedia di Dinas',0.15,'benefit',1,'Mutlak: Fungsional wajib sama nama & jenjang jabatan; Pelaksana fleksibel sama/turun/naik (jika naik tingkat pendidikan wajib sesuai); kuota lowong > 0.','2026-11-27 08:28:19','2026-11-27 08:44:21'),
 (10,'C5','dinas_to_pns','kebutuhan_unit_asal','Kebutuhan Pegawai Unit Kerja Asal (%)',0.15,'benefit',1,'Persentase Bezetting/ABK unit asal: >=100% Lengkap (3), >=50% Cukup (2), <50% Kurang (1).','2026-11-27 08:28:19','2026-11-27 08:28:19');
 /*!40000 ALTER TABLE `topsis_kriteria` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -1153,4 +1153,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-11-27 22:28:39
+-- Dump completed on 2026-11-27 22:44:41

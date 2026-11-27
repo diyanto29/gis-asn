@@ -85,9 +85,7 @@ class SimulasiMandiriController extends Controller
         $matchingByUnit = $matchingFormasis->groupBy('id_unit_kerja');
 
         if ($matchingByUnit->isEmpty()) {
-            $aturanMatch = strtolower((string)$asn->jenis_jabatan) === 'pelaksana'
-                ? 'Jabatan Pelaksana Kelas ' . ($asn->masterJabatan?->kelas_jabatan ?? '-')
-                : "Jabatan Fungsional {$asn->jabatan}";
+            $aturanMatch = $this->mutasiRule->deskripsiAturanMatch($asn);
 
             return view('asn.simulasi-mandiri', [
                 'asn' => $asn,
