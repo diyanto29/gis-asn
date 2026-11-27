@@ -37,16 +37,30 @@ if defined LARAGON_DIR (
         if exist "!LARAGON_DIR!\bin\composer" set "PATH=!LARAGON_DIR!\bin\composer;!PATH!"
     )
 
-    where mysql >nul 2>&1
-    if errorlevel 1 (
-        set "MYSQL_BIN="
+    set "MYSQL_ROOT="
+    set "MYSQL_BIN="
+    if exist "!LARAGON_DIR!\usr\laragon.ini" (
+        for /f "usebackq tokens=1,* delims==" %%A in ("!LARAGON_DIR!\usr\laragon.ini") do (
+            if /i "%%A"=="Version" (
+                if not defined MYSQL_ROOT if exist "!LARAGON_DIR!\bin\mysql\%%B\bin\mysqld.exe" set "MYSQL_ROOT=!LARAGON_DIR!\bin\mysql\%%B"
+                if not defined MYSQL_ROOT if exist "!LARAGON_DIR!\bin\mariadb\%%B\bin\mysqld.exe" set "MYSQL_ROOT=!LARAGON_DIR!\bin\mariadb\%%B"
+            )
+        )
+    )
+    if not defined MYSQL_ROOT (
         for /f "delims=" %%M in ('dir /b /ad /o-n "!LARAGON_DIR!\bin\mysql\mysql-*" 2^>nul') do (
-            if not defined MYSQL_BIN if exist "!LARAGON_DIR!\bin\mysql\%%M\bin\mysql.exe" set "MYSQL_BIN=!LARAGON_DIR!\bin\mysql\%%M\bin"
+            if not defined MYSQL_ROOT if exist "!LARAGON_DIR!\bin\mysql\%%M\bin\mysqld.exe" set "MYSQL_ROOT=!LARAGON_DIR!\bin\mysql\%%M"
         )
+    )
+    if not defined MYSQL_ROOT (
         for /f "delims=" %%M in ('dir /b /ad /o-n "!LARAGON_DIR!\bin\mariadb\mariadb-*" 2^>nul') do (
-            if not defined MYSQL_BIN if exist "!LARAGON_DIR!\bin\mariadb\%%M\bin\mysql.exe" set "MYSQL_BIN=!LARAGON_DIR!\bin\mariadb\%%M\bin"
+            if not defined MYSQL_ROOT if exist "!LARAGON_DIR!\bin\mariadb\%%M\bin\mysqld.exe" set "MYSQL_ROOT=!LARAGON_DIR!\bin\mariadb\%%M"
         )
-        if defined MYSQL_BIN set "PATH=!MYSQL_BIN!;!PATH!"
+    )
+    if defined MYSQL_ROOT (
+        set "MYSQL_BIN=!MYSQL_ROOT!\bin"
+        where mysql >nul 2>&1
+        if errorlevel 1 set "PATH=!MYSQL_BIN!;!PATH!"
     )
 )
 
@@ -153,19 +167,38 @@ echo [INFO] Mengecek koneksi MySQL/MariaDB Laragon di 127.0.0.1:3306...
 
 :CHECK_MYSQL
 php -r "$fp=@fsockopen('127.0.0.1', 3306, $e, $s, 2); if($fp){fclose($fp); exit(0);} exit(1);"
-if errorlevel 1 (
-    echo.
-    echo [WARN] MySQL/MariaDB belum berjalan di port 3306!
-    if defined LARAGON_DIR (
-        echo        Membuka Laragon... Silakan klik tombol "Start All" di Laragon.
-        start "" "!LARAGON_DIR!\laragon.exe"
-    ) else (
-        echo        Silakan buka Laragon dan klik "Start All".
+if not errorlevel 1 goto MYSQL_READY
+
+if defined MYSQL_BIN (
+    if exist "!MYSQL_BIN!\mysqld.exe" (
+        echo [INFO] MySQL belum berjalan. Auto-starting MySQL Laragon...
+        if exist "!MYSQL_ROOT!\my.ini" (
+            start "" /B "!MYSQL_BIN!\mysqld.exe" --defaults-file="!MYSQL_ROOT!\my.ini" >nul 2>&1
+        ) else (
+            start "" /B "!MYSQL_BIN!\mysqld.exe" >nul 2>&1
+        )
+        echo [INFO] Menunggu MySQL siap di port 3306...
+        for /l %%I in (1,1,15) do (
+            timeout /t 1 /nobreak >nul
+            php -r "$fp=@fsockopen('127.0.0.1', 3306, $e, $s, 1); if($fp){fclose($fp); exit(0);} exit(1);"
+            if not errorlevel 1 goto MYSQL_READY
+        )
     )
-    echo        Setelah MySQL aktif, tekan tombol apapun untuk melanjutkan...
-    pause >nul
-    goto CHECK_MYSQL
 )
+
+echo.
+echo [WARN] Auto-start MySQL belum merespons di port 3306.
+if defined LARAGON_DIR (
+    echo        Membuka Laragon... Silakan klik tombol "Start All" di Laragon.
+    start "" "!LARAGON_DIR!\laragon.exe"
+) else (
+    echo        Silakan buka Laragon dan klik "Start All".
+)
+echo        Setelah MySQL aktif, tekan tombol apapun untuk melanjutkan...
+pause >nul
+goto CHECK_MYSQL
+
+:MYSQL_READY
 echo [OK]   MySQL/MariaDB aktif di 127.0.0.1:3306.
 
 :: Baca konfigurasi DB dari .env, buat database jika belum ada, dan cek apakah masih kosong
