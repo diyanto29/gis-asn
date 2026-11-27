@@ -112,6 +112,8 @@ class KriteriaController extends Controller
             'atribut' => 'required|in:cost,benefit',
             'bobot' => 'required|numeric|min:0|max:1',
             'keterangan' => 'nullable|string|max:255',
+            'min_masa_jabatan_tahun' => 'nullable|numeric|min:0|max:20',
+            'min_masa_kerja_keluar_tahun' => 'nullable|integer|min:1|max:30',
         ]);
 
         $k->update([
@@ -122,8 +124,26 @@ class KriteriaController extends Controller
             'keterangan' => $validated['keterangan'],
         ]);
 
+        // Simpan nilai subkriteria dinamis jika mengedit Masa Jabatan / Masa Kerja
+        $rules = MutasiRuleService::getRules();
+        $updatedSub = false;
+        if ($request->filled('min_masa_jabatan_tahun') && str_contains($validated['parameter_key'], 'masa_jabatan')) {
+            $rules['min_masa_jabatan_tahun'] = (float)$validated['min_masa_jabatan_tahun'];
+            $updatedSub = true;
+        }
+        if ($request->filled('min_masa_kerja_keluar_tahun') && str_contains($validated['parameter_key'], 'masa_kerja')) {
+            $rules['min_masa_kerja_keluar_tahun'] = (int)$validated['min_masa_kerja_keluar_tahun'];
+            $updatedSub = true;
+        }
+        if ($updatedSub) {
+            MutasiRuleService::saveRules(
+                (float)$rules['min_masa_jabatan_tahun'],
+                (int)$rules['min_masa_kerja_keluar_tahun']
+            );
+        }
+
         return redirect()->route('master-kriteria.index', ['mode' => $k->kategori_mode])
-            ->with('success', "Kriteria [{$k->kode_kriteria}] {$k->nama_kriteria} berhasil diperbarui.");
+            ->with('success', "Kriteria [{$k->kode_kriteria}] {$k->nama_kriteria}" . ($updatedSub ? ' beserta subkriterianya' : '') . ' berhasil diperbarui.');
     }
 
     /**

@@ -20,39 +20,6 @@
         </div>
     </div>
 
-    <!-- Pengaturan Aturan Mutasi Dinamis (Syarat Mutlak & Keluar Daerah) -->
-    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
-        <form method="POST" action="{{ route('master-kriteria.update-aturan') }}" class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-            @csrf
-            <div class="flex-1">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-blue-700"></i>
-                    Aturan Mutasi Dinamis (Syarat Mutlak Sistem &amp; Keluar Daerah)
-                </h3>
-                <p class="text-[11px] text-slate-500 mt-0.5">
-                    Mutasi dalam instansi mewajibkan kesesuaian jabatan (Fungsional wajib sama nama &amp; jenjang; Pelaksana fleksibel sama/turun/naik dengan tingkat pendidikan sesuai), formasi tersedia (lowong &gt; 0), dan masa jabatan minimal. Aturan batas tahun dapat diubah dinamis.
-                </p>
-            </div>
-            <div class="flex flex-wrap items-end gap-3 shrink-0">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Min. Masa Jabatan (Thn)</label>
-                    <input type="number" step="0.5" min="0" max="20" name="min_masa_jabatan_tahun"
-                        value="{{ $mutasiRules['min_masa_jabatan_tahun'] ?? 2 }}"
-                        class="w-28 px-2.5 py-1.5 text-xs font-bold text-slate-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Min. Masa Kerja Keluar (Thn)</label>
-                    <input type="number" step="1" min="1" max="30" name="min_masa_kerja_keluar_tahun"
-                        value="{{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }}"
-                        class="w-32 px-2.5 py-1.5 text-xs font-bold text-slate-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600">
-                </div>
-                <button type="submit" class="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition shadow-xs h-[32px] inline-flex items-center gap-1.5">
-                    <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Aturan
-                </button>
-            </div>
-        </form>
-    </div>
-
     <!-- Mode Switcher Tabs -->
     <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
         <a href="{{ route('master-kriteria.index', ['mode' => 'pns_to_dinas']) }}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition {{ $currentMode === 'pns_to_dinas' ? 'bg-blue-700 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
@@ -158,14 +125,24 @@
                                     <div class="text-[11px] text-slate-400 font-mono">Parameter Key: <code>{{ $k->parameter_key ?? '-' }}</code></div>
                                     <div class="text-xs text-slate-500 mt-0.5">{{ $k->keterangan ?? '-' }}</div>
                                     @if (str_contains((string)$k->parameter_key, 'masa_jabatan'))
-                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-semibold">
-                                            <i data-lucide="git-branch" class="w-3 h-3"></i>
-                                            Subkriteria Aktif: TMT Jabatan &ge; {{ $mutasiRules['min_masa_jabatan_tahun'] ?? 2 }} Tahun (Mutlak, Dinamis)
+                                        <div class="mt-2 p-2 rounded-lg bg-blue-50/70 border border-blue-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                                            <div class="flex items-center gap-1.5 text-blue-900">
+                                                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-blue-700 shrink-0"></i>
+                                                <span><strong>Subkriteria:</strong> Batas Minimal Masa Jabatan (TMT Jabatan) &ge; <span class="px-1.5 py-0.5 rounded bg-blue-700 text-white font-mono font-bold">{{ $mutasiRules['min_masa_jabatan_tahun'] ?? 2 }} Tahun</span> (Mutlak)</span>
+                                            </div>
+                                            <button type="button" onclick='openEditCriteriaModal(@json($k))' class="px-2 py-0.5 rounded bg-white hover:bg-blue-100 text-blue-700 border border-blue-300 text-[10px] font-bold transition inline-flex items-center gap-1">
+                                                <i data-lucide="edit-2" class="w-3 h-3"></i> Edit Subkriteria
+                                            </button>
                                         </div>
                                     @elseif (str_contains((string)$k->parameter_key, 'masa_kerja'))
-                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-semibold">
-                                            <i data-lucide="git-branch" class="w-3 h-3"></i>
-                                            Subkriteria Aktif: TMT CPNS &gt; {{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }} Tahun untuk Keluar Kabupaten XYZ (Dinamis)
+                                        <div class="mt-2 p-2 rounded-lg bg-indigo-50/70 border border-indigo-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                                            <div class="flex items-center gap-1.5 text-indigo-900">
+                                                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-indigo-700 shrink-0"></i>
+                                                <span><strong>Subkriteria:</strong> Batas Minimal Masa Kerja Keluar Kab. XYZ (TMT CPNS) &gt; <span class="px-1.5 py-0.5 rounded bg-indigo-700 text-white font-mono font-bold">{{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }} Tahun</span></span>
+                                            </div>
+                                            <button type="button" onclick='openEditCriteriaModal(@json($k))' class="px-2 py-0.5 rounded bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 text-[10px] font-bold transition inline-flex items-center gap-1">
+                                                <i data-lucide="edit-2" class="w-3 h-3"></i> Edit Subkriteria
+                                            </button>
                                         </div>
                                     @elseif (str_contains((string)$k->parameter_key, 'kebutuhan_unit_asal'))
                                         <div class="mt-1.5 inline-flex flex-wrap items-center gap-1.5 text-[10px] font-semibold">
@@ -380,6 +357,28 @@
                 <input type="number" name="bobot" id="edit_bobot" step="0.01" min="0" max="1" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
             </div>
 
+            <!-- Subkriteria Dinamis: Masa Jabatan -->
+            <div id="editSubMasaJabatanWrap" class="hidden p-3 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
+                <label class="block text-xs font-bold text-blue-900">
+                    Subkriteria: Batas Minimal Masa Jabatan (Tahun) <span class="text-rose-500">*</span>
+                </label>
+                <input type="number" step="0.5" min="0" max="20" name="min_masa_jabatan_tahun" id="edit_min_masa_jabatan_tahun"
+                    value="{{ $mutasiRules['min_masa_jabatan_tahun'] ?? 2 }}"
+                    class="w-full text-xs font-mono font-bold border border-blue-300 rounded-lg p-2 bg-white focus:border-blue-600 focus:ring-blue-600">
+                <p class="text-[10px] text-blue-700">Syarat mutlak TMT Jabatan untuk mutasi dalam instansi (contoh: 2, 3, 5 tahun).</p>
+            </div>
+
+            <!-- Subkriteria Dinamis: Masa Kerja -->
+            <div id="editSubMasaKerjaWrap" class="hidden p-3 rounded-xl bg-indigo-50 border border-indigo-200 space-y-1.5">
+                <label class="block text-xs font-bold text-indigo-900">
+                    Subkriteria: Batas Minimal Masa Kerja Keluar Kab. XYZ (Tahun) <span class="text-rose-500">*</span>
+                </label>
+                <input type="number" step="1" min="1" max="30" name="min_masa_kerja_keluar_tahun" id="edit_min_masa_kerja_keluar_tahun"
+                    value="{{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }}"
+                    class="w-full text-xs font-mono font-bold border border-indigo-300 rounded-lg p-2 bg-white focus:border-indigo-600 focus:ring-indigo-600">
+                <p class="text-[10px] text-indigo-700">Batas minimal TMT CPNS jika mutasi keluar Kabupaten XYZ (contoh: 2, 3, 5 tahun).</p>
+            </div>
+
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Landasan Kebijakan</label>
                 <textarea name="keterangan" id="edit_keterangan" rows="2" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500"></textarea>
@@ -424,6 +423,13 @@
             document.getElementById('edit_atribut').value = item.atribut || 'benefit';
             document.getElementById('edit_bobot').value = parseFloat(item.bobot || 0).toFixed(2);
             document.getElementById('edit_keterangan').value = item.keterangan || '';
+
+            const paramKey = (item.parameter_key || '').toLowerCase();
+            const subJab = document.getElementById('editSubMasaJabatanWrap');
+            const subKer = document.getElementById('editSubMasaKerjaWrap');
+            if (subJab) subJab.classList.toggle('hidden', !paramKey.includes('masa_jabatan'));
+            if (subKer) subKer.classList.toggle('hidden', !paramKey.includes('masa_kerja'));
+
             document.getElementById('editCriteriaModal').classList.remove('hidden');
             if (window.lucide) lucide.createIcons();
         };
