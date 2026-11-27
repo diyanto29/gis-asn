@@ -92,52 +92,41 @@ class FormasiJabatanController extends Controller
     }
 
     /**
-     * Menyimpan data formasi jabatan baru dan sinkronisasi kuota unit kerja.
+     * Menyimpan data formasi jabatan baru (atribut jabatan otomatis dari MasterJabatan,
+     * bezetting & kuota lowong dihitung otomatis dari pemangku PNS).
      */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'id_unit_kerja' => 'required|exists:unit_kerja,id',
-            'id_master_jabatan' => 'nullable|exists:master_jabatan,id',
+            'id_master_jabatan' => 'required|exists:master_jabatan,id',
             'tahun_anggaran' => 'required|integer|min:2020|max:2035',
-            'periode' => 'required|string|max:50',
-            'nama_jabatan' => 'required|string|max:150',
-            'jenis_jabatan' => 'required|in:struktural,fungsional,pelaksana',
-            'jenjang_jabatan' => 'nullable|string|max:50',
-            'kualifikasi_pendidikan' => 'nullable|string|max:150',
             'kebutuhan_abk' => 'required|integer|min:1',
-            'bezetting_riil' => 'required|integer|min:0',
-            'kuota_lowong' => 'nullable|integer|min:0',
-            'status' => 'required|in:terbuka,terisi,ditutup',
-            'keterangan' => 'nullable|string',
         ]);
 
-        // Korelasi otomatis ke master_jabatan jika belum dipilih langsung
-        if (empty($validated['id_master_jabatan'])) {
-            $master = MasterJabatan::whereRaw('LOWER(nama_jabatan) = ?', [strtolower(trim($validated['nama_jabatan']))])->first();
-            if ($master) {
-                $validated['id_master_jabatan'] = $master->id;
-            }
-        }
+        $master = MasterJabatan::findOrFail($validated['id_master_jabatan']);
 
-        // Standar Regulasi: Kuota lowong = max(0, Kebutuhan ABK - Bezetting Riil)
-        // Jika status ditutup / terisi, kuota efektif menjadi 0
-        if ($validated['status'] === 'terbuka') {
-            $validated['kuota_lowong'] = max(0, (int)$validated['kebutuhan_abk'] - (int)$validated['bezetting_riil']);
-        } else {
-            $validated['kuota_lowong'] = 0;
-        }
+        $formasi = FormasiJabatan::create([
+            'id_unit_kerja' => $validated['id_unit_kerja'],
+            'id_master_jabatan' => $master->id,
+            'tahun_anggaran' => $validated['tahun_anggaran'],
+            'periode' => 'Tahun ' . $validated['tahun_anggaran'],
+            'nama_jabatan' => $master->nama_jabatan,
+            'jenis_jabatan' => $master->jenis_jabatan,
+            'jenjang_jabatan' => $master->jenjang_jabatan,
+            'kualifikasi_pendidikan' => $master->kualifikasi_pendidikan,
+            'kebutuhan_abk' => (int)$validated['kebutuhan_abk'],
+            'bezetting_riil' => 0,
+            'kuota_lowong' => (int)$validated['kebutuhan_abk'],
+            'status' => 'terbuka',
+            'keterangan' => null,
+        ]);
 
-        $formasi = FormasiJabatan::create($validated);
-
-        // Auto-sync kuota formasi unit kerja pada tahun anggaran terkait
-        $unit = UnitKerja::find($validated['id_unit_kerja']);
-        if ($unit) {
-            $unit->syncKuotaFormasi((int)$validated['tahun_anggaran']);
-        }
+        // Hitung otomatis bezetting riil dari pemangku PNS, kuota lowong, status, & sync unit kerja
+        $formasi->recalculateBezetting();
 
         return redirect()->route('formasi-jabatan.index', ['tahun' => $validated['tahun_anggaran']])
-            ->with('success', "Formasi jabatan {$formasi->nama_jabatan} untuk tahun {$formasi->tahun_anggaran} berhasil didaftarkan.");
+            ->with('success', "Formasi jabatan {$formasi->nama_jabatan} untuk tahun {$formasi->tahun_anggaran} berhasil didaftarkan (Bezetting: {$formasi->bezetting_riil}, Lowong: {$formasi->kuota_lowong}).");
     }
 
     /**
@@ -152,7 +141,7 @@ class FormasiJabatanController extends Controller
     }
 
     /**
-     * Memperbarui data formasi jabatan dan sinkronisasi kuota unit kerja.
+     * Memperbarui data formasi jabatan dan hitung ulang bezetting/kuota otomatis.
      */
     public function update(Request $request, int $id): RedirectResponse
     {
@@ -160,45 +149,36 @@ class FormasiJabatanController extends Controller
 
         $validated = $request->validate([
             'id_unit_kerja' => 'required|exists:unit_kerja,id',
-            'id_master_jabatan' => 'nullable|exists:master_jabatan,id',
+            'id_master_jabatan' => 'required|exists:master_jabatan,id',
             'tahun_anggaran' => 'required|integer|min:2020|max:2035',
-            'periode' => 'required|string|max:50',
-            'nama_jabatan' => 'required|string|max:150',
-            'jenis_jabatan' => 'required|in:struktural,fungsional,pelaksana',
-            'jenjang_jabatan' => 'nullable|string|max:50',
-            'kualifikasi_pendidikan' => 'nullable|string|max:150',
             'kebutuhan_abk' => 'required|integer|min:1',
-            'bezetting_riil' => 'required|integer|min:0',
-            'kuota_lowong' => 'nullable|integer|min:0',
-            'status' => 'required|in:terbuka,terisi,ditutup',
-            'keterangan' => 'nullable|string',
         ]);
 
-        // Korelasi otomatis ke master_jabatan jika belum dipilih langsung
-        if (empty($validated['id_master_jabatan'])) {
-            $master = MasterJabatan::whereRaw('LOWER(nama_jabatan) = ?', [strtolower(trim($validated['nama_jabatan']))])->first();
-            if ($master) {
-                $validated['id_master_jabatan'] = $master->id;
-            }
-        }
+        $master = MasterJabatan::findOrFail($validated['id_master_jabatan']);
+        $oldUnitId = $formasi->id_unit_kerja;
+        $oldTahun = (int)$formasi->tahun_anggaran;
 
-        // Standar Regulasi: Kuota lowong = max(0, Kebutuhan ABK - Bezetting Riil)
-        if ($validated['status'] === 'terbuka') {
-            $validated['kuota_lowong'] = max(0, (int)$validated['kebutuhan_abk'] - (int)$validated['bezetting_riil']);
-        } else {
-            $validated['kuota_lowong'] = 0;
-        }
+        $formasi->update([
+            'id_unit_kerja' => $validated['id_unit_kerja'],
+            'id_master_jabatan' => $master->id,
+            'tahun_anggaran' => $validated['tahun_anggaran'],
+            'periode' => 'Tahun ' . $validated['tahun_anggaran'],
+            'nama_jabatan' => $master->nama_jabatan,
+            'jenis_jabatan' => $master->jenis_jabatan,
+            'jenjang_jabatan' => $master->jenjang_jabatan,
+            'kualifikasi_pendidikan' => $master->kualifikasi_pendidikan,
+            'kebutuhan_abk' => (int)$validated['kebutuhan_abk'],
+        ]);
 
-        $formasi->update($validated);
+        $formasi->recalculateBezetting();
 
-        // Auto-sync kuota formasi unit kerja
-        $unit = UnitKerja::find($validated['id_unit_kerja']);
-        if ($unit) {
-            $unit->syncKuotaFormasi((int)$validated['tahun_anggaran']);
+        if ($oldUnitId != $formasi->id_unit_kerja) {
+            $oldUnit = UnitKerja::find($oldUnitId);
+            $oldUnit?->syncKuotaFormasi($oldTahun);
         }
 
         return redirect()->route('formasi-jabatan.index', ['tahun' => $validated['tahun_anggaran']])
-            ->with('success', "Formasi jabatan {$formasi->nama_jabatan} berhasil diperbarui.");
+            ->with('success', "Formasi jabatan {$formasi->nama_jabatan} berhasil diperbarui (Bezetting: {$formasi->bezetting_riil}, Lowong: {$formasi->kuota_lowong}).");
     }
 
     /**

@@ -31,8 +31,7 @@ class AsnController extends Controller
                 $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('nip', 'like', "%{$search}%")
                   ->orWhere('jabatan', 'like', "%{$search}%")
-                  ->orWhere('kecamatan', 'like', "%{$search}%")
-                  ->orWhereHas('masterJabatan', fn ($mq) => $mq->where('kode_jabatan', 'like', "%{$search}%"));
+                  ->orWhere('kecamatan', 'like', "%{$search}%");
             });
         }
 
@@ -59,7 +58,22 @@ class AsnController extends Controller
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
         $jabatanList = MasterJabatan::orderBy('nama_jabatan')->get();
-        return view('asn.create', compact('units', 'kecamatans', 'jabatanList'));
+        $formasiList = FormasiJabatan::with('masterJabatan')
+            ->orderBy('nama_jabatan')
+            ->get()
+            ->map(fn ($f) => [
+                'id' => $f->id,
+                'id_unit_kerja' => $f->id_unit_kerja,
+                'nama_jabatan' => $f->nama_jabatan,
+                'jenis_jabatan' => $f->jenis_jabatan,
+                'jenjang_jabatan' => $f->jenjang_jabatan,
+                'kebutuhan_abk' => (int)$f->kebutuhan_abk,
+                'bezetting_riil' => (int)$f->bezetting_riil,
+                'kuota_lowong' => (int)$f->kuota_lowong,
+                'status' => $f->status,
+            ])->values();
+
+        return view('asn.create', compact('units', 'kecamatans', 'jabatanList', 'formasiList'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,8 +83,8 @@ class AsnController extends Controller
             'nama' => 'required|string|max:150',
             'gelar_depan' => 'nullable|string|max:20',
             'gelar_belakang' => 'nullable|string|max:20',
-            'jabatan' => 'required|string|max:150',
-            'jenis_jabatan' => 'required|in:struktural,fungsional,pelaksana',
+            'id_unit_saat_ini' => 'required|exists:unit_kerja,id',
+            'id_formasi_jabatan' => 'required|exists:formasi_jabatan,id',
             'pangkat_golongan' => 'required|string|max:20',
             'tmt_golongan' => 'nullable|date',
             'tgl_jabatan' => 'nullable|date',
@@ -79,7 +93,6 @@ class AsnController extends Controller
             'tingkat_pendidikan' => 'nullable|string|max:50',
             'pendidikan_terakhir' => 'nullable|string|max:150',
             'masa_kerja_tahun' => 'nullable|integer|min:0',
-            'id_unit_saat_ini' => 'required|exists:unit_kerja,id',
             'unit_kerja_induk' => 'nullable|string|max:255',
             'domisili_lat' => 'required|numeric|between:-90,90',
             'domisili_lng' => 'required|numeric|between:-180,180',
@@ -90,28 +103,28 @@ class AsnController extends Controller
             'alamat_detail' => 'nullable|string',
         ]);
 
-        // Korelasi otomatis ke master_jabatan (case-insensitive)
-        $masterJbt = MasterJabatan::whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))])->first();
-        if ($masterJbt) {
-            $validated['id_master_jabatan'] = $masterJbt->id;
-            $validated['jabatan'] = $masterJbt->nama_jabatan;
-            $validated['jenis_jabatan'] = $validated['jenis_jabatan'] ?? $masterJbt->jenis_jabatan;
+        // Validasi formasi jabatan wajib milik unit kerja terpilih & masih tersedia kuota lowong
+        $formasiUnit = FormasiJabatan::with('masterJabatan')
+            ->where('id', $validated['id_formasi_jabatan'])
+            ->where('id_unit_kerja', $validated['id_unit_saat_ini'])
+            ->first();
+
+        if (!$formasiUnit) {
+            return back()->withInput()->withErrors([
+                'id_formasi_jabatan' => 'Formasi jabatan tidak ditemukan pada unit kerja yang dipilih.',
+            ]);
         }
 
-        // Korelasi otomatis ke formasi_jabatan pada unit kerja terpilih
-        $formasiUnit = FormasiJabatan::where('id_unit_kerja', $validated['id_unit_saat_ini'])
-            ->where(function ($q) use ($validated, $masterJbt) {
-                if ($masterJbt) {
-                    $q->where('id_master_jabatan', $masterJbt->id)
-                      ->orWhereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
-                } else {
-                    $q->whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
-                }
-            })
-            ->first();
-        if ($formasiUnit) {
-            $validated['id_formasi_jabatan'] = $formasiUnit->id;
+        if ((int)$formasiUnit->kuota_lowong <= 0) {
+            return back()->withInput()->withErrors([
+                'id_formasi_jabatan' => "Formasi jabatan {$formasiUnit->nama_jabatan} pada unit kerja ini sudah penuh (kuota lowong 0).",
+            ]);
         }
+
+        // Ambil nama jabatan, jenis jabatan, dan id_master_jabatan otomatis dari Formasi/Master Jabatan
+        $validated['id_master_jabatan'] = $formasiUnit->id_master_jabatan;
+        $validated['jabatan'] = $formasiUnit->masterJabatan->nama_jabatan ?? $formasiUnit->nama_jabatan;
+        $validated['jenis_jabatan'] = $formasiUnit->masterJabatan->jenis_jabatan ?? $formasiUnit->jenis_jabatan ?? 'pelaksana';
 
         // Hitung masa kerja otomatis jika ada tgl_cpns
         if (!empty($validated['tgl_cpns'])) {
@@ -134,21 +147,24 @@ class AsnController extends Controller
         );
         $zona = $this->haversine->classifyZone($jarak);
 
-        DB::transaction(function () use ($validated, $jarak, $zona) {
+        DB::transaction(function () use ($validated, $jarak, $zona, $formasiUnit) {
             $asn = AsnMaster::create(array_merge($validated, [
                 'jarak_ke_kantor_km' => $jarak,
                 'zona_jarak' => $zona,
                 'status_permohonan_mutasi' => false,
             ]));
 
-            // Otomatis buat akun User Login mandiri (role: asn)
-            $email = "{$asn->nip}@bkpsdm.indramayukab.go.id";
+            // Hitung ulang bezetting & kuota lowong formasi secara otomatis
+            $formasiUnit->recalculateBezetting();
+
+            // Otomatis buat akun User Login mandiri (role: asn, default password: NIP)
+            $email = "{$asn->nip}@bkpsdm.kabxyz.go.id";
             if (!User::where('nip', $asn->nip)->exists()) {
                 User::create([
                     'name' => $asn->nama,
                     'nip' => $asn->nip,
                     'email' => $email,
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make($asn->nip),
                     'role' => 'asn',
                     'asn_id' => $asn->id,
                 ]);
@@ -156,7 +172,7 @@ class AsnController extends Controller
         });
 
         return redirect()->route('asn.index')
-            ->with('success', "Pegawai ASN {$validated['nama']} berhasil didaftarkan beserta akun login mandiri.");
+            ->with('success', "Pegawai ASN {$validated['nama']} berhasil didaftarkan dan bezetting formasi telah diperbarui.");
     }
 
     public function show(int $id): View
@@ -171,7 +187,22 @@ class AsnController extends Controller
         $units = UnitKerja::orderBy('nama_unit')->get();
         $kecamatans = MasterLokasi::orderBy('nama_kecamatan')->get();
         $jabatanList = MasterJabatan::orderBy('nama_jabatan')->get();
-        return view('asn.edit', compact('asn', 'units', 'kecamatans', 'jabatanList'));
+        $formasiList = FormasiJabatan::with('masterJabatan')
+            ->orderBy('nama_jabatan')
+            ->get()
+            ->map(fn ($f) => [
+                'id' => $f->id,
+                'id_unit_kerja' => $f->id_unit_kerja,
+                'nama_jabatan' => $f->nama_jabatan,
+                'jenis_jabatan' => $f->jenis_jabatan,
+                'jenjang_jabatan' => $f->jenjang_jabatan,
+                'kebutuhan_abk' => (int)$f->kebutuhan_abk,
+                'bezetting_riil' => (int)$f->bezetting_riil,
+                'kuota_lowong' => (int)$f->kuota_lowong,
+                'status' => $f->status,
+            ])->values();
+
+        return view('asn.edit', compact('asn', 'units', 'kecamatans', 'jabatanList', 'formasiList'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -183,8 +214,8 @@ class AsnController extends Controller
             'nama' => 'required|string|max:150',
             'gelar_depan' => 'nullable|string|max:20',
             'gelar_belakang' => 'nullable|string|max:20',
-            'jabatan' => 'required|string|max:150',
-            'jenis_jabatan' => 'required|in:struktural,fungsional,pelaksana',
+            'id_unit_saat_ini' => 'required|exists:unit_kerja,id',
+            'id_formasi_jabatan' => 'required|exists:formasi_jabatan,id',
             'pangkat_golongan' => 'required|string|max:20',
             'tmt_golongan' => 'nullable|date',
             'tgl_jabatan' => 'nullable|date',
@@ -193,7 +224,6 @@ class AsnController extends Controller
             'tingkat_pendidikan' => 'nullable|string|max:50',
             'pendidikan_terakhir' => 'nullable|string|max:150',
             'masa_kerja_tahun' => 'nullable|integer|min:0',
-            'id_unit_saat_ini' => 'required|exists:unit_kerja,id',
             'unit_kerja_induk' => 'nullable|string|max:255',
             'domisili_lat' => 'required|numeric|between:-90,90',
             'domisili_lng' => 'required|numeric|between:-180,180',
@@ -204,28 +234,31 @@ class AsnController extends Controller
             'alamat_detail' => 'nullable|string',
         ]);
 
-        // Korelasi otomatis ke master_jabatan (case-insensitive)
-        $masterJbt = MasterJabatan::whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))])->first();
-        if ($masterJbt) {
-            $validated['id_master_jabatan'] = $masterJbt->id;
-            $validated['jabatan'] = $masterJbt->nama_jabatan;
-            $validated['jenis_jabatan'] = $validated['jenis_jabatan'] ?? $masterJbt->jenis_jabatan;
+        // Validasi formasi jabatan milik unit kerja terpilih
+        $formasiUnit = FormasiJabatan::with('masterJabatan')
+            ->where('id', $validated['id_formasi_jabatan'])
+            ->where('id_unit_kerja', $validated['id_unit_saat_ini'])
+            ->first();
+
+        if (!$formasiUnit) {
+            return back()->withInput()->withErrors([
+                'id_formasi_jabatan' => 'Formasi jabatan tidak ditemukan pada unit kerja yang dipilih.',
+            ]);
         }
 
-        // Korelasi otomatis ke formasi_jabatan pada unit kerja terpilih
-        $formasiUnit = FormasiJabatan::where('id_unit_kerja', $validated['id_unit_saat_ini'])
-            ->where(function ($q) use ($validated, $masterJbt) {
-                if ($masterJbt) {
-                    $q->where('id_master_jabatan', $masterJbt->id)
-                      ->orWhereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
-                } else {
-                    $q->whereRaw('LOWER(TRIM(nama_jabatan)) = ?', [strtolower(trim($validated['jabatan']))]);
-                }
-            })
-            ->first();
-        if ($formasiUnit) {
-            $validated['id_formasi_jabatan'] = $formasiUnit->id;
+        // Jika berpindah ke formasi baru, pastikan formasi tujuan masih ada kuota lowong
+        $isChangingFormasi = ((int)$asn->id_formasi_jabatan !== (int)$formasiUnit->id);
+        if ($isChangingFormasi && (int)$formasiUnit->kuota_lowong <= 0) {
+            return back()->withInput()->withErrors([
+                'id_formasi_jabatan' => "Formasi jabatan {$formasiUnit->nama_jabatan} pada unit kerja ini sudah penuh (kuota lowong 0).",
+            ]);
         }
+
+        $oldFormasiId = $asn->id_formasi_jabatan;
+
+        $validated['id_master_jabatan'] = $formasiUnit->id_master_jabatan;
+        $validated['jabatan'] = $formasiUnit->masterJabatan->nama_jabatan ?? $formasiUnit->nama_jabatan;
+        $validated['jenis_jabatan'] = $formasiUnit->masterJabatan->jenis_jabatan ?? $formasiUnit->jenis_jabatan ?? 'pelaksana';
 
         if (!empty($validated['tgl_cpns'])) {
             $thnCpns = (int)date('Y', strtotime($validated['tgl_cpns']));
@@ -243,11 +276,17 @@ class AsnController extends Controller
         );
         $zona = $this->haversine->classifyZone($jarak);
 
-        DB::transaction(function () use ($asn, $validated, $jarak, $zona) {
+        DB::transaction(function () use ($asn, $validated, $jarak, $zona, $formasiUnit, $oldFormasiId) {
             $asn->update(array_merge($validated, [
                 'jarak_ke_kantor_km' => $jarak,
                 'zona_jarak' => $zona,
             ]));
+
+            // Hitung ulang bezetting formasi baru & formasi lama (jika pindah)
+            $formasiUnit->recalculateBezetting();
+            if ($oldFormasiId && (int)$oldFormasiId !== (int)$formasiUnit->id) {
+                FormasiJabatan::find($oldFormasiId)?->recalculateBezetting();
+            }
 
             // Sinkronkan data ke tabel users jika ada
             if ($asn->user) {
@@ -266,11 +305,17 @@ class AsnController extends Controller
     {
         $asn = AsnMaster::findOrFail($id);
         $nama = $asn->nama;
+        $oldFormasiId = $asn->id_formasi_jabatan;
 
-        DB::transaction(function () use ($asn) {
+        DB::transaction(function () use ($asn, $oldFormasiId) {
             // Hapus akun user terkait
             User::where('asn_id', $asn->id)->orWhere('nip', $asn->nip)->delete();
             $asn->delete();
+
+            // Kembalikan kursi formasi secara otomatis
+            if ($oldFormasiId) {
+                FormasiJabatan::find($oldFormasiId)?->recalculateBezetting();
+            }
         });
 
         return redirect()->route('asn.index')
@@ -327,8 +372,12 @@ class AsnController extends Controller
         $asn->update(array_merge($validated, [
             'jarak_ke_kantor_km' => $jarak,
             'zona_jarak' => $zona,
-            'status_permohonan_mutasi' => $request->has('status_permohonan_mutasi'),
         ]));
+
+        if ($user->isAsn()) {
+            return redirect()->route('asn.edit-lokasi', $asn->id)
+                ->with('success', 'Titik domisili dan kalkulasi jarak spasial berhasil diperbarui.');
+        }
 
         return redirect()->route('asn.show', $asn->id)
             ->with('success', 'Titik domisili dan kalkulasi jarak spasial berhasil diperbarui.');

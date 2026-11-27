@@ -7,10 +7,12 @@ use App\Models\FormasiJabatan;
 use App\Models\MasterJabatan;
 use App\Models\MasterLokasi;
 use App\Models\UnitKerja;
+use App\Models\User;
 use App\Services\HaversineService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Seeder PnsFixSampleSeeder
@@ -40,11 +42,12 @@ class PnsFixSampleSeeder extends Seeder
 
         $haversine = new HaversineService();
 
-        // Bersihkan sampel dummy sebelumnya (asn_master & formasi_jabatan) agar data 100% bersih dari DATA PNS FIX
+        // Bersihkan data lama (rekomendasi, asn, formasi, dan unit_kerja) agar hanya 31 unit sampel FIX yang tampil bersih di Peta GIS
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('rekomendasi_mutasi')->truncate();
         DB::table('asn_master')->truncate();
         DB::table('formasi_jabatan')->truncate();
+        DB::table('unit_kerja')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // =========================================================================
@@ -314,6 +317,35 @@ class PnsFixSampleSeeder extends Seeder
                 ]
             );
             $inserted++;
+        }
+
+        // =========================================================================
+        // 6. SINKRONKAN AKUN LOGIN SAMPLE (ADMIN + 5 SAMPLE AKUN PNS)
+        // =========================================================================
+        User::updateOrCreate(
+            ['email' => 'admin@bkpsdm.go.id'],
+            [
+                'name' => 'Administrator BKPSDM',
+                'nip' => '198501012010011001',
+                'password' => Hash::make('admin123'),
+                'role' => 'admin',
+                'asn_id' => null,
+            ]
+        );
+
+        // Hapus akun PNS lama yang asn_id-nya sudah tidak valid lalu buat 5 sampel akun PNS aktif
+        User::where('role', 'asn')->delete();
+        foreach (AsnMaster::orderBy('id')->limit(5)->get() as $sampleAsn) {
+            User::updateOrCreate(
+                ['nip' => $sampleAsn->nip],
+                [
+                    'name' => $sampleAsn->nama,
+                    'email' => $sampleAsn->nip . '@bkpsdm.indramayukab.go.id',
+                    'password' => Hash::make($sampleAsn->nip),
+                    'role' => 'asn',
+                    'asn_id' => $sampleAsn->id,
+                ]
+            );
         }
 
         $this->command?->info("PnsFixSampleSeeder selesai: {$inserted} PNS (alamat terdeteksi kecamatan: {$geocodedExact}), " . count($formasiByPair) . ' Formasi Jabatan 2026, ' . count($unitByKey) . ' Unit Kerja aktif, dan ' . count($masterByKey) . ' Master Jabatan SIASN terhubung penuh.');

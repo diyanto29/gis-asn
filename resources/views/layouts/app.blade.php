@@ -402,7 +402,7 @@
                         <span class="font-extrabold text-slate-900 text-sm tracking-tight">Rekom Mutasi PNS</span>
                         <span class="bg-blue-50 text-blue-700 text-[10px] uppercase font-bold px-1.5 py-0.2 rounded border border-blue-200">v1.0</span>
                     </div>
-                    <span class="text-[10px] text-slate-400 font-semibold block leading-tight">BKPSDM Kabupaten Indramayu</span>
+                    <span class="text-[10px] text-slate-400 font-semibold block leading-tight">BKPSDM Kabupaten XYZ</span>
                 </div>
             </a>
             <button onclick="toggleSidebar()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 lg:hidden">
@@ -426,13 +426,12 @@
                 </div>
             </div>
 
-            <!-- Master Data Pengelolaan (Sesuai Struktur Sederhana Klien) -->
+            <!-- Master Data Pengelolaan (Khusus Admin BKPSDM) -->
+            @if(Auth::check() && Auth::user()->isAdmin())
             <div>
                 <div class="px-3 mb-2 font-bold uppercase tracking-wider text-[10px] text-slate-400 flex items-center justify-between">
                     <span>Master Data</span>
-                    @if(Auth::check() && Auth::user()->isAdmin())
-                        <span class="text-[9px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.2 rounded">Admin</span>
-                    @endif
+                    <span class="text-[9px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.2 rounded">Admin</span>
                 </div>
                 <div class="space-y-1">
                     <a href="{{ route('asn.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.index', 'asn.show', 'asn.create', 'asn.edit*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
@@ -445,7 +444,6 @@
                         <span>Data Unit Kerja</span>
                     </a>
 
-                    @if(Auth::check() && Auth::user()->isAdmin())
                     <a href="{{ route('master-jabatan.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('master-jabatan.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="tag" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-jabatan.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span>Data Referensi Jabatan</span>
@@ -456,21 +454,29 @@
                         <span>Data Formasi Jabatan</span>
                     </a>
 
-                    {{-- HIDE SEMENTARA MENU MASTER WILAYAH & KRITERIA SESUAI INSTRUKSI KLIEN --}}
-                    @if(false)
-                    <a href="{{ route('master-lokasi.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('master-lokasi.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="map" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-lokasi.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Master Wilayah (31 Kec)</span>
+                    <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('users.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="user-cog" class="w-4 h-4 shrink-0 {{ request()->routeIs('users.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span>Manajemen User</span>
                     </a>
-
-                    <a href="{{ route('master-kriteria.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('master-kriteria.*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                        <i data-lucide="sliders" class="w-4 h-4 shrink-0 {{ request()->routeIs('master-kriteria.*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
-                        <span>Master Kriteria & Bobot</span>
-                    </a>
-                    @endif
+                </div>
+            </div>
+            @elseif(Auth::check() && Auth::user()->isAsn())
+            <!-- Menu Profil Khusus Pegawai PNS -->
+            <div>
+                <div class="px-3 mb-2 font-bold uppercase tracking-wider text-[10px] text-slate-400 flex items-center justify-between">
+                    <span>Profil Pegawai</span>
+                    <span class="text-[9px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded">PNS</span>
+                </div>
+                <div class="space-y-1">
+                    @if(Auth::user()->asn_id)
+                        <a href="{{ route('asn.edit-lokasi', Auth::user()->asn_id) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.edit-lokasi', 'asn.show') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                            <i data-lucide="map-pin" class="w-4 h-4 shrink-0 {{ request()->routeIs('asn.edit-lokasi', 'asn.show') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                            <span>Profil &amp; Titik Lokasi</span>
+                        </a>
                     @endif
                 </div>
             </div>
+            @endif
 
             <!-- SPK (Sistem Pendukung Keputusan) -->
             <div>
@@ -492,6 +498,11 @@
                     <a href="{{ route('topsis.pns-to-dinas') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('topsis.pns-to-dinas*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
                         <i data-lucide="user-check" class="w-4 h-4 shrink-0 {{ request()->routeIs('topsis.pns-to-dinas*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
                         <span class="flex-1">PNS ➔ Dinas</span>
+                    </a>
+                    @elseif(Auth::check() && Auth::user()->isAsn())
+                    <a href="{{ route('asn.simulasi-mandiri') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition {{ request()->routeIs('asn.simulasi-mandiri*') ? 'bg-blue-50 text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <i data-lucide="compass" class="w-4 h-4 shrink-0 {{ request()->routeIs('asn.simulasi-mandiri*') ? 'text-blue-700' : 'text-slate-400' }}"></i>
+                        <span class="flex-1">Peta &amp; Rekomendasi Unit</span>
                     </a>
                     @endif
 
@@ -519,16 +530,6 @@
                 </div>
             </div>
 
-            <!-- Standar Metodologi (Info Box) -->
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
-                <div class="font-bold text-slate-800 flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i> Metodologi Riset
-                </div>
-                <p class="text-slate-500 leading-relaxed text-[10px]">
-                    Kombinasi Formula Haversine Spasial & OSRM Road Routing dengan Algoritma TOPSIS Multi-Kriteria.
-                </p>
-            </div>
-
         </nav>
 
         <!-- Bottom Sidebar Widget (Authenticated User & Server Connection) -->
@@ -553,7 +554,7 @@
             @endif
 
             <div class="flex items-center justify-between px-2 pt-1 text-[11px] text-slate-400">
-                <span>BKPSDM Indramayu</span>
+                <span>BKPSDM Kabupaten XYZ</span>
                 <span>&copy; {{ date('Y') }}</span>
             </div>
         </div>
@@ -575,7 +576,7 @@
                 </button>
                 <div>
                     <h2 class="font-bold text-slate-900 text-sm sm:text-base leading-tight">@yield('title', 'Sistem Rekomendasi Mutasi PNS')</h2>
-                    <div class="text-[11px] text-slate-400 hidden sm:block">Pemerintah Kabupaten Indramayu &bull; Badan Kepegawaian & Pengembangan SDM</div>
+                    <div class="text-[11px] text-slate-400 hidden sm:block">Pemerintah Kabupaten XYZ &bull; Badan Kepegawaian & Pengembangan SDM</div>
                 </div>
             </div>
 
@@ -690,6 +691,77 @@
                 });
             }
         });
+
+        /**
+         * Global Google Maps-style Teardrop Marker Pin Helper untuk seluruh peta Leaflet SIMUTASI-GIS.
+         * @param {Object} opts { color: '#ea4335', type: 'dot'|'home'|'office'|'rank', label: '', size: 'sm'|'md'|'lg' }
+         */
+        window.createGmapPinIcon = function (opts = {}) {
+            const color = opts.color || '#ea4335';
+            const type = opts.type || 'dot';
+            const label = opts.label || '';
+            const size = opts.size || 'md';
+
+            const dims = size === 'sm' ? { w: 28, h: 38 } : (size === 'lg' ? { w: 40, h: 52 } : { w: 34, h: 44 });
+            let inner = `<circle cx="18" cy="17" r="6" fill="#ffffff"/>`;
+            if (type === 'home') {
+                inner = `<circle cx="18" cy="17" r="10.5" fill="#ffffff"/>
+                         <path d="M12.5 17.5L18 12.6l5.5 4.9M14.2 16.4v5.1h7.6v-5.1" fill="none" stroke="${color}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>`;
+            } else if (type === 'office') {
+                inner = `<circle cx="18" cy="17" r="10.5" fill="#ffffff"/>
+                         <path d="M13.5 22v-9.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1V22M11.5 22h13M16 14.5h1.5M18.5 14.5H20M16 17.5h1.5M18.5 17.5H20" fill="none" stroke="${color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>`;
+            } else if (type === 'rank') {
+                inner = `<circle cx="18" cy="17" r="10.5" fill="#ffffff"/>
+                         <text x="18" y="20.8" text-anchor="middle" font-size="10.5" font-weight="800" font-family="ui-sans-serif, system-ui, sans-serif" fill="${color}">${label}</text>`;
+            }
+
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="${dims.w}" height="${dims.h}" viewBox="0 0 36 48" style="filter: drop-shadow(0 3px 4px rgba(15,23,42,0.32)); overflow: visible;">
+                    <path d="M18 1C8.61 1 1 8.61 1 18c0 11.8 15.1 26.8 16.1 27.8a1.25 1.25 0 0 0 1.8 0C19.9 44.8 35 29.8 35 18 35 8.61 27.39 1 18 1z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+                    ${inner}
+                </svg>
+            `;
+
+            return L.divIcon({
+                className: 'gmap-teardrop-pin',
+                html: svg,
+                iconSize: [dims.w, dims.h],
+                iconAnchor: [dims.w / 2, dims.h - 1],
+                popupAnchor: [0, -(dims.h - 6)]
+            });
+        };
+
+        /**
+         * Global Google Maps Basemap & Layer Switcher untuk seluruh peta Leaflet SIMUTASI-GIS.
+         * Menampilkan POI / lokasi Google Maps (kantor, sekolah, masjid, RS, nama jalan) secara default.
+         */
+        window.attachGmapBasemap = function (mapInstance) {
+            const gmapRoadmap = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=id&x={x}&y={y}&z={z}', {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                attribution: '&copy; Google Maps'
+            });
+
+            const gmapHybrid = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&hl=id&x={x}&y={y}&z={z}', {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                attribution: '&copy; Google Maps Satellite'
+            });
+
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            });
+
+            gmapRoadmap.addTo(mapInstance);
+            L.control.layers({
+                'Google Maps (POI)': gmapRoadmap,
+                'Satelit Hybrid': gmapHybrid,
+                'OpenStreetMap': osmLayer
+            }, null, { position: 'topright' }).addTo(mapInstance);
+
+            return { gmapRoadmap, gmapHybrid, osmLayer };
+        };
     </script>
     @stack('scripts')
 </body>

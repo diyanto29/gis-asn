@@ -320,9 +320,7 @@
     function initMap() {
         map = L.map('simulasiMap').setView([homeLat, homeLng], 12);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        window.attachGmapBasemap(map);
 
         // Marker Domisili ASN (Rumah)
         const homeIcon = L.divIcon({

@@ -33,9 +33,9 @@
         <div>
             <strong class="text-blue-950 font-bold block mb-0.5">Catatan Regulasi BKN & Kepatuhan Spasial Kepegawaian:</strong>
             <ul class="list-disc list-inside text-slate-600 space-y-0.5 text-[11px]">
-                <li><strong>Aturan Komitmen 10 Tahun (PermenPAN-RB 27/2021):</strong> PNS dengan TMT CPNS &ge; 2019 yang belum 10 tahun masa kerja berstatus <em>Rotasi Internal Sah</em>. Sistem memindahkan ke unit kerja Indramayu terdekat tanpa melanggar larangan pindah instansi keluar daerah.</li>
+                <li><strong>Aturan Komitmen 10 Tahun (PermenPAN-RB 27/2021):</strong> PNS dengan TMT CPNS &ge; 2019 yang belum 10 tahun masa kerja berstatus <em>Rotasi Internal Sah</em>. Sistem memindahkan ke unit kerja Kabupaten XYZ terdekat tanpa melanggar larangan pindah instansi keluar daerah.</li>
                 <li><strong>Komuter Perbatasan (Cirebon / Sekitar):</strong> Sistem memprioritaskan penempatan koridor terdekat perbatasan guna menekan waktu tempuh harian.</li>
-                <li><strong>Domisili Ekstra-Teritorial (&gt;100 km):</strong> Rekomendasi internal Indramayu berjarak tinggi; ditandai untuk atensi khusus sidang Baperjakat.</li>
+                <li><strong>Domisili Ekstra-Teritorial (&gt;100 km):</strong> Rekomendasi internal Kabupaten XYZ berjarak tinggi; ditandai untuk atensi khusus sidang Baperjakat.</li>
             </ul>
         </div>
     </div>

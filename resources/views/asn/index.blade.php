@@ -25,7 +25,7 @@
         <form method="GET" action="{{ route('asn.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama / NIP / Jabatan</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama, NIP, jabatan, kode..." class="w-full text-sm rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama, NIP, jabatan..." class="w-full text-sm rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
             </div>
 
             <div>
@@ -94,14 +94,6 @@
                                     {{ $asn->nama_lengkap }}
                                 </a>
                                 <div class="text-xs text-slate-400 font-mono">{{ $asn->nip }}</div>
-                                <div class="flex flex-wrap items-center gap-1 mt-1.5">
-                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $asn->status_komitmen_10_tahun['badge_color'] }}">
-                                        {{ $asn->status_komitmen_10_tahun['pill_short'] }}
-                                    </span>
-                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $asn->status_spasial_regional['badge_color'] }}">
-                                        {{ $asn->status_spasial_regional['pill_short'] }}
-                                    </span>
-                                </div>
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="font-semibold text-slate-900 text-xs">{{ $asn->jabatan }}</div>
@@ -113,13 +105,10 @@
                                     @else
                                         <span class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold rounded">Struktural</span>
                                     @endif
-                                    @if ($asn->masterJabatan?->kelas_jabatan)
-                                        <span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-mono font-semibold rounded">Kls {{ $asn->masterJabatan->kelas_jabatan }}</span>
-                                    @endif
                                     <span class="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded">{{ $asn->pangkat_golongan }}</span>
                                 </div>
                                 <div class="text-[10px] text-slate-400 mt-0.5 font-mono">
-                                    {{ $asn->masterJabatan->kode_jabatan ?? '-' }} &bull; TMT Jbt: {{ $asn->tgl_jabatan ? $asn->tgl_jabatan->format('d/m/Y') : '-' }} &bull; MK: {{ $asn->masa_kerja_tahun }} Thn
+                                    TMT Jbt: {{ $asn->tgl_jabatan ? $asn->tgl_jabatan->format('d/m/Y') : '-' }} &bull; MK: {{ $asn->masa_kerja_tahun }} Thn
                                 </div>
                             </td>
                             <td class="px-5 py-3.5 font-medium text-slate-800 text-xs">
@@ -161,9 +150,6 @@
                                 <div class="flex items-center justify-center gap-1.5">
                                     <a href="{{ route('asn.show', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Detail Pegawai">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </a>
-                                    <a href="{{ route('asn.edit-lokasi', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Update Titik Lokasi Peta">
-                                        <i data-lucide="map-pin" class="w-4 h-4"></i>
                                     </a>
                                     @if (auth()->user()->isAdmin())
                                         <a href="{{ route('asn.edit', $asn->id) }}" class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit Profil Pegawai">

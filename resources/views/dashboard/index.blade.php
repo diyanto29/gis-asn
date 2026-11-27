@@ -246,10 +246,7 @@
         const map = L.map('map').setView([-6.38, 108.25], 11);
 
         // Base Map OSM
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '&copy; OpenStreetMap contributors | BKPSDM GIS'
-        }).addTo(map);
+        window.attachGmapBasemap(map);
 
         // Layer Groups
         const officeLayer = L.layerGroup().addTo(map);
@@ -278,23 +275,10 @@
         const iconBuildingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
         const iconHomeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
 
-        // 1. Render Unit Kerja (Kantor) dengan Icon Gedung & Efek Ripple Biru
+        // 1. Render Unit Kerja (Kantor) dengan Pin Google Maps Biru (Gedung)
         units.forEach(u => {
             if (u.kantor_lat && u.kantor_lng) {
-                const officeIcon = L.divIcon({
-                    className: 'custom-office-marker',
-                    html: `
-                        <div class="relative flex items-center justify-center w-8 h-8 cursor-pointer group">
-                            <span class="marker-ripple bg-blue-500/35"></span>
-                            <div class="relative z-10 w-7 h-7 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-115 transition-transform">
-                                ${iconBuildingSvg}
-                            </div>
-                        </div>
-                    `,
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16],
-                    popupAnchor: [0, -16]
-                });
+                const officeIcon = window.createGmapPinIcon({ color: '#1d4ed8', type: 'office', size: 'md' });
 
                 const marker = L.marker([u.kantor_lat, u.kantor_lng], { icon: officeIcon });
 
@@ -347,20 +331,7 @@
                     color = '#dc2626';
                 }
 
-                const homeIcon = L.divIcon({
-                    className: 'custom-home-marker',
-                    html: `
-                        <div class="relative flex items-center justify-center w-7 h-7 cursor-pointer group">
-                            <span class="marker-ripple ${rippleColor}"></span>
-                            <div class="relative z-10 w-6 h-6 rounded-full ${bgColor} text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-115 transition-transform">
-                                ${iconHomeSvg}
-                            </div>
-                        </div>
-                    `,
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 14],
-                    popupAnchor: [0, -14]
-                });
+                const homeIcon = window.createGmapPinIcon({ color: color, type: 'home', size: 'sm' });
 
                 const marker = L.marker([asn.domisili_lat, asn.domisili_lng], { icon: homeIcon });
 

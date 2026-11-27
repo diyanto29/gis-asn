@@ -34,8 +34,9 @@
         </a>
     </div>
 
+    {{-- HIDE SEMENTARA CARD PRESET SESUAI PERMINTAAN --}}
     <!-- Info & Presets Banner -->
-    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+    <div class="hidden bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
@@ -65,8 +66,9 @@
         @csrf
         <input type="hidden" name="kategori_mode" value="{{ $currentMode }}">
 
+        {{-- HIDE SEMENTARA CARD TOTAL AKUMULASI BOBOT SESUAI PERMINTAAN --}}
         <!-- Total Meter Bar -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="hidden bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex-1 space-y-2">
                 <div class="flex items-center justify-between text-xs">
                     <span class="font-bold text-slate-700">Total Akumulasi Bobot Kriteria Aktif:</span>
@@ -167,6 +169,13 @@
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
+                                        <!-- Edit Kriteria Button -->
+                                        <button type="button"
+                                            onclick="openEditCriteriaModal({{ Js::from($k) }})"
+                                            class="p-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 text-xs transition"
+                                            title="Edit Kriteria &amp; Bobot">
+                                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                        </button>
                                         <!-- Toggle Active Button -->
                                         <button type="button" onclick="document.getElementById('toggleForm_{{ $k->id }}').submit();" class="p-1.5 rounded-lg border text-xs transition {{ $k->is_active ? 'border-amber-200 text-amber-700 hover:bg-amber-50' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' }}" title="{{ $k->is_active ? 'Nonaktifkan Kriteria' : 'Aktifkan Kriteria' }}">
                                             <i data-lucide="{{ $k->is_active ? 'pause' : 'play' }}" class="w-3.5 h-3.5"></i>
@@ -183,6 +192,20 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+            <!-- Footer Bar Simpan Pembobotan -->
+            <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div class="text-xs text-slate-600">
+                    Total Bobot Aktif: <span id="footerTotalBadge" class="font-mono font-extrabold {{ abs($totalBobot - 1.00) <= 0.01 ? 'text-emerald-600' : 'text-rose-600' }}">{{ round($totalBobot * 100) }}%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="autoNormalize()" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i data-lucide="wand-2" class="w-3.5 h-3.5 text-amber-600"></i> Auto-Normalize 100%
+                    </button>
+                    <button type="submit" id="submitWeightsFooterBtn" {{ abs($totalBobot - 1.00) > 0.01 ? 'disabled' : '' }} class="px-5 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Pembobotan
+                    </button>
+                </div>
             </div>
         </div>
     </form>
@@ -265,6 +288,62 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Edit Kriteria & Bobot -->
+<div id="editCriteriaModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-xl overflow-hidden animate-modal-pop">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-4 h-4 text-blue-600"></i> Edit Kriteria <span id="editKodeLabel" class="font-mono text-blue-700"></span>
+            </h3>
+            <button type="button" onclick="closeEditCriteriaModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <form id="editCriteriaForm" method="POST" action="" class="p-5 space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kriteria <span class="text-rose-500">*</span></label>
+                <input type="text" name="nama_kriteria" id="edit_nama_kriteria" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Parameter Key <span class="text-rose-500">*</span></label>
+                    <input type="text" name="parameter_key" id="edit_parameter_key" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Sifat Atribut <span class="text-rose-500">*</span></label>
+                    <select name="atribut" id="edit_atribut" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="benefit">Benefit (Makin Besar Makin Baik)</option>
+                        <option value="cost">Cost (Makin Kecil Makin Baik)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Bobot Kepentingan (0 - 1.00) <span class="text-rose-500">*</span></label>
+                <input type="number" name="bobot" id="edit_bobot" step="0.01" min="0" max="1" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Landasan Kebijakan</label>
+                <textarea name="keterangan" id="edit_keterangan" rows="2" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button type="button" onclick="closeEditCriteriaModal()" class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-semibold transition">Batal</button>
+                <button type="submit" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -275,6 +354,8 @@
         const bar = document.getElementById('totalBar');
         const msg = document.getElementById('statusMsg');
         const submitBtn = document.getElementById('submitWeightsBtn');
+        const footerBadge = document.getElementById('footerTotalBadge');
+        const submitFooterBtn = document.getElementById('submitWeightsFooterBtn');
 
         window.openAddCriteriaModal = function() {
             document.getElementById('addCriteriaModal').classList.remove('hidden');
@@ -282,6 +363,23 @@
 
         window.closeAddCriteriaModal = function() {
             document.getElementById('addCriteriaModal').classList.add('hidden');
+        };
+
+        window.openEditCriteriaModal = function(item) {
+            const form = document.getElementById('editCriteriaForm');
+            form.action = `{{ url('/master-kriteria') }}/${item.id}`;
+            document.getElementById('editKodeLabel').textContent = `[${item.kode_kriteria}]`;
+            document.getElementById('edit_nama_kriteria').value = item.nama_kriteria || '';
+            document.getElementById('edit_parameter_key').value = item.parameter_key || '';
+            document.getElementById('edit_atribut').value = item.atribut || 'benefit';
+            document.getElementById('edit_bobot').value = parseFloat(item.bobot || 0).toFixed(2);
+            document.getElementById('edit_keterangan').value = item.keterangan || '';
+            document.getElementById('editCriteriaModal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeEditCriteriaModal = function() {
+            document.getElementById('editCriteriaModal').classList.add('hidden');
         };
 
         window.updateTotal = function() {
@@ -302,17 +400,22 @@
 
             badge.innerText = percent + '% (' + sum.toFixed(2) + ')';
             bar.style.width = Math.min(100, Math.max(0, percent)) + '%';
+            if (footerBadge) footerBadge.innerText = percent + '%';
 
             if (sum >= 0.99 && sum <= 1.01) {
                 badge.className = 'font-extrabold text-sm text-emerald-600 font-mono';
                 bar.className = 'h-full bg-emerald-500 transition-all duration-300 rounded-full';
                 msg.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span class="text-emerald-700 font-semibold">Total kriteria aktif tepat 100%. Sesuai kaidah ilmiah TOPSIS.</span>';
                 submitBtn.disabled = false;
+                if (footerBadge) footerBadge.className = 'font-mono font-extrabold text-emerald-600';
+                if (submitFooterBtn) submitFooterBtn.disabled = false;
             } else {
                 badge.className = 'font-extrabold text-sm text-rose-600 font-mono animate-pulse';
                 bar.className = 'h-full bg-rose-500 transition-all duration-300 rounded-full';
                 msg.innerHTML = '<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> <span class="text-rose-700 font-semibold">Total bobot saat ini ' + percent + '%. Wajib tepat 100% (1.00) agar formulir dapat disimpan.</span>';
                 submitBtn.disabled = true;
+                if (footerBadge) footerBadge.className = 'font-mono font-extrabold text-rose-600';
+                if (submitFooterBtn) submitFooterBtn.disabled = true;
             }
             if (window.lucide) {
                 lucide.createIcons();

@@ -44,7 +44,7 @@
         </h2>
         <p class="mt-1 text-center text-xs text-slate-500 font-medium">
             Sistem Pemetaan Spasial & Rekomendasi Mutasi PNS Terintegrasi<br>
-            <span class="text-blue-700 font-semibold">BKPSDM Kabupaten Indramayu</span>
+            <span class="text-blue-700 font-semibold">BKPSDM Kabupaten XYZ</span>
         </p>
     </div>
 

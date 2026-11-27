@@ -12,6 +12,8 @@ use App\Http\Controllers\SsoController;
 use App\Http\Controllers\SwapMatchController;
 use App\Http\Controllers\TopsisController;
 use App\Http\Controllers\UnitKerjaController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\WilayahController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,6 +55,14 @@ Route::middleware('auth')->group(function () {
     // Simulasi Rekomendasi Penempatan Mandiri (Tahap 2 TOPSIS & OSRM)
     Route::get('/simulasi-mandiri', [SimulasiMandiriController::class, 'index'])->name('asn.simulasi-mandiri');
     Route::post('/simulasi-mandiri/ajukan', [SimulasiMandiriController::class, 'ajukan'])->name('asn.simulasi-mandiri.ajukan');
+
+    // Proxy API Wilayah Administratif Indonesia (Wilayah.id)
+    Route::prefix('api/wilayah')->name('api.wilayah.')->group(function () {
+        Route::get('/provinces', [WilayahController::class, 'provinces'])->name('provinces');
+        Route::get('/regencies/{code}', [WilayahController::class, 'regencies'])->name('regencies');
+        Route::get('/districts/{code}', [WilayahController::class, 'districts'])->name('districts');
+        Route::get('/villages/{code}', [WilayahController::class, 'villages'])->name('villages');
+    });
 
     // Modul Data ASN
     Route::prefix('asn')->name('asn.')->group(function () {
@@ -108,6 +118,16 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [MasterJabatanController::class, 'destroy'])->name('destroy');
     });
 
+    // Modul Manajemen User & Hak Akses RBAC (Khusus Role: Admin BKPSDM)
+    Route::prefix('users')->name('users.')->middleware('role:admin')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+    });
+
     // Modul Master Lokasi / Wilayah Spasial (Khusus Role: Admin BKPSDM)
     Route::prefix('master-lokasi')->name('master-lokasi.')->middleware('role:admin')->group(function () {
         Route::get('/', [MasterLokasiController::class, 'index'])->name('index');
@@ -122,6 +142,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('master-kriteria')->name('master-kriteria.')->middleware('role:admin')->group(function () {
         Route::get('/', [KriteriaController::class, 'index'])->name('index');
         Route::post('/', [KriteriaController::class, 'store'])->name('store');
+        Route::put('/{id}', [KriteriaController::class, 'update'])->name('update');
         Route::post('/bobot', [KriteriaController::class, 'updateBobot'])->name('update-bobot');
         Route::post('/{id}/toggle', [KriteriaController::class, 'toggle'])->name('toggle');
         Route::delete('/{id}', [KriteriaController::class, 'destroy'])->name('destroy');

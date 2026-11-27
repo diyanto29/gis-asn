@@ -9,7 +9,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Master Data Wilayah & Geospasial</h1>
-            <p class="text-sm text-slate-500 mt-1">Daftar kecamatan, titik koordinat pusat wilayah, dan referensi batas spasial Kabupaten Indramayu.</p>
+            <p class="text-sm text-slate-500 mt-1">Daftar kecamatan, titik koordinat pusat wilayah, dan referensi batas spasial Kabupaten XYZ.</p>
         </div>
         <div>
             <a href="{{ route('master-lokasi.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold shadow-sm transition">
@@ -53,7 +53,7 @@
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="font-bold text-slate-900 group-hover:text-blue-700 transition">{{ $lokasi->nama_kecamatan }}</div>
-                                <span class="text-[11px] text-slate-400">Kabupaten Indramayu</span>
+                                <span class="text-[11px] text-slate-400">Kabupaten XYZ</span>
                             </td>
                             <td class="px-5 py-3.5 text-xs font-mono text-slate-600">
                                 <div>Lat: {{ number_format($lokasi->pusat_lat, 6) }}</div>

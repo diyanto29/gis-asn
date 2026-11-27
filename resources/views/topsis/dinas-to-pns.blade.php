@@ -291,16 +291,13 @@
         if (!document.getElementById('spkMapDinasToPns')) return;
 
         spkMap2 = L.map('spkMapDinasToPns').setView([dinasLat, dinasLng], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(spkMap2);
+        window.attachGmapBasemap(spkMap2);
 
         const bounds = [[dinasLat, dinasLng]];
 
-        // 1. Marker Dinas Tujuan (Indigo)
-        L.circleMarker([dinasLat, dinasLng], {
-            radius: 10, fillColor: '#4338ca', color: '#ffffff', weight: 3, fillOpacity: 1
+        // 1. Marker Dinas Tujuan (Pin Google Maps Biru Gedung)
+        L.marker([dinasLat, dinasLng], {
+            icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'office', size: 'lg' })
         }).addTo(spkMap2).bindPopup(`<strong>Lokasi Dinas Tujuan</strong><br/>{{ addslashes($selectedUnit->nama_unit) }}`).openPopup();
 
         // 2. Top 10 Kandidat PNS (Emerald)
@@ -320,12 +317,13 @@
 
         topPns.forEach(p => {
             if (!p.lat || !p.lng) return;
-            L.circleMarker([p.lat, p.lng], {
-                radius: p.rank === 1 ? 9 : 7,
-                fillColor: p.rank === 1 ? '#059669' : '#10b981',
-                color: '#ffffff',
-                weight: 2,
-                fillOpacity: 0.95
+            L.marker([p.lat, p.lng], {
+                icon: window.createGmapPinIcon({
+                    color: p.rank === 1 ? '#059669' : '#10b981',
+                    type: 'rank',
+                    label: '#' + p.rank,
+                    size: p.rank === 1 ? 'lg' : 'md'
+                })
             }).addTo(spkMap2).bindPopup(
                 `<span style="font-weight:700;color:#059669;">Rank #${p.rank}</span><br/><strong>${p.nama}</strong><br/>Jarak ke Dinas: <strong>${p.jarak} km</strong> &bull; V<sub>i</sub>: ${p.vi}`
             );
@@ -363,8 +361,8 @@
             color: '#4338ca', weight: 3, dashArray: '6, 6', opacity: 0.75
         }).addTo(spkMap2);
 
-        activeHighlightMarker2 = L.circleMarker([lat, lng], {
-            radius: 11, fillColor: '#e11d48', color: '#ffffff', weight: 3, fillOpacity: 1
+        activeHighlightMarker2 = L.marker([lat, lng], {
+            icon: window.createGmapPinIcon({ color: '#ea4335', type: 'rank', label: '#' + rank, size: 'lg' })
         }).addTo(spkMap2).bindPopup(
             `<span style="font-weight:700;color:#4338ca;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak Lurus: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}<br/><span style="color:#64748b;font-size:11px;">Melacak rute jalan raya OSRM...</span>`
         );

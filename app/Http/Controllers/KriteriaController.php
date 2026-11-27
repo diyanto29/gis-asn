@@ -79,6 +79,33 @@ class KriteriaController extends Controller
     }
 
     /**
+     * Memperbarui detail kriteria (nama, parameter_key, atribut, bobot, keterangan).
+     */
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $k = TopsisKriteria::findOrFail($id);
+
+        $validated = $request->validate([
+            'nama_kriteria' => 'required|string|max:100',
+            'parameter_key' => 'required|string|max:50',
+            'atribut' => 'required|in:cost,benefit',
+            'bobot' => 'required|numeric|min:0|max:1',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        $k->update([
+            'nama_kriteria' => $validated['nama_kriteria'],
+            'parameter_key' => $validated['parameter_key'],
+            'atribut' => $validated['atribut'],
+            'bobot' => round((float)$validated['bobot'], 4),
+            'keterangan' => $validated['keterangan'],
+        ]);
+
+        return redirect()->route('master-kriteria.index', ['mode' => $k->kategori_mode])
+            ->with('success', "Kriteria [{$k->kode_kriteria}] {$k->nama_kriteria} berhasil diperbarui.");
+    }
+
+    /**
      * Mengaktifkan atau menonaktifkan kriteria.
      */
     public function toggle(int $id): RedirectResponse

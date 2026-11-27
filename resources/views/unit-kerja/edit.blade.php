@@ -11,7 +11,7 @@
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Edit Kuota Formasi & Unit Kerja</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Edit Unit Kerja</h1>
             <p class="text-xs text-slate-500 font-mono mt-0.5">{{ $unit->nama_unit }} ({{ $unit->kode_unit }})</p>
         </div>
     </div>
@@ -27,32 +27,15 @@
                 <input type="text" name="nama_unit" value="{{ old('nama_unit', $unit->nama_unit) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
-                    <select name="kategori" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                        <option value="Dinas" {{ $unit->kategori === 'Dinas' ? 'selected' : '' }}>Dinas</option>
-                        <option value="Badan" {{ $unit->kategori === 'Badan' ? 'selected' : '' }}>Badan</option>
-                        <option value="Kecamatan" {{ $unit->kategori === 'Kecamatan' ? 'selected' : '' }}>Kecamatan</option>
-                        <option value="UPTD" {{ $unit->kategori === 'UPTD' ? 'selected' : '' }}>UPTD / Rumah Sakit</option>
-                        <option value="Sekolah" {{ $unit->kategori === 'Sekolah' ? 'selected' : '' }}>Sekolah</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-indigo-700 mb-1">Kuota Formasi Lowong (ABK)</label>
-                    <input type="number" name="kuota_formasi_kosong" value="{{ old('kuota_formasi_kosong', $unit->kuota_formasi_kosong) }}" min="0" required class="w-full text-sm font-bold border border-indigo-300 rounded-lg p-2.5 bg-indigo-50/50 text-indigo-900 focus:border-indigo-500 focus:ring-indigo-500">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Bezetting Riil Saat Ini</label>
-                    <input type="number" name="bezetting_saat_ini" value="{{ old('bezetting_saat_ini', $unit->bezetting_saat_ini) }}" min="0" class="w-full text-sm border border-slate-300 rounded-lg p-2.5">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kebutuhan Analisis Beban Kerja (ABK)</label>
-                    <input type="number" name="kebutuhan_abk" value="{{ old('kebutuhan_abk', $unit->kebutuhan_abk) }}" min="0" class="w-full text-sm border border-slate-300 rounded-lg p-2.5">
-                </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
+                <select name="kategori" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="Dinas" {{ $unit->kategori === 'Dinas' ? 'selected' : '' }}>Dinas</option>
+                    <option value="Badan" {{ $unit->kategori === 'Badan' ? 'selected' : '' }}>Badan</option>
+                    <option value="Kecamatan" {{ $unit->kategori === 'Kecamatan' ? 'selected' : '' }}>Kecamatan</option>
+                    <option value="UPTD" {{ $unit->kategori === 'UPTD' ? 'selected' : '' }}>UPTD / Rumah Sakit</option>
+                    <option value="Sekolah" {{ $unit->kategori === 'Sekolah' ? 'selected' : '' }}>Sekolah</option>
+                </select>
             </div>
 
             <div class="grid grid-cols-2 gap-3">

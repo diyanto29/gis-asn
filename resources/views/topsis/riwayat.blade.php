@@ -7,10 +7,10 @@
 
     <!-- Kop Surat Resmi (Hanya Tampil Saat Print) -->
     <div class="hidden print:block text-center border-b-4 border-double border-slate-900 pb-3 mb-6">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800">Pemerintah Kabupaten Indramayu</h3>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800">Pemerintah Kabupaten XYZ</h3>
         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Badan Kepegawaian dan Pengembangan Sumber Daya Manusia</h2>
         <h4 class="text-xs font-semibold text-slate-700">Tim Penilai Kinerja / Badan Pertimbangan Jabatan dan Kepangkatan (Baperjakat)</h4>
-        <p class="text-[10px] text-slate-500 mt-0.5">Jl. Mayjen Sutoyo No. 1, Lemahmekar, Kec. Indramayu, Kabupaten Indramayu, Jawa Barat 45214</p>
+        <p class="text-[10px] text-slate-500 mt-0.5">Jl. Mayjen Sutoyo No. 1, Lemahmekar, Kec. Indramayu, Kabupaten XYZ, Jawa Barat 45214</p>
         <div class="mt-3 text-xs font-bold uppercase tracking-wide text-slate-900 bg-slate-100 py-1 border border-slate-300">
             Daftar Usulan dan Rekomendasi Mutasi Rotasi Pegawai PNS Berbasis Spasial OSRM & TOPSIS
         </div>
@@ -160,15 +160,15 @@
         <div>
             <p>Mengetahui,</p>
             <p class="font-bold">Sekretaris Tim Baperjakat</p>
-            <p class="text-[10px] text-slate-500">Kepala BKPSDM Kabupaten Indramayu</p>
+            <p class="text-[10px] text-slate-500">Kepala BKPSDM Kabupaten XYZ</p>
             <div class="h-20"></div>
             <p class="font-bold underline">Drs. H. DADANG RAHMAT, M.Si</p>
             <p class="font-mono text-[10px]">NIP. 196805141994031004</p>
         </div>
         <div>
-            <p>Indramayu, {{ date('d F Y') }}</p>
+            <p>Kabupaten XYZ, {{ date('d F Y') }}</p>
             <p class="font-bold">Ketua Tim Baperjakat</p>
-            <p class="text-[10px] text-slate-500">Sekretaris Daerah Kabupaten Indramayu</p>
+            <p class="text-[10px] text-slate-500">Sekretaris Daerah Kabupaten XYZ</p>
             <div class="h-20"></div>
             <p class="font-bold underline">Ir. H. AEP SURAHMAN</p>
             <p class="font-mono text-[10px]">NIP. 196708211993031002</p>

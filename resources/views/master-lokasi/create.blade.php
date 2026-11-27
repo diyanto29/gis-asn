@@ -12,7 +12,7 @@
         </a>
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tambah Master Wilayah / Kecamatan</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Menambahkan data batas dan koordinat pusat kecamatan di Kabupaten Indramayu.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Menambahkan data batas dan koordinat pusat kecamatan di Kabupaten XYZ.</p>
         </div>
     </div>
 
@@ -105,13 +105,11 @@
         const defaultLng = parseFloat(document.getElementById('pusat_lng').value) || 108.320420;
 
         const map = L.map('pickerMap').setView([defaultLat, defaultLng], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+        window.attachGmapBasemap(map);
 
         const marker = L.marker([defaultLat, defaultLng], {
-            draggable: true
+            draggable: true,
+            icon: window.createGmapPinIcon({ color: '#ea4335', type: 'dot', size: 'lg' })
         }).addTo(map);
 
         function updateCoords(lat, lng) {

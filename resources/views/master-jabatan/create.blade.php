@@ -34,37 +34,28 @@
         <form action="{{ route('master-jabatan.store') }}" method="POST" class="p-6 space-y-6">
             @csrf
 
-            <!-- Pilihan Utama: Jenis Jabatan (Pelaksana / Fungsional / Struktural) Sesuai Nota Klien -->
+            <!-- Pilihan Utama: Jenis Jabatan (Hanya 2: Jabatan Pelaksana & Jabatan Fungsional) -->
             <div>
                 <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                    Klasifikasi / Jenis Jabatan <span class="text-rose-500">*</span>
+                    Pilihan Jenis Jabatan <span class="text-rose-500">*</span>
                 </label>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label class="relative flex flex-col p-4 bg-white border-2 rounded-xl cursor-pointer hover:border-emerald-500 transition has-checked:border-emerald-600 has-checked:bg-emerald-50/30">
-                        <input type="radio" name="jenis_jabatan" value="pelaksana" {{ old('jenis_jabatan', 'pelaksana') === 'pelaksana' ? 'checked' : '' }} class="sr-only">
+                        <input type="radio" name="jenis_jabatan" value="pelaksana" {{ old('jenis_jabatan', 'pelaksana') === 'pelaksana' ? 'checked' : '' }} onchange="toggleJenjangJabatan()" class="sr-only">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-bold text-slate-900">Jabatan Pelaksana</span>
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                         </div>
-                        <span class="text-[11px] text-slate-500">Tugas teknis operasional administratif (contoh: Pengadministrasi Perkantoran, Pengolah Data).</span>
+                        <span class="text-[11px] text-slate-500">Tugas teknis operasional administratif (tanpa jenjang jabatan).</span>
                     </label>
 
                     <label class="relative flex flex-col p-4 bg-white border-2 rounded-xl cursor-pointer hover:border-indigo-500 transition has-checked:border-indigo-600 has-checked:bg-indigo-50/30">
-                        <input type="radio" name="jenis_jabatan" value="fungsional" {{ old('jenis_jabatan') === 'fungsional' ? 'checked' : '' }} class="sr-only">
+                        <input type="radio" name="jenis_jabatan" value="fungsional" {{ old('jenis_jabatan') === 'fungsional' ? 'checked' : '' }} onchange="toggleJenjangJabatan()" class="sr-only">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-bold text-slate-900">Jabatan Fungsional</span>
                             <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
                         </div>
-                        <span class="text-[11px] text-slate-500">Keahlian / keterampilan profesi tertentu (contoh: Pranata Komputer, Analis Kebijakan, Guru).</span>
-                    </label>
-
-                    <label class="relative flex flex-col p-4 bg-white border-2 rounded-xl cursor-pointer hover:border-amber-500 transition has-checked:border-amber-600 has-checked:bg-amber-50/30">
-                        <input type="radio" name="jenis_jabatan" value="struktural" {{ old('jenis_jabatan') === 'struktural' ? 'checked' : '' }} class="sr-only">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-sm font-bold text-slate-900">Jabatan Struktural</span>
-                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                        </div>
-                        <span class="text-[11px] text-slate-500">Kepemimpinan manajerial satuan kerja (contoh: Kepala Dinas, Camat, Sekretaris).</span>
+                        <span class="text-[11px] text-slate-500">Keahlian / keterampilan profesi tertentu (memiliki jenjang jabatan).</span>
                     </label>
                 </div>
                 @error('jenis_jabatan')
@@ -72,9 +63,9 @@
                 @enderror
             </div>
 
-            <!-- Nama & Kode Jabatan -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="sm:col-span-2">
+            <!-- Nama Jabatan, Kelas Jabatan (1-12), & Jenjang Jabatan (khusus Fungsional) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">
                         Nama Jabatan Standar <span class="text-rose-500">*</span>
                     </label>
@@ -86,63 +77,65 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">
-                        Kode Jabatan (Opsional)
+                        Kelas Jabatan (1 - 12) <span class="text-rose-500">*</span>
                     </label>
-                    <input type="text" name="kode_jabatan" value="{{ old('kode_jabatan') }}" placeholder="Contoh: JBT-0102" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    @error('kode_jabatan')
+                    <select name="kelas_jabatan" required class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">-- Pilih Kelas Jabatan --</option>
+                        @for ($kls = 1; $kls <= 12; $kls++)
+                            <option value="{{ $kls }}" {{ (string)old('kelas_jabatan') === (string)$kls ? 'selected' : '' }}>Kelas {{ $kls }}</option>
+                        @endfor
+                    </select>
+                    @error('kelas_jabatan')
                         <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
-            <!-- Jenjang & Rumpun Jabatan -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Jabatan</label>
-                    <input type="text" name="jenjang_jabatan" value="{{ old('jenjang_jabatan') }}" placeholder="Contoh: Ahli Pertama, Ahli Muda, Terampil..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    @error('jenjang_jabatan')
-                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Rumpun Jabatan</label>
-                    <input type="text" name="rumpun_jabatan" value="{{ old('rumpun_jabatan') }}" placeholder="Contoh: Komputer, Administrasi, Medis..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    @error('rumpun_jabatan')
-                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Atribut Standar SIASN BKN -->
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kelas Jabatan</label>
-                    <input type="number" name="kelas_jabatan" value="{{ old('kelas_jabatan') }}" min="1" max="17" placeholder="1 - 14" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">BUP (Usia Pensiun)</label>
-                    <input type="number" name="bup_usia" value="{{ old('bup_usia', 58) }}" min="50" max="70" placeholder="58 / 60 / 65" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Cepat (Pelaksana)</label>
-                    <input type="text" name="kode_cepat" value="{{ old('kode_cepat') }}" placeholder="Opsional" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">ID SIASN BKN</label>
-                    <input type="text" name="siasn_id" value="{{ old('siasn_id') }}" placeholder="Opsional" class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
-            </div>
-
-            <!-- Kualifikasi Pendidikan Linier -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Kualifikasi Pendidikan Linier</label>
-                <textarea name="kualifikasi_pendidikan" rows="3" placeholder="Contoh: S-1 Teknik Informatika / Sistem Informasi / Ilmu Komputer" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('kualifikasi_pendidikan') }}</textarea>
-                <p class="text-[11px] text-slate-400 mt-1">Digunakan untuk validasi kesesuaian formasi linier pada modul rekomendasi mutasi.</p>
-                @error('kualifikasi_pendidikan')
+            <div id="jenjangJabatanWrapper">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Jabatan (Khusus Jabatan Fungsional)</label>
+                @php
+                    $jenjangOptions = ['Pemula', 'Terampil', 'Mahir', 'Ahli Pertama', 'Ahli Muda', 'Ahli Madya', 'Ahli Utama'];
+                @endphp
+                <select name="jenjang_jabatan" id="jenjangJabatanSelect" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">-- Pilih Jenjang Jabatan --</option>
+                    @foreach ($jenjangOptions as $jOpt)
+                        <option value="{{ $jOpt }}" {{ old('jenjang_jabatan') === $jOpt ? 'selected' : '' }}>{{ $jOpt }}</option>
+                    @endforeach
+                </select>
+                @error('jenjang_jabatan')
                     <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
+
+            <!-- Kualifikasi Pendidikan Linier -->
+            @php
+                $tingkatPendOptions = [
+                    'SLTA / SMA Sederajat',
+                    'Diploma III (D-III)',
+                    'Diploma IV (D-IV)',
+                    'S-1 / Sarjana',
+                    'Profesi',
+                    'S-2 / Magister',
+                    'S-3 / Doktor',
+                ];
+            @endphp
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tingkat Pendidikan (Kualifikasi Linier)</label>
+                    <select name="tingkat_pendidikan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">-- Pilih Tingkat Pendidikan --</option>
+                        @foreach ($tingkatPendOptions as $tp)
+                            <option value="{{ $tp }}" {{ old('tingkat_pendidikan') === $tp ? 'selected' : '' }}>{{ $tp }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pendidikan / Program Studi</label>
+                    <input type="text" name="nama_pendidikan" value="{{ old('nama_pendidikan') }}" placeholder="Contoh: Teknik Informatika / Administrasi Publik" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-400 -mt-3">Digunakan untuk validasi kesesuaian formasi linier pada modul rekomendasi mutasi.</p>
 
             <!-- Form Actions -->
             <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
@@ -157,3 +150,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleJenjangJabatan() {
+        const jenis = document.querySelector('input[name="jenis_jabatan"]:checked')?.value;
+        const wrap = document.getElementById('jenjangJabatanWrapper');
+        const sel = document.getElementById('jenjangJabatanSelect');
+        if (!wrap || !sel) return;
+        if (jenis === 'fungsional') {
+            wrap.classList.remove('hidden');
+            sel.disabled = false;
+        } else {
+            wrap.classList.add('hidden');
+            sel.value = '';
+            sel.disabled = true;
+        }
+    }
+    document.addEventListener('DOMContentLoaded', toggleJenjangJabatan);
+</script>
+@endpush

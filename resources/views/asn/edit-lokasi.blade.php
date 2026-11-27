@@ -6,13 +6,59 @@
 <div class="space-y-6">
 
     <!-- Header -->
-    <div class="flex items-center gap-3">
-        <a href="{{ route('asn.show', $asn->id) }}" class="p-2 border border-slate-300 hover:bg-white text-slate-600 rounded-lg transition">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        </a>
-        <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Perbarui Titik Domisili Tempat Tinggal</h1>
-            <p class="text-xs text-slate-500 font-mono mt-0.5">{{ $asn->nama_lengkap }} &bull; NIP: {{ $asn->nip }}</p>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+            @if (auth()->user()->isAdmin())
+                <a href="{{ route('asn.show', $asn->id) }}" class="p-2 border border-slate-300 hover:bg-white text-slate-600 rounded-lg transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                </a>
+            @endif
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Profil Pegawai &amp; Perbarui Titik Domisili</h1>
+                <p class="text-xs text-slate-500 mt-0.5">Data kepegawaian bersifat hanya-baca (dikelola Admin BKPSDM). Anda dapat memperbarui titik koordinat &amp; wilayah domisili di peta.</p>
+            </div>
+        </div>
+        @if (auth()->user()->isAsn())
+            <a href="{{ route('asn.simulasi-mandiri') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+                <i data-lucide="compass" class="w-4 h-4"></i> Lihat Rekomendasi Unit Kerja (SPK)
+            </a>
+        @endif
+    </div>
+
+    <!-- Identitas Kepegawaian (Read-Only / Disabled) -->
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i> Identitas Kepegawaian (Sementara Tidak Dapat Diubah)
+            </h3>
+            <span class="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200 rounded">Read-Only</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">NIP (18 Digit)</label>
+                <input type="text" value="{{ $asn->nip }}" disabled class="w-full text-xs font-mono bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-slate-600 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Nama Lengkap</label>
+                <input type="text" value="{{ $asn->nama_lengkap }}" disabled class="w-full text-xs bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-slate-600 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Unit Kerja Saat Ini</label>
+                <input type="text" value="{{ $asn->unitSaatIni->nama_unit ?? '-' }}" disabled class="w-full text-xs bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-slate-600 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Jabatan</label>
+                <input type="text" value="{{ $asn->jabatan }}" disabled class="w-full text-xs bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-slate-600 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Pangkat / Golongan</label>
+                <input type="text" value="{{ $asn->pangkat_golongan }} (Masa Kerja {{ $asn->masa_kerja_tahun }} Thn)" disabled class="w-full text-xs bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-slate-600 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Pendidikan Terakhir</label>
+                <input type="text" value="{{ $asn->pendidikan_terakhir ?? $asn->tingkat_pendidikan ?? '-' }}" disabled class="w-full text-xs bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-slate-600 cursor-not-allowed">
+            </div>
         </div>
     </div>
 
@@ -37,7 +83,7 @@
                 <!-- Search Toolbar Lokasi & GPS (Model Satpol PP) -->
                 <div class="p-3 bg-white border-b border-slate-200 flex flex-wrap items-center gap-2">
                     <div class="relative flex-1 min-w-[220px]">
-                        <input type="text" id="mapSearchInput" placeholder="Ketik nama jalan, desa, patokan di Indramayu (mis: Jl. Veteran, Haurgeulis)..." class="w-full text-xs pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <input type="text" id="mapSearchInput" placeholder="Ketik nama jalan, desa, patokan di Kabupaten XYZ (mis: Jl. Veteran, Haurgeulis)..." class="w-full text-xs pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
                     </div>
                     <button type="button" id="btnSearchMap" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1.5">
@@ -85,53 +131,50 @@
                         </div>
                     </div>
 
-                    <!-- Cascading Alamat Naratif -->
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Provinsi</label>
-                            <input type="text" name="provinsi" value="{{ old('provinsi', $asn->provinsi ?? 'Jawa Barat') }}" readonly class="w-full text-xs bg-slate-100 border border-slate-300 rounded-lg p-2 text-slate-600 font-medium">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Kabupaten / Kota</label>
-                            <input type="text" name="kabupaten_kota" value="{{ old('kabupaten_kota', $asn->kabupaten_kota ?? 'Kabupaten Indramayu') }}" readonly class="w-full text-xs bg-slate-100 border border-slate-300 rounded-lg p-2 text-slate-600 font-medium">
-                        </div>
-                    </div>
-
+                    <!-- Cascading Wilayah Administratif (Wilayah.id se-Indonesia) -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kecamatan (Indramayu) <span class="text-rose-500">*</span></label>
-                        <select id="kecamatanSelect" name="kecamatan" required class="searchable-select w-full" data-placeholder="-- Pilih Kecamatan --">
-                            <option value="">-- Pilih Kecamatan Indramayu --</option>
-                            @foreach ($kecamatans as $kec)
-                                <option value="{{ $kec->nama_kecamatan }}" data-lat="{{ $kec->pusat_lat }}" data-lng="{{ $kec->pusat_lng }}" {{ old('kecamatan', $asn->kecamatan) == $kec->nama_kecamatan ? 'selected' : '' }}>
-                                    Kec. {{ $kec->nama_kecamatan }}
-                                </option>
-                            @endforeach
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Provinsi <span class="text-rose-500">*</span></label>
+                        <select id="provinsiSelect" name="provinsi" required class="searchable-select w-full" data-placeholder="-- Pilih Provinsi --">
+                            <option value="">-- Memuat Provinsi... --</option>
+                            @if (old('provinsi', $asn->provinsi))
+                                <option value="{{ old('provinsi', $asn->provinsi) }}" selected>{{ old('provinsi', $asn->provinsi) }}</option>
+                            @endif
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Desa / Kelurahan <span class="text-rose-500">*</span></label>
-                        <select id="desaSelect" name="kelurahan_desa" required class="searchable-select w-full" data-placeholder="-- Pilih Desa / Kelurahan --">
-                            <option value="{{ old('kelurahan_desa', $asn->kelurahan_desa) }}">{{ old('kelurahan_desa', $asn->kelurahan_desa) ?: '-- Pilih Desa / Kelurahan --' }}</option>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kabupaten / Kota <span class="text-rose-500">*</span></label>
+                        <select id="kabupatenSelect" name="kabupaten_kota" required class="searchable-select w-full" data-placeholder="-- Pilih Kabupaten / Kota --">
+                            <option value="">-- Pilih Provinsi Terlebih Dahulu --</option>
+                            @if (old('kabupaten_kota', $asn->kabupaten_kota))
+                                <option value="{{ old('kabupaten_kota', $asn->kabupaten_kota) }}" selected>{{ old('kabupaten_kota', $asn->kabupaten_kota) }}</option>
+                            @endif
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kecamatan <span class="text-rose-500">*</span></label>
+                        <select id="kecamatanSelect" name="kecamatan" required class="searchable-select w-full" data-placeholder="-- Pilih Kecamatan --">
+                            <option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>
+                            @if (old('kecamatan', $asn->kecamatan))
+                                <option value="{{ old('kecamatan', $asn->kecamatan) }}" selected>Kec. {{ old('kecamatan', $asn->kecamatan) }}</option>
+                            @endif
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Desa / Kelurahan</label>
+                        <select id="desaSelect" name="kelurahan_desa" class="searchable-select w-full" data-placeholder="-- Pilih Desa / Kelurahan --">
+                            <option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>
+                            @if (old('kelurahan_desa', $asn->kelurahan_desa))
+                                <option value="{{ old('kelurahan_desa', $asn->kelurahan_desa) }}" selected>{{ old('kelurahan_desa', $asn->kelurahan_desa) }}</option>
+                            @endif
                         </select>
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap / RT RW</label>
                         <textarea name="alamat_detail" rows="2" class="w-full text-sm border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500" placeholder="Jl. Veteran No. 12 RT 02/RW 04...">{{ old('alamat_detail', $asn->alamat_detail) }}</textarea>
-                    </div>
-
-                    <!-- Checklist Ajukan Permohonan Mutasi -->
-                    <div class="pt-3 border-t border-slate-100">
-                        <label class="inline-flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="status_permohonan_mutasi" value="1" {{ old('status_permohonan_mutasi', $asn->status_permohonan_mutasi) ? 'checked' : '' }} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                            <span class="text-xs font-bold text-slate-800">Ajukan Rekomendasi Mutasi ke Baperjakat</span>
-                        </label>
-
-                        <div class="mt-2">
-                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Alasan Pengajuan (Opsional)</label>
-                            <textarea name="alasan_mutasi" rows="2" class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-blue-500 focus:ring-blue-500" placeholder="Contoh: Mengurangi beban jarak 40km setiap hari...">{{ old('alasan_mutasi', $asn->alasan_mutasi) }}</textarea>
-                        </div>
                     </div>
 
                     <!-- Submit Button -->
@@ -162,31 +205,135 @@
             });
         }
 
-        fetch('/data/indramayu_wilayah.json')
-            .then(res => res.json())
-            .then(data => {
-                wilayahIndramayu = data;
-                const initialKec = $('#kecamatanSelect').val();
-                if (initialKec) {
-                    populateDesa(initialKec, "{{ old('kelurahan_desa', $asn->kelurahan_desa) }}");
-                }
-            })
-            .catch(err => console.warn('Gagal memuat katalog desa:', err));
+        const initProv = @json(old('provinsi', $asn->provinsi ?? ''));
+        const initKab  = @json(old('kabupaten_kota', $asn->kabupaten_kota ?? ''));
+        const initKec  = @json(old('kecamatan', $asn->kecamatan ?? ''));
+        const initDesa = @json(old('kelurahan_desa', $asn->kelurahan_desa ?? ''));
 
-        function populateDesa(kecamatanName, selectedDesa) {
-            const desaSelect = $('#desaSelect');
-            desaSelect.empty().append('<option value="">-- Pilih Desa / Kelurahan --</option>');
-
-            const key = kecamatanName.toUpperCase().trim();
-            const district = wilayahIndramayu[key];
-            if (district && district.villages) {
-                district.villages.forEach(v => {
-                    const isSel = (selectedDesa && selectedDesa.toLowerCase() === v.name.toLowerCase()) ? 'selected' : '';
-                    desaSelect.append(`<option value="${v.name}" ${isSel}>${v.name}</option>`);
-                });
-            }
-            desaSelect.trigger('change.select2');
+        function normalizeWilayah(s) {
+            return (s || '').toLowerCase().replace(/^kab(\.|upaten)?\s+/i, '').replace(/^kota\s+/i, '').trim();
         }
+
+        function geocodeAndFly(query, zoom) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=1`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res && res.length > 0) {
+                        const lat = parseFloat(res[0].lat);
+                        const lng = parseFloat(res[0].lon);
+                        map.flyTo([lat, lng], zoom, { duration: 1.1 });
+                        updateMarkerPosition(lat, lng);
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function loadVillages(distCode, preselectName) {
+            const $desa = $('#desaSelect');
+            $desa.empty().append('<option value="">-- Memuat Desa / Kelurahan... --</option>').trigger('change.select2');
+            if (!distCode) {
+                $desa.empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
+                return;
+            }
+            fetch(`{{ url('/api/wilayah/villages') }}/${encodeURIComponent(distCode)}`)
+                .then(r => r.json())
+                .then(res => {
+                    $desa.empty().append('<option value="">-- Pilih Desa / Kelurahan --</option>');
+                    (res.data || []).forEach(v => {
+                        const sel = preselectName && v.name.toLowerCase() === preselectName.toLowerCase();
+                        $desa.append(new Option(v.name, v.name, sel, sel));
+                    });
+                    $desa.trigger('change.select2');
+                });
+        }
+
+        function loadDistricts(regCode, preselectKec, preselectDesa) {
+            const $kec = $('#kecamatanSelect');
+            $kec.empty().append('<option value="">-- Memuat Kecamatan... --</option>').trigger('change.select2');
+            if (!regCode) {
+                $kec.empty().append('<option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>').trigger('change.select2');
+                return;
+            }
+            fetch(`{{ url('/api/wilayah/districts') }}/${encodeURIComponent(regCode)}`)
+                .then(r => r.json())
+                .then(res => {
+                    $kec.empty().append('<option value="">-- Pilih Kecamatan --</option>');
+                    let matchedCode = null;
+                    (res.data || []).forEach(d => {
+                        const sel = preselectKec && d.name.toLowerCase() === preselectKec.toLowerCase();
+                        const opt = $(`<option value="${d.name}" data-code="${d.code}" ${sel ? 'selected' : ''}>Kec. ${d.name}</option>`);
+                        $kec.append(opt);
+                        if (sel) matchedCode = d.code;
+                    });
+                    if (preselectKec && !matchedCode) {
+                        $kec.append(new Option(`Kec. ${preselectKec}`, preselectKec, true, true));
+                    }
+                    $kec.trigger('change.select2');
+                    if (matchedCode) loadVillages(matchedCode, preselectDesa);
+                });
+        }
+
+        function loadRegencies(provCode, preselectKab, preselectKec, preselectDesa) {
+            const $kab = $('#kabupatenSelect');
+            $kab.empty().append('<option value="">-- Memuat Kabupaten / Kota... --</option>').trigger('change.select2');
+            if (!provCode) {
+                $kab.empty().append('<option value="">-- Pilih Provinsi Terlebih Dahulu --</option>').trigger('change.select2');
+                return;
+            }
+            fetch(`{{ url('/api/wilayah/regencies') }}/${encodeURIComponent(provCode)}`)
+                .then(r => r.json())
+                .then(res => {
+                    $kab.empty().append('<option value="">-- Pilih Kabupaten / Kota --</option>');
+                    let matchedCode = null;
+                    (res.data || []).forEach(reg => {
+                        const sel = preselectKab && (
+                            reg.name.toLowerCase() === preselectKab.toLowerCase() ||
+                            normalizeWilayah(reg.name) === normalizeWilayah(preselectKab)
+                        );
+                        const opt = $(`<option value="${reg.name}" data-code="${reg.code}" ${sel ? 'selected' : ''}>${reg.name}</option>`);
+                        $kab.append(opt);
+                        if (sel) matchedCode = reg.code;
+                    });
+                    if (preselectKab && !matchedCode) {
+                        $kab.append(new Option(preselectKab, preselectKab, true, true));
+                    }
+                    $kab.trigger('change.select2');
+                    if (matchedCode) loadDistricts(matchedCode, preselectKec, preselectDesa);
+                });
+        }
+
+        fetch(`{{ route('api.wilayah.provinces') }}`)
+            .then(r => r.json())
+            .then(res => {
+                const $prov = $('#provinsiSelect');
+                $prov.empty().append('<option value="">-- Pilih Provinsi --</option>');
+                let matchedCode = null;
+                (res.data || []).forEach(p => {
+                    const sel = initProv && p.name.toLowerCase() === initProv.toLowerCase();
+                    const opt = $(`<option value="${p.name}" data-code="${p.code}" ${sel ? 'selected' : ''}>${p.name}</option>`);
+                    $prov.append(opt);
+                    if (sel) matchedCode = p.code;
+                });
+                if (initProv && !matchedCode) {
+                    $prov.append(new Option(initProv, initProv, true, true));
+                }
+                $prov.trigger('change.select2');
+                if (matchedCode) loadRegencies(matchedCode, initKab, initKec, initDesa);
+            })
+            .catch(err => console.warn('Gagal memuat daftar provinsi:', err));
+
+        $('#provinsiSelect').on('change', function () {
+            const code = $(this).find('option:selected').data('code');
+            loadRegencies(code, null, null, null);
+        });
+
+        $('#kabupatenSelect').on('change', function () {
+            const code = $(this).find('option:selected').data('code');
+            const kabName = $(this).val();
+            const provName = $('#provinsiSelect').val();
+            loadDistricts(code, null, null);
+            if (kabName) geocodeAndFly(`${kabName}, ${provName || 'Indonesia'}`, 11);
+        });
 
         const officeLat = {{ $asn->unitSaatIni->kantor_lat ?? -6.32635 }};
         const officeLng = {{ $asn->unitSaatIni->kantor_lng ?? 108.32042 }};
@@ -196,32 +343,22 @@
 
         const map = L.map('pickerMap').setView([curLat, curLng], 13);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+        window.attachGmapBasemap(map);
 
-        // Marker Kantor Saat Ini (Fixed Blue)
-        const officeMarker = L.circleMarker([officeLat, officeLng], {
-            radius: 8,
-            fillColor: '#1d4ed8',
-            color: '#ffffff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 1
+        // Marker Kantor Saat Ini (Google Maps Blue Office Pin)
+        const officeMarker = L.marker([officeLat, officeLng], {
+            icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'office', size: 'md' })
         }).addTo(map).bindPopup("<strong>Kantor Anda: {{ $asn->unitSaatIni->nama_unit }}</strong>");
 
-        // Draggable Home Marker (Red Pin)
+        // Draggable Home Marker (Google Maps Red Home Pin)
         const homeMarker = L.marker([curLat, curLng], {
-            draggable: true
+            draggable: true,
+            icon: window.createGmapPinIcon({ color: '#ea4335', type: 'home', size: 'lg' })
         }).addTo(map).bindPopup("<strong>Titik Domisili Anda</strong><br/><span class='text-xs text-slate-500'>Geser pin ini tepat di atas atap rumah Anda</span>").openPopup();
 
-        // Polyline connecting home & office
-        const line = L.polyline([[curLat, curLng], [officeLat, officeLng]], {
-            color: '#dc2626',
-            weight: 2,
-            dashArray: '5, 8'
-        }).addTo(map);
+        // Polyline rute jalan raya OSRM (fallback ke Haversine)
+        let line = null;
+        let routeReqSeq = 0;
 
         function calculateHaversine(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -234,25 +371,63 @@
             return (R * c).toFixed(2);
         }
 
-        function updateMarkerPosition(lat, lng) {
-            document.getElementById('domisili_lat').value = lat.toFixed(7);
-            document.getElementById('domisili_lng').value = lng.toFixed(7);
-
-            homeMarker.setLatLng([lat, lng]);
-            line.setLatLngs([[lat, lng], [officeLat, officeLng]]);
-
-            const dKm = calculateHaversine(lat, lng, officeLat, officeLng);
+        function setDistanceBadge(dKm, suffix) {
             const badge = document.getElementById('liveDistanceBadge');
-            badge.innerText = dKm + ' km';
-
-            if (dKm < 5) {
+            badge.innerText = dKm + ' km' + (suffix ? ' ' + suffix : '');
+            if (parseFloat(dKm) < 5) {
                 badge.className = 'px-2.5 py-0.5 rounded font-extrabold text-sm bg-emerald-500 text-white';
-            } else if (dKm <= 20) {
+            } else if (parseFloat(dKm) <= 20) {
                 badge.className = 'px-2.5 py-0.5 rounded font-extrabold text-sm bg-amber-500 text-white';
             } else {
                 badge.className = 'px-2.5 py-0.5 rounded font-extrabold text-sm bg-rose-600 text-white';
             }
         }
+
+        function drawRouteLine(coords, isOsrm, dKm) {
+            const km = parseFloat(dKm);
+            const routeColor = km < 5 ? '#059669' : (km <= 20 ? '#d97706' : '#e11d48');
+            if (line) map.removeLayer(line);
+            line = L.polyline(coords, {
+                color: routeColor,
+                weight: isOsrm ? 4 : 2,
+                opacity: isOsrm ? 0.88 : 0.75,
+                dashArray: isOsrm ? null : '5, 8'
+            }).addTo(map);
+        }
+
+        function updateMarkerPosition(lat, lng) {
+            document.getElementById('domisili_lat').value = lat.toFixed(7);
+            document.getElementById('domisili_lng').value = lng.toFixed(7);
+            homeMarker.setLatLng([lat, lng]);
+
+            const fallbackKm = calculateHaversine(lat, lng, officeLat, officeLng);
+            const reqId = ++routeReqSeq;
+
+            fetch(`https://router.project-osrm.org/route/v1/driving/${lng},${lat};${officeLng},${officeLat}?overview=full&geometries=geojson`)
+                .then(res => res.json())
+                .then(data => {
+                    if (reqId !== routeReqSeq) return;
+                    if (data && data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                        const route = data.routes[0];
+                        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                        const osrmKm = (route.distance / 1000).toFixed(2);
+                        const mins = Math.max(1, Math.round(route.duration / 60));
+                        drawRouteLine(coords, true, osrmKm);
+                        setDistanceBadge(osrmKm, `(~${mins} mnt • OSRM)`);
+                    } else {
+                        drawRouteLine([[lat, lng], [officeLat, officeLng]], false, fallbackKm);
+                        setDistanceBadge(fallbackKm, '(Haversine)');
+                    }
+                })
+                .catch(() => {
+                    if (reqId !== routeReqSeq) return;
+                    drawRouteLine([[lat, lng], [officeLat, officeLng]], false, fallbackKm);
+                    setDistanceBadge(fallbackKm, '(Haversine)');
+                });
+        }
+
+        // Gambar rute OSRM awal saat peta dimuat
+        updateMarkerPosition(curLat, curLng);
 
         homeMarker.on('dragend', function (e) {
             const pos = e.target.getLatLng();
@@ -263,37 +438,23 @@
             updateMarkerPosition(e.latlng.lat, e.latlng.lng);
         });
 
-        // Fast fly to kecamatan when dropdown changed
         $('#kecamatanSelect').on('change', function () {
             const kecName = $(this).val();
-            const opt = $(this).find('option:selected');
-            const lat = parseFloat(opt.data('lat'));
-            const lng = parseFloat(opt.data('lng'));
-            if (lat && lng) {
-                map.flyTo([lat, lng], 14, { duration: 1.2 });
-                updateMarkerPosition(lat, lng);
-            }
+            const distCode = $(this).find('option:selected').data('code');
+            const kabName = $('#kabupatenSelect').val();
+            const provName = $('#provinsiSelect').val();
+            loadVillages(distCode, null);
             if (kecName) {
-                populateDesa(kecName, null);
+                geocodeAndFly(`Kecamatan ${kecName}, ${kabName || ''}, ${provName || 'Indonesia'}`, 13);
             }
         });
 
         $('#desaSelect').on('change', function () {
             const desaName = $(this).val();
             const kecName = $('#kecamatanSelect').val();
+            const kabName = $('#kabupatenSelect').val();
             if (desaName && kecName) {
-                const query = `Desa ${desaName}, ${kecName}, Kabupaten Indramayu`;
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=1`)
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res && res.length > 0) {
-                            const lat = parseFloat(res[0].lat);
-                            const lng = parseFloat(res[0].lon);
-                            map.flyTo([lat, lng], 16, { duration: 1.2 });
-                            updateMarkerPosition(lat, lng);
-                        }
-                    })
-                    .catch(err => console.log('Geosearch desa fallback:', err));
+                geocodeAndFly(`${desaName}, ${kecName}, ${kabName || 'Indonesia'}`, 15);
             }
         });
 
@@ -323,7 +484,7 @@
                         updateMarkerPosition(lat, lng);
                         homeMarker.bindPopup(`<strong>Hasil Pencarian:</strong><br/>${top.display_name}`).openPopup();
                     } else {
-                        alert(`Lokasi "${query}" tidak ditemukan di area Indramayu. Silakan geser pin merah secara manual.`);
+                        alert(`Lokasi "${query}" tidak ditemukan di area Kabupaten XYZ. Silakan geser pin merah secara manual.`);
                     }
                 })
                 .catch(err => {

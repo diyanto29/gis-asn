@@ -11,8 +11,8 @@
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tambah Unit Kerja / SKPD Baru</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Mendaftarkan instansi, titik koordinat kantor absensi, dan kuota formasi ABK.</p>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tambah Unit Kerja Baru</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Mendaftarkan instansi dan titik koordinat lokasi kantor.</p>
         </div>
     </div>
 
@@ -43,7 +43,7 @@
             <div class="space-y-6">
                 <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
                     <h3 class="font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">
-                        Identitas & Formasi Kantor
+                        Identitas Unit Kerja
                     </h3>
 
                     <div>
@@ -86,22 +86,7 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Kantor Lengkap</label>
-                        <textarea name="alamat_kantor" rows="2" placeholder="Jl. Mayor Oking No. 1, Indramayu..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('alamat_kantor') }}</textarea>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Bezetting</label>
-                            <input type="number" name="bezetting_saat_ini" value="{{ old('bezetting_saat_ini', 0) }}" min="0" class="w-full text-xs border border-slate-300 rounded-lg p-2">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kebutuhan</label>
-                            <input type="number" name="kebutuhan_abk" value="{{ old('kebutuhan_abk', 0) }}" min="0" class="w-full text-xs border border-slate-300 rounded-lg p-2">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-emerald-700 mb-1 font-bold">Kuota Lowong *</label>
-                            <input type="number" name="kuota_formasi_kosong" value="{{ old('kuota_formasi_kosong', 1) }}" min="0" required class="w-full text-xs border border-emerald-400 bg-emerald-50 text-emerald-900 font-bold rounded-lg p-2">
-                        </div>
+                        <textarea name="alamat_kantor" rows="2" placeholder="Jl. Mayor Oking No. 1, Kabupaten XYZ..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('alamat_kantor') }}</textarea>
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -126,13 +111,11 @@
         const defaultLng = parseFloat(document.getElementById('kantor_lng').value) || 108.320420;
 
         const map = L.map('pickerMap').setView([defaultLat, defaultLng], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+        window.attachGmapBasemap(map);
 
         const marker = L.marker([defaultLat, defaultLng], {
-            draggable: true
+            draggable: true,
+            icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'office', size: 'lg' })
         }).addTo(map);
 
         function updateCoords(lat, lng) {

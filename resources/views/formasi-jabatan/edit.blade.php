@@ -16,99 +16,61 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm max-w-3xl overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm max-w-2xl overflow-hidden">
         <form method="POST" action="{{ route('formasi-jabatan.update', $formasi->id) }}" class="p-6 space-y-5">
             @csrf
             @method('PUT')
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Kerja Sasaran <span class="text-rose-500">*</span></label>
-                    <select name="id_unit_kerja" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <select name="id_unit_kerja" required class="searchable-select w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                         @foreach ($units as $u)
                             <option value="{{ $u->id }}" {{ old('id_unit_kerja', $formasi->id_unit_kerja) == $u->id ? 'selected' : '' }}>
                                 {{ $u->nama_unit }} ({{ $u->kategori }})
                             </option>
                         @endforeach
                     </select>
+                    @error('id_unit_kerja')
+                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun Anggaran <span class="text-rose-500">*</span></label>
-                        <input type="number" name="tahun_anggaran" value="{{ old('tahun_anggaran', $formasi->tahun_anggaran) }}" min="2020" max="2035" required class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Periode Formasi <span class="text-rose-500">*</span></label>
-                        <input type="text" name="periode" value="{{ old('periode', $formasi->periode) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun Anggaran <span class="text-rose-500">*</span></label>
+                    <input type="number" name="tahun_anggaran" value="{{ old('tahun_anggaran', $formasi->tahun_anggaran) }}" min="2020" max="2035" required class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    @error('tahun_anggaran')
+                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Referensi Master Jabatan (Standar SIASN)</label>
-                <select name="id_master_jabatan" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">-- Pilih dari Master Jabatan (opsional) --</option>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Referensi Master Jabatan <span class="text-rose-500">*</span></label>
+                <select name="id_master_jabatan" required class="searchable-select w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                     @foreach ($masterJabatans as $mj)
                         <option value="{{ $mj->id }}" {{ old('id_master_jabatan', $formasi->id_master_jabatan) == $mj->id ? 'selected' : '' }}>
-                            [{{ strtoupper($mj->jenis_jabatan) }}{{ $mj->kelas_jabatan ? ' - Kls ' . $mj->kelas_jabatan : '' }}] {{ $mj->nama_jabatan }}
+                            [{{ $mj->jenis_jabatan === 'fungsional' ? 'Fungsional' : 'Pelaksana' }}] {{ $mj->nama_jabatan }}{{ $mj->jenis_jabatan === 'fungsional' && $mj->jenjang_jabatan ? ' — ' . $mj->jenjang_jabatan : '' }}{{ $mj->kelas_jabatan ? ' (Kelas ' . $mj->kelas_jabatan . ')' : '' }}
                         </option>
                     @endforeach
                 </select>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan <span class="text-rose-500">*</span></label>
-                    <input type="text" name="nama_jabatan" value="{{ old('nama_jabatan', $formasi->nama_jabatan) }}" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Jabatan <span class="text-rose-500">*</span></label>
-                    <select name="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                        <option value="fungsional" {{ old('jenis_jabatan', $formasi->jenis_jabatan) == 'fungsional' ? 'selected' : '' }}>Jabatan Fungsional</option>
-                        <option value="pelaksana" {{ old('jenis_jabatan', $formasi->jenis_jabatan) == 'pelaksana' ? 'selected' : '' }}>Jabatan Pelaksana</option>
-                        <option value="struktural" {{ old('jenis_jabatan', $formasi->jenis_jabatan) == 'struktural' ? 'selected' : '' }}>Jabatan Struktural</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Jabatan</label>
-                    <input type="text" name="jenjang_jabatan" value="{{ old('jenjang_jabatan', $formasi->jenjang_jabatan) }}" placeholder="Contoh: Ahli Pertama, Ahli Muda, Pelaksana" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
+                <p class="text-[11px] text-slate-400 mt-1">Nama, jenis, jenjang, dan kualifikasi pendidikan disinkronkan otomatis dari Data Referensi Jabatan.</p>
+                @error('id_master_jabatan')
+                    <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Kualifikasi Pendidikan & Rumpun Keilmuan</label>
-                <input type="text" name="kualifikasi_pendidikan" value="{{ old('kualifikasi_pendidikan', $formasi->kualifikasi_pendidikan) }}" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kebutuhan ABK <span class="text-rose-500">*</span></label>
-                    <input type="number" name="kebutuhan_abk" id="kebutuhan_abk" value="{{ old('kebutuhan_abk', $formasi->kebutuhan_abk) }}" min="1" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2" oninput="calcLowong()">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Kebutuhan ABK (Jumlah Kursi) <span class="text-rose-500">*</span></label>
+                <input type="number" name="kebutuhan_abk" value="{{ old('kebutuhan_abk', $formasi->kebutuhan_abk) }}" min="1" required class="w-full sm:w-48 text-sm font-mono font-bold border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 flex flex-wrap items-center gap-4">
+                    <span>Bezetting Riil (PNS aktif): <strong class="font-mono text-slate-900">{{ $formasi->bezetting_riil }}</strong></span>
+                    <span>Kuota Lowong Otomatis: <strong class="font-mono {{ $formasi->kuota_lowong > 0 ? 'text-emerald-700' : 'text-slate-500' }}">{{ $formasi->kuota_lowong }}</strong></span>
+                    <span>Status: <strong class="uppercase">{{ $formasi->status }}</strong></span>
                 </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Bezetting Riil <span class="text-rose-500">*</span></label>
-                    <input type="number" name="bezetting_riil" id="bezetting_riil" value="{{ old('bezetting_riil', $formasi->bezetting_riil) }}" min="0" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2" oninput="calcLowong()">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-emerald-800 mb-1">Kuota Lowong <span class="text-rose-500">*</span></label>
-                    <input type="number" name="kuota_lowong" id="kuota_lowong" value="{{ old('kuota_lowong', $formasi->kuota_lowong) }}" min="0" required class="w-full text-xs font-mono font-bold bg-emerald-50 text-emerald-900 border border-emerald-300 rounded-lg p-2">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Status Formasi <span class="text-rose-500">*</span></label>
-                    <select name="status" required class="w-full text-xs border border-slate-300 rounded-lg p-2">
-                        <option value="terbuka" {{ old('status', $formasi->status) == 'terbuka' ? 'selected' : '' }}>🟢 Terbuka</option>
-                        <option value="terisi" {{ old('status', $formasi->status) == 'terisi' ? 'selected' : '' }}>🔵 Terisi</option>
-                        <option value="ditutup" {{ old('status', $formasi->status) == 'ditutup' ? 'selected' : '' }}>⚪ Ditutup</option>
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Landasan SK Formasi</label>
-                <textarea name="keterangan" rows="2" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('keterangan', $formasi->keterangan) }}</textarea>
+                @error('kebutuhan_abk')
+                    <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -122,15 +84,3 @@
 
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    function calcLowong() {
-        const keb = parseInt(document.getElementById('kebutuhan_abk').value) || 0;
-        const bez = parseInt(document.getElementById('bezetting_riil').value) || 0;
-        const lowong = Math.max(0, keb - bez);
-        document.getElementById('kuota_lowong').value = lowong;
-    }
-</script>
-@endpush
-

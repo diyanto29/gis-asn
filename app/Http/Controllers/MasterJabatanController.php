@@ -7,6 +7,7 @@ use App\Models\FormasiJabatan;
 use App\Models\MasterJabatan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MasterJabatanController extends Controller
@@ -23,14 +24,11 @@ class MasterJabatanController extends Controller
             $query->where('jenis_jabatan', $request->jenis);
         }
 
-        // Pencarian Nama Jabatan / Kode / SIASN
+        // Pencarian Nama Jabatan / Jenjang
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_jabatan', 'like', "%{$search}%")
-                  ->orWhere('kode_jabatan', 'like', "%{$search}%")
-                  ->orWhere('kode_cepat', 'like', "%{$search}%")
-                  ->orWhere('siasn_id', 'like', "%{$search}%")
                   ->orWhere('jenjang_jabatan', 'like', "%{$search}%");
             });
         }
@@ -68,17 +66,37 @@ class MasterJabatanController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'nama_jabatan' => 'required|string|max:255|unique:master_jabatan,nama_jabatan',
-            'kode_jabatan' => 'nullable|string|max:50|unique:master_jabatan,kode_jabatan',
-            'siasn_id' => 'nullable|string|max:64|unique:master_jabatan,siasn_id',
-            'kode_cepat' => 'nullable|string|max:30',
-            'jenis_jabatan' => 'required|in:pelaksana,fungsional,struktural',
+            'nama_jabatan' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('master_jabatan', 'nama_jabatan')
+                    ->where(fn ($q) => $q->where('jenjang_jabatan', $request->input('jenis_jabatan') === 'fungsional' ? $request->input('jenjang_jabatan') : null)),
+            ],
+            'jenis_jabatan' => 'required|in:pelaksana,fungsional',
             'jenjang_jabatan' => 'nullable|string|max:100',
-            'kelas_jabatan' => 'nullable|integer|min:1|max:17',
-            'bup_usia' => 'nullable|integer|min:50|max:70',
-            'rumpun_jabatan' => 'nullable|string|max:150',
+            'kelas_jabatan' => 'required|integer|min:1|max:12',
+            'tingkat_pendidikan' => 'nullable|string|max:60',
+            'nama_pendidikan' => 'nullable|string|max:180',
             'kualifikasi_pendidikan' => 'nullable|string',
+        ], [
+            'nama_jabatan.unique' => 'Kombinasi Nama Jabatan dan Jenjang Jabatan tersebut sudah terdaftar.',
         ]);
+
+        // Selain jabatan fungsional tidak memiliki jenjang jabatan
+        if ($validated['jenis_jabatan'] !== 'fungsional') {
+            $validated['jenjang_jabatan'] = null;
+        }
+
+        // Gabungkan dropdown tingkat_pendidikan + nama_pendidikan ke kualifikasi_pendidikan
+        if (!empty($validated['tingkat_pendidikan']) || !empty($validated['nama_pendidikan'])) {
+            $parts = array_filter([
+                trim((string)($validated['tingkat_pendidikan'] ?? '')),
+                trim((string)($validated['nama_pendidikan'] ?? '')),
+            ]);
+            $validated['kualifikasi_pendidikan'] = implode(' - ', $parts);
+        }
+        unset($validated['tingkat_pendidikan'], $validated['nama_pendidikan']);
 
         MasterJabatan::create($validated);
 
@@ -103,17 +121,38 @@ class MasterJabatanController extends Controller
         $jabatan = MasterJabatan::findOrFail($id);
 
         $validated = $request->validate([
-            'nama_jabatan' => 'required|string|max:255|unique:master_jabatan,nama_jabatan,' . $id,
-            'kode_jabatan' => 'nullable|string|max:50|unique:master_jabatan,kode_jabatan,' . $id,
-            'siasn_id' => 'nullable|string|max:64|unique:master_jabatan,siasn_id,' . $id,
-            'kode_cepat' => 'nullable|string|max:30',
-            'jenis_jabatan' => 'required|in:pelaksana,fungsional,struktural',
+            'nama_jabatan' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('master_jabatan', 'nama_jabatan')
+                    ->where(fn ($q) => $q->where('jenjang_jabatan', $request->input('jenis_jabatan') === 'fungsional' ? $request->input('jenjang_jabatan') : null))
+                    ->ignore($id),
+            ],
+            'jenis_jabatan' => 'required|in:pelaksana,fungsional',
             'jenjang_jabatan' => 'nullable|string|max:100',
-            'kelas_jabatan' => 'nullable|integer|min:1|max:17',
-            'bup_usia' => 'nullable|integer|min:50|max:70',
-            'rumpun_jabatan' => 'nullable|string|max:150',
+            'kelas_jabatan' => 'required|integer|min:1|max:12',
+            'tingkat_pendidikan' => 'nullable|string|max:60',
+            'nama_pendidikan' => 'nullable|string|max:180',
             'kualifikasi_pendidikan' => 'nullable|string',
+        ], [
+            'nama_jabatan.unique' => 'Kombinasi Nama Jabatan dan Jenjang Jabatan tersebut sudah terdaftar.',
         ]);
+
+        // Selain jabatan fungsional tidak memiliki jenjang jabatan
+        if ($validated['jenis_jabatan'] !== 'fungsional') {
+            $validated['jenjang_jabatan'] = null;
+        }
+
+        // Gabungkan dropdown tingkat_pendidikan + nama_pendidikan ke kualifikasi_pendidikan
+        if ($request->has('tingkat_pendidikan') || $request->has('nama_pendidikan')) {
+            $parts = array_filter([
+                trim((string)($validated['tingkat_pendidikan'] ?? '')),
+                trim((string)($validated['nama_pendidikan'] ?? '')),
+            ]);
+            $validated['kualifikasi_pendidikan'] = !empty($parts) ? implode(' - ', $parts) : null;
+        }
+        unset($validated['tingkat_pendidikan'], $validated['nama_pendidikan']);
 
         $oldName = $jabatan->nama_jabatan;
         $jabatan->update($validated);

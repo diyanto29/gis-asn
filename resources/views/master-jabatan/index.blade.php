@@ -21,7 +21,7 @@
     </div>
 
     <!-- Stat Cards Metric Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i data-lucide="briefcase" class="w-5 h-5"></i>
@@ -51,16 +51,6 @@
                 <div class="text-xl font-extrabold text-indigo-600">{{ number_format($totalFungsional) }} <span class="text-xs font-normal text-slate-400">Profesi</span></div>
             </div>
         </div>
-
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <i data-lucide="shield" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Jabatan Struktural</div>
-                <div class="text-xl font-extrabold text-amber-600">{{ number_format($totalStruktural) }} <span class="text-xs font-normal text-slate-400">Eselon</span></div>
-            </div>
-        </div>
     </div>
 
     <!-- Filter Tab Bar -->
@@ -77,9 +67,6 @@
             </a>
             <a href="{{ route('master-jabatan.index', ['jenis' => 'fungsional']) }}" class="px-3 py-1.5 rounded-lg transition {{ request('jenis') === 'fungsional' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:bg-slate-100' }}">
                 Fungsional ({{ number_format($totalFungsional) }})
-            </a>
-            <a href="{{ route('master-jabatan.index', ['jenis' => 'struktural']) }}" class="px-3 py-1.5 rounded-lg transition {{ request('jenis') === 'struktural' ? 'bg-amber-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:bg-slate-100' }}">
-                Struktural ({{ number_format($totalStruktural) }})
             </a>
         </div>
         <div class="text-[11px] text-slate-400 font-mono pr-2">
@@ -102,11 +89,10 @@
                 <thead>
                     <tr>
                         <th class="w-12 text-center">No</th>
-                        <th>Kode / SIASN</th>
                         <th>Nama Jabatan Standar</th>
                         <th>Jenis Jabatan</th>
-                        <th>Jenjang / Kelas &amp; BUP</th>
-                        <th class="text-center">Relasi (Formasi / PNS)</th>
+                        <th>Jenjang Jabatan</th>
+                        <th class="text-center">Kelas Jabatan</th>
                         <th class="text-right no-sort">Aksi</th>
                     </tr>
                 </thead>
@@ -114,16 +100,6 @@
                     @foreach ($jabatanList as $index => $item)
                         <tr>
                             <td class="text-center font-mono text-xs text-slate-400">{{ $index + 1 }}</td>
-                            <td>
-                                <span class="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                                    {{ $item->kode_jabatan ?? 'JBT-' . str_pad($item->id, 4, '0', STR_PAD_LEFT) }}
-                                </span>
-                                @if ($item->kode_cepat)
-                                    <div class="text-[10px] font-mono text-slate-400 mt-1">Kode Cepat: {{ $item->kode_cepat }}</div>
-                                @elseif ($item->siasn_id)
-                                    <div class="text-[10px] font-mono text-slate-400 mt-1 truncate max-w-[130px]" title="{{ $item->siasn_id }}">SIASN: {{ \Illuminate\Support\Str::limit($item->siasn_id, 12, '…') }}</div>
-                                @endif
-                            </td>
                             <td>
                                 <div class="font-bold text-slate-900 text-sm">{{ $item->nama_jabatan }}</div>
                                 @if($item->kualifikasi_pendidikan)
@@ -133,45 +109,27 @@
                             <td>
                                 @if ($item->jenis_jabatan === 'fungsional')
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                        Fungsional
-                                    </span>
-                                @elseif ($item->jenis_jabatan === 'pelaksana')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        Pelaksana
+                                        Jabatan Fungsional
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                        Struktural
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Jabatan Pelaksana
                                     </span>
                                 @endif
                             </td>
                             <td>
-                                <div class="text-xs text-slate-700 font-medium">{{ $item->jenjang_jabatan ?? '-' }}</div>
-                                <div class="flex items-center gap-1.5 mt-0.5">
-                                    @if ($item->kelas_jabatan)
-                                        <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">Kelas {{ $item->kelas_jabatan }}</span>
-                                    @endif
-                                    @if ($item->bup_usia)
-                                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">BUP {{ $item->bup_usia }} th</span>
-                                    @endif
+                                <div class="text-xs text-slate-700 font-medium">
+                                    {{ $item->jenis_jabatan === 'fungsional' ? ($item->jenjang_jabatan ?? '-') : '-' }}
                                 </div>
                             </td>
                             <td class="text-center">
-                                <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                                    @if (($item->formasis_count ?? 0) > 0)
-                                        <span class="inline-flex items-center gap-1 font-semibold text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-                                            {{ $item->formasis_count }} Formasi
-                                        </span>
-                                    @endif
-                                    @if ($item->asns_count > 0)
-                                        <span class="inline-flex items-center gap-1 font-bold text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                                            <i data-lucide="user" class="w-3 h-3"></i> {{ $item->asns_count }} PNS
-                                        </span>
-                                    @endif
-                                    @if (($item->formasis_count ?? 0) === 0 && $item->asns_count === 0)
-                                        <span class="text-xs text-slate-400 font-mono">-</span>
-                                    @endif
-                                </div>
+                                @if ($item->kelas_jabatan)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                        Kelas {{ $item->kelas_jabatan }}
+                                    </span>
+                                @else
+                                    <span class="text-xs text-slate-400">-</span>
+                                @endif
                             </td>
                             <td class="text-right">
                                 <div class="inline-flex items-center gap-1.5">

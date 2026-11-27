@@ -149,7 +149,7 @@
                     <i data-lucide="award" class="w-4 h-4 text-amber-500"></i> Matriks Rekomendasi Penempatan Terbaik untuk {{ $selectedAsn->nama }}
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Hasil pemeringkatan Euclidean TOPSIS terhadap <strong>{{ count($ranked) }}</strong> alternatif Unit Kerja se-Kabupaten Indramayu.
+                    Hasil pemeringkatan Euclidean TOPSIS terhadap <strong>{{ count($ranked) }}</strong> alternatif Unit Kerja se-Kabupaten XYZ.
                 </p>
             </div>
             <div class="text-xs text-slate-500">
@@ -274,24 +274,21 @@
         if (!document.getElementById('spkMapPnsToDinas')) return;
 
         spkMap1 = L.map('spkMapPnsToDinas').setView([pnsHomeLat, pnsHomeLng], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(spkMap1);
+        window.attachGmapBasemap(spkMap1);
 
         const bounds = [[pnsHomeLat, pnsHomeLng]];
 
-        // 1. Marker Rumah PNS (Merah)
-        L.circleMarker([pnsHomeLat, pnsHomeLng], {
-            radius: 10, fillColor: '#e11d48', color: '#ffffff', weight: 3, fillOpacity: 1
+        // 1. Marker Rumah PNS (Pin Google Maps Merah)
+        L.marker([pnsHomeLat, pnsHomeLng], {
+            icon: window.createGmapPinIcon({ color: '#ea4335', type: 'home', size: 'lg' })
         }).addTo(spkMap1).bindPopup(`<strong>Domisili PNS</strong><br/>{{ addslashes($selectedAsn->nama) }}`).openPopup();
 
-        // 2. Marker Kantor Asal (Slate)
+        // 2. Marker Kantor Asal (Pin Google Maps Slate)
         @if($selectedAsn->unitSaatIni && $selectedAsn->unitSaatIni->kantor_lat)
             const asalLat = {{ $selectedAsn->unitSaatIni->kantor_lat }};
             const asalLng = {{ $selectedAsn->unitSaatIni->kantor_lng }};
-            L.circleMarker([asalLat, asalLng], {
-                radius: 8, fillColor: '#64748b', color: '#ffffff', weight: 2, fillOpacity: 0.9
+            L.marker([asalLat, asalLng], {
+                icon: window.createGmapPinIcon({ color: '#64748b', type: 'office', size: 'md' })
             }).addTo(spkMap1).bindPopup(`<strong>Kantor Asal</strong><br/>{{ addslashes($selectedAsn->unitSaatIni->nama_unit) }}<br/>Jarak: {{ number_format($selectedAsn->jarak_ke_kantor_km, 2) }} km`);
             L.polyline([[pnsHomeLat, pnsHomeLng], [asalLat, asalLng]], {
                 color: '#94a3b8', weight: 2, dashArray: '5, 6', opacity: 0.7
@@ -316,12 +313,13 @@
 
         topUnits.forEach(u => {
             if (!u.lat || !u.lng) return;
-            L.circleMarker([u.lat, u.lng], {
-                radius: u.rank === 1 ? 9 : 7,
-                fillColor: u.rank === 1 ? '#059669' : '#10b981',
-                color: '#ffffff',
-                weight: 2,
-                fillOpacity: 0.95
+            L.marker([u.lat, u.lng], {
+                icon: window.createGmapPinIcon({
+                    color: u.rank === 1 ? '#059669' : '#10b981',
+                    type: 'rank',
+                    label: '#' + u.rank,
+                    size: u.rank === 1 ? 'lg' : 'md'
+                })
             }).addTo(spkMap1).bindPopup(
                 `<span style="font-weight:700;color:#059669;">Rank #${u.rank}</span><br/><strong>${u.nama}</strong><br/>Jarak: <strong>${u.jarak} km</strong> &bull; V<sub>i</sub>: ${u.vi}`
             );
@@ -359,8 +357,8 @@
             color: '#2563eb', weight: 3, dashArray: '6, 6', opacity: 0.75
         }).addTo(spkMap1);
 
-        activeHighlightMarker1 = L.circleMarker([lat, lng], {
-            radius: 11, fillColor: '#2563eb', color: '#ffffff', weight: 3, fillOpacity: 1
+        activeHighlightMarker1 = L.marker([lat, lng], {
+            icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'rank', label: '#' + rank, size: 'lg' })
         }).addTo(spkMap1).bindPopup(
             `<span style="font-weight:700;color:#1d4ed8;">Rank #${rank} (Terpilih)</span><br/><strong>${nama}</strong><br/>Jarak Lurus: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}<br/><span style="color:#64748b;font-size:11px;">Melacak rute jalan raya OSRM...</span>`
         );

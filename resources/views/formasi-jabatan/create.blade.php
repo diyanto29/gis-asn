@@ -12,18 +12,18 @@
         </a>
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Buka Formasi Jabatan Baru</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Mendaftarkan alokasi kebutuhan formasi jabatan untuk unit kerja dan tahun anggaran tertentu.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Mendaftarkan kebutuhan ABK jabatan pada unit kerja. Bezetting riil, kuota lowong, dan status dihitung otomatis dari pemangku PNS.</p>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm max-w-3xl overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm max-w-2xl overflow-hidden">
         <form method="POST" action="{{ route('formasi-jabatan.store') }}" class="p-6 space-y-5">
             @csrf
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Kerja Sasaran <span class="text-rose-500">*</span></label>
-                    <select name="id_unit_kerja" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <select name="id_unit_kerja" required class="searchable-select w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
                         <option value="">-- Pilih Unit Kerja / Kantor --</option>
                         @foreach ($units as $u)
                             <option value="{{ $u->id }}" {{ old('id_unit_kerja') == $u->id ? 'selected' : '' }}>
@@ -36,96 +36,44 @@
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun Anggaran <span class="text-rose-500">*</span></label>
-                        <input type="number" name="tahun_anggaran" value="{{ old('tahun_anggaran', 2026) }}" min="2020" max="2035" required class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Periode Formasi <span class="text-rose-500">*</span></label>
-                        <input type="text" name="periode" value="{{ old('periode', 'Semester 1 - 2026') }}" required placeholder="Semester 1 - 2026" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Referensi Master Jabatan (Standar SIASN)</label>
-                <select name="id_master_jabatan" id="id_master_jabatan" onchange="applyMasterJabatan(this)" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">-- Pilih dari Master Jabatan (opsional, otomatis isi nomenklatur) --</option>
-                    @foreach ($masterJabatans as $mj)
-                        <option value="{{ $mj->id }}"
-                            data-nama="{{ $mj->nama_jabatan }}"
-                            data-jenis="{{ $mj->jenis_jabatan }}"
-                            data-jenjang="{{ $mj->jenjang_jabatan }}"
-                            data-kualifikasi="{{ $mj->kualifikasi_pendidikan }}"
-                            {{ old('id_master_jabatan') == $mj->id ? 'selected' : '' }}>
-                            [{{ strtoupper($mj->jenis_jabatan) }}{{ $mj->kelas_jabatan ? ' - Kls ' . $mj->kelas_jabatan : '' }}] {{ $mj->nama_jabatan }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jabatan <span class="text-rose-500">*</span></label>
-                    <input type="text" name="nama_jabatan" id="nama_jabatan" value="{{ old('nama_jabatan') }}" required placeholder="Contoh: Analis SDM Aparatur" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                    @error('nama_jabatan')
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun Anggaran <span class="text-rose-500">*</span></label>
+                    <input type="number" name="tahun_anggaran" value="{{ old('tahun_anggaran', 2026) }}" min="2020" max="2035" required class="w-full text-sm font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    @error('tahun_anggaran')
                         <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Jabatan <span class="text-rose-500">*</span></label>
-                    <select name="jenis_jabatan" id="jenis_jabatan" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                        <option value="fungsional" {{ old('jenis_jabatan', 'fungsional') == 'fungsional' ? 'selected' : '' }}>Jabatan Fungsional</option>
-                        <option value="pelaksana" {{ old('jenis_jabatan') == 'pelaksana' ? 'selected' : '' }}>Jabatan Pelaksana</option>
-                        <option value="struktural" {{ old('jenis_jabatan') == 'struktural' ? 'selected' : '' }}>Jabatan Struktural</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang Jabatan</label>
-                    <input type="text" name="jenjang_jabatan" id="jenjang_jabatan" value="{{ old('jenjang_jabatan') }}" placeholder="Contoh: Ahli Pertama, Ahli Muda, Pelaksana" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-                </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Kualifikasi Pendidikan & Rumpun Keilmuan</label>
-                <input type="text" name="kualifikasi_pendidikan" id="kualifikasi_pendidikan" value="{{ old('kualifikasi_pendidikan') }}" placeholder="Contoh: S-1 Ilmu Administrasi Negara / Ilmu Pemerintahan / Manajemen" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kebutuhan ABK <span class="text-rose-500">*</span></label>
-                    <input type="number" name="kebutuhan_abk" id="kebutuhan_abk" value="{{ old('kebutuhan_abk', 2) }}" min="1" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2" oninput="calcLowong()">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Bezetting Riil <span class="text-rose-500">*</span></label>
-                    <input type="number" name="bezetting_riil" id="bezetting_riil" value="{{ old('bezetting_riil', 0) }}" min="0" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2" oninput="calcLowong()">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-emerald-800 mb-1">Kuota Lowong <span class="text-rose-500">*</span></label>
-                    <input type="number" name="kuota_lowong" id="kuota_lowong" value="{{ old('kuota_lowong', 2) }}" min="0" required class="w-full text-xs font-mono font-bold bg-emerald-50 text-emerald-900 border border-emerald-300 rounded-lg p-2">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Status Formasi <span class="text-rose-500">*</span></label>
-                    <select name="status" required class="w-full text-xs border border-slate-300 rounded-lg p-2">
-                        <option value="terbuka" {{ old('status') == 'terbuka' ? 'selected' : '' }}>🟢 Terbuka</option>
-                        <option value="terisi" {{ old('status') == 'terisi' ? 'selected' : '' }}>🔵 Terisi</option>
-                        <option value="ditutup" {{ old('status') == 'ditutup' ? 'selected' : '' }}>⚪ Ditutup</option>
-                    </select>
-                </div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Referensi Master Jabatan <span class="text-rose-500">*</span></label>
+                <select name="id_master_jabatan" required class="searchable-select w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">-- Pilih Jabatan dari Master Referensi Jabatan --</option>
+                    @foreach ($masterJabatans as $mj)
+                        <option value="{{ $mj->id }}" {{ old('id_master_jabatan') == $mj->id ? 'selected' : '' }}>
+                            [{{ $mj->jenis_jabatan === 'fungsional' ? 'Fungsional' : 'Pelaksana' }}] {{ $mj->nama_jabatan }}{{ $mj->jenis_jabatan === 'fungsional' && $mj->jenjang_jabatan ? ' — ' . $mj->jenjang_jabatan : '' }}{{ $mj->kelas_jabatan ? ' (Kelas ' . $mj->kelas_jabatan . ')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="text-[11px] text-slate-400 mt-1">Nama, jenis, jenjang, dan kualifikasi pendidikan diambil otomatis dari Data Referensi Jabatan.</p>
+                @error('id_master_jabatan')
+                    <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Landasan SK Formasi</label>
-                <textarea name="keterangan" rows="2" placeholder="Contoh: Kebutuhan tim operasional penataan sistem geospasial BKPSDM..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('keterangan') }}</textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Kebutuhan ABK (Jumlah Kursi) <span class="text-rose-500">*</span></label>
+                <input type="number" name="kebutuhan_abk" value="{{ old('kebutuhan_abk', 2) }}" min="1" required class="w-full sm:w-48 text-sm font-mono font-bold border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
+                <p class="text-[11px] text-slate-400 mt-1">Bezetting riil akan dihitung otomatis dari jumlah PNS pemangku jabatan ini pada unit kerja sasaran, dan Kuota Lowong = Kebutuhan ABK − Bezetting.</p>
+                @error('kebutuhan_abk')
+                    <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <a href="{{ route('formasi-jabatan.index') }}" class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-semibold transition">Batal</a>
                 <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition">
-                    Simpan & Buka Formasi
+                    Simpan &amp; Buka Formasi
                 </button>
             </div>
         </form>
@@ -133,24 +81,3 @@
 
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    function calcLowong() {
-        const keb = parseInt(document.getElementById('kebutuhan_abk').value) || 0;
-        const bez = parseInt(document.getElementById('bezetting_riil').value) || 0;
-        const lowong = Math.max(0, keb - bez);
-        document.getElementById('kuota_lowong').value = lowong;
-    }
-
-    function applyMasterJabatan(select) {
-        const opt = select.options[select.selectedIndex];
-        if (!opt || !opt.value) return;
-        document.getElementById('nama_jabatan').value = opt.dataset.nama || '';
-        if (opt.dataset.jenis) document.getElementById('jenis_jabatan').value = opt.dataset.jenis;
-        if (opt.dataset.jenjang) document.getElementById('jenjang_jabatan').value = opt.dataset.jenjang;
-        if (opt.dataset.kualifikasi) document.getElementById('kualifikasi_pendidikan').value = opt.dataset.kualifikasi;
-    }
-</script>
-@endpush
-

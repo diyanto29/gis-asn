@@ -44,10 +44,14 @@ class UnitKerjaController extends Controller
             'kantor_lat' => 'required|numeric|between:-90,90',
             'kantor_lng' => 'required|numeric|between:-180,180',
             'alamat_kantor' => 'nullable|string',
-            'kuota_formasi_kosong' => 'required|integer|min:0',
+            'kuota_formasi_kosong' => 'nullable|integer|min:0',
             'kebutuhan_abk' => 'nullable|integer|min:0',
             'bezetting_saat_ini' => 'nullable|integer|min:0',
         ]);
+
+        $validated['kuota_formasi_kosong'] = $validated['kuota_formasi_kosong'] ?? 0;
+        $validated['kebutuhan_abk'] = $validated['kebutuhan_abk'] ?? 0;
+        $validated['bezetting_saat_ini'] = $validated['bezetting_saat_ini'] ?? 0;
 
         UnitKerja::create($validated);
 
@@ -69,7 +73,7 @@ class UnitKerjaController extends Controller
             'kantor_lat' => 'required|numeric|between:-90,90',
             'kantor_lng' => 'required|numeric|between:-180,180',
             'alamat_kantor' => 'nullable|string',
-            'kuota_formasi_kosong' => 'required|integer|min:0',
+            'kuota_formasi_kosong' => 'nullable|integer|min:0',
             'kebutuhan_abk' => 'nullable|integer|min:0',
             'bezetting_saat_ini' => 'nullable|integer|min:0',
         ]);
