@@ -1,460 +1,709 @@
 @extends('layouts.app')
 
-@section('title', 'Sistem Pendukung Keputusan (SPK) TOPSIS Mutasi PNS')
+@section('title', 'Sistem Pendukung Keputusan (SPK) TOPSIS')
 
 @section('content')
 <div class="space-y-6">
 
-    <!-- Header -->
+    <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Sistem Pendukung Keputusan (SPK) Mutasi PNS</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Sistem Pendukung Keputusan (SPK) TOPSIS</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Kombinasi Formula Haversine Spasial & Algoritma TOPSIS dengan Pembobotan Kriteria Dinamis (Dynamic Weighting).
+                Analisis pemeringkatan mutasi ASN berbasis spasial (GIS + OSRM) dan metode TOPSIS dalam satu halaman terpadu.
             </p>
         </div>
-        <a href="{{ route('topsis.riwayat') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-50 transition shadow-sm">
-            <i data-lucide="archive" class="w-4 h-4"></i> Riwayat Usulan Baperjakat
+        <a href="{{ route('master-kriteria.index', ['mode' => $activeMode]) }}" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition shadow-xs inline-flex items-center gap-1.5 self-start sm:self-center">
+            <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i> Atur Kriteria &amp; Bobot
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Column 1: Pemilihan Unit Kerja Tujuan Mutasi -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
-                <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
-                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                        <i data-lucide="target" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h2 class="font-bold text-slate-900 text-base">Pilih Unit Kerja Tujuan Mutasi</h2>
-                        <p class="text-xs text-slate-500">Sistem hanya menampilkan unit kerja yang memiliki kuota formasi lowong (ABK &gt; 0).</p>
-                    </div>
-                </div>
-
-                <form method="POST" action="{{ route('topsis.proses') }}">
-                    @csrf
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Pilih Instansi / Unit Kerja Sasaran</label>
-                            <div class="space-y-2.5">
-                                @forelse ($targetUnits as $unit)
-                                    <label class="flex items-center justify-between p-3.5 border rounded-xl cursor-pointer hover:bg-slate-50 transition border-slate-200 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/40">
-                                        <div class="flex items-center gap-3">
-                                            <input type="radio" name="unit_tujuan_id" value="{{ $unit->id }}" required class="text-blue-600 focus:ring-blue-500 w-4 h-4" {{ $loop->first ? 'checked' : '' }}>
-                                            <div>
-                                                <div class="font-bold text-slate-900 text-sm">{{ $unit->nama_unit }}</div>
-                                                <div class="text-xs text-slate-500">{{ $unit->kategori }} &bull; {{ $unit->alamat_kantor }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full">
-                                                {{ $unit->kuota_formasi_kosong }} Formasi Kosong
-                                            </span>
-                                            <div class="text-[10px] text-slate-400 mt-1 font-mono">
-                                                {{ number_format($unit->kantor_lat, 4) }}, {{ number_format($unit->kantor_lng, 4) }}
-                                            </div>
-                                        </div>
-                                    </label>
-                                @empty
-                                    <div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                        Semua formasi unit kerja saat ini terisi penuh. Silakan update kuota di menu Formasi Unit.
-                                    </div>
-                                @endforelse
-                            </div>
-                        </div>
-
-                        <div class="pt-3">
-                            <button type="submit" class="w-full py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
-                                <i data-lucide="play" class="w-4 h-4"></i> Eksekusi Algoritma TOPSIS
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Column 2: Pengaturan Bobot Kriteria Dinamis (Dynamic Weighting & Flexible 3-5 Criteria) -->
-        <div class="space-y-6">
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i>
-                        <h3 class="font-bold text-slate-900 text-sm">Komponen Kriteria Dinamis</h3>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <a href="{{ route('master-kriteria.index') }}" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-300 shadow-xs" title="Buka Halaman Manajemen Master Kriteria">
-                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-600"></i> Kelola di Master
-                        </a>
-                        <button type="button" onclick="openAddCriteriaModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Kriteria
-                        </button>
-                    </div>
-                </div>
-
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    Komponen kriteria dapat <strong>ditambah, dikurangi, atau dinonaktifkan (3, 4, 5, atau lebih kriteria)</strong> sesuai instrumen kebijakan BKPSDM. Total bobot kriteria aktif <strong>wajib tepat 100% (1.00)</strong>.
-                </p>
-
-                <!-- Quick Policy Presets (3 Kriteria, 4 Kriteria, 5 Kriteria) -->
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Preset Simulasi Komponen:</label>
-                    <div class="grid grid-cols-3 gap-1.5">
-                        <button type="button" onclick="applyPreset('three')" class="px-2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold rounded-lg text-center transition border border-slate-200">
-                            3 Kriteria <span class="block text-[9px] font-normal text-slate-500">(Jarak, Hemat, Masa)</span>
-                        </button>
-                        <button type="button" onclick="applyPreset('four')" class="px-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold rounded-lg text-center transition border border-blue-200">
-                            4 Kriteria <span class="block text-[9px] font-normal text-blue-600">(Standar BKPSDM)</span>
-                        </button>
-                        <button type="button" onclick="applyPreset('five')" class="px-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-lg text-center transition border border-emerald-200">
-                            5 Kriteria <span class="block text-[9px] font-normal text-emerald-600">(+ SKP Kinerja)</span>
-                        </button>
-                    </div>
-                </div>
-
-                <form id="weightForm" method="POST" action="{{ route('topsis.update-bobot') }}" class="space-y-3.5">
-                    @csrf
-
-                    <div class="space-y-2.5">
-                        @foreach ($kriteria as $k)
-                            <div class="p-3 rounded-xl border transition {{ $k->is_active ? 'bg-slate-50 border-slate-200' : 'bg-slate-100/60 border-slate-200 opacity-60' }}">
-                                <div class="flex items-center justify-between text-xs mb-1">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="font-extrabold text-slate-900">
-                                            [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold {{ $k->atribut === 'cost' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                            {{ strtoupper($k->atribut) }}
-                                        </span>
-                                        @if ($k->is_active)
-                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Aktif</span>
-                                        @else
-                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-600">Nonaktif</span>
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                <div class="flex items-center justify-between text-[11px] text-slate-500 mb-2">
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="database" class="w-3 h-3 text-slate-400"></i>
-                                        Param: <code class="font-mono text-slate-700 bg-white px-1 py-0.5 rounded border border-slate-200">{{ $k->parameter_key }}</code>
-                                    </span>
-                                    
-                                    <!-- Toggle & Delete Actions -->
-                                    <div class="flex items-center gap-2">
-                                        <button 
-                                            type="button" 
-                                            onclick="event.preventDefault(); document.getElementById('toggle_form_{{ $k->id }}').submit();" 
-                                            class="text-[10px] font-bold {{ $k->is_active ? 'text-amber-700 hover:text-amber-900' : 'text-blue-700 hover:text-blue-900' }} hover:underline"
-                                        >
-                                            {{ $k->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                        </button>
-                                        @if ($k->kode_kriteria !== 'C1')
-                                            <span class="text-slate-300">&bull;</span>
-                                            <button 
-                                                type="button" 
-                                                onclick="if(confirm('Hapus kriteria [{{ $k->kode_kriteria }}] {{ $k->nama_kriteria }}?')) { document.getElementById('delete_form_{{ $k->id }}').submit(); }" 
-                                                class="text-[10px] font-semibold text-rose-600 hover:text-rose-800 hover:underline"
-                                            >
-                                                Hapus
-                                            </button>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if ($k->is_active)
-                                    <div class="flex items-center gap-2 pt-1">
-                                        <!-- Stepper Minus -->
-                                        <button type="button" onclick="stepWeight('weight_{{ $k->id }}', -0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
-                                            -
-                                        </button>
-
-                                        <!-- Number Input -->
-                                        <div class="relative flex-1">
-                                            <input 
-                                                type="number" 
-                                                step="0.01" 
-                                                min="0" 
-                                                max="1" 
-                                                id="weight_{{ $k->id }}"
-                                                data-kode="{{ $k->kode_kriteria }}"
-                                                name="bobot[{{ $k->id }}]" 
-                                                value="{{ $k->bobot }}" 
-                                                class="weight-input w-full text-sm font-extrabold font-mono border border-slate-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-indigo-500 bg-white"
-                                            >
-                                        </div>
-
-                                        <!-- Stepper Plus -->
-                                        <button type="button" onclick="stepWeight('weight_{{ $k->id }}', 0.05)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center justify-center transition shadow-xs">
-                                            +
-                                        </button>
-
-                                        <!-- Percent Tag -->
-                                        <span id="percent_{{ $k->id }}" class="w-14 text-right font-mono font-bold text-xs text-slate-700">
-                                            {{ round($k->bobot * 100) }}%
-                                        </span>
-                                    </div>
-                                @else
-                                    <div class="p-2 bg-slate-200/50 rounded-lg text-center text-[11px] text-slate-500 italic">
-                                        Kriteria ini dinonaktifkan (diabaikan dalam perhitungan matriks TOPSIS).
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <!-- Live Total Weight Meter (Active Criteria Only) -->
-                    <div class="p-3.5 rounded-xl border bg-slate-50 border-slate-200 space-y-2">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-bold text-slate-700 flex items-center gap-1.5">
-                                <i data-lucide="calculator" class="w-4 h-4 text-slate-400"></i>
-                                Akumulasi Bobot Kriteria Aktif:
-                            </span>
-                            <span id="totalWeightBadge" class="font-extrabold text-sm text-emerald-600">
-                                {{ number_format($totalBobot * 100, 0) }}% ({{ number_format($totalBobot, 2) }})
-                            </span>
-                        </div>
-
-                        <!-- Progress Bar Visualizer -->
-                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                            <div id="totalWeightBar" class="h-full bg-emerald-500 transition-all duration-300 rounded-full" style="width: {{ min(100, $totalBobot * 100) }}%;"></div>
-                        </div>
-
-                        <div id="validationMessage" class="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Total tepat 100%. Kaidah matematis TOPSIS terpenuhi.
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons: Auto-Normalize & Submit -->
-                    <div class="flex items-center gap-2 pt-1">
-                        <button type="button" onclick="autoNormalize()" class="px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shrink-0" title="Ratakan proporsional agar total tepat 100%">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Auto-Normalize 100%
-                        </button>
-                        
-                        <button type="submit" id="submitWeightBtn" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
-                            <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Bobot Aktif
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Thesis Defense Academic Guide Card -->
-            <div class="bg-gradient-to-br from-indigo-50/60 to-blue-50/60 rounded-xl border border-indigo-100 p-4 text-xs space-y-2.5">
-                <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs">
-                    <i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-600"></i>
-                    <span>Kaidah Akademik Skripsi: Fleksibilitas 3-5 Kriteria</span>
-                </div>
-                <p class="text-slate-600 leading-relaxed text-[11px]">
-                    <strong>Fleksibilitas Jumlah Kriteria ($n$ Dimensi):</strong><br>
-                    Algoritma TOPSIS bekerja pada ruang vektor berdimensi-$n$ ($m$ alternatif $\times$ $n$ kriteria). Berapapun jumlah kriteria yang diaktifkan (3, 4, atau 5 kriteria), perhitungan normalisasi matriks $R$, solusi ideal $A^+/A^-$, dan separasi Euclidean $D^+/D^-$ tetap valid dan konsisten, asalkan total bobot $\sum_{j=1}^n w_j = 1.00$.
-                </p>
-            </div>
-        </div>
-
+    <!-- Mode Switcher Tabs (1 Halaman SPK untuk Mode 1 & Mode 2) -->
+    <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
+        <a href="{{ route('topsis.index', ['mode' => 'pns_to_dinas']) }}"
+           class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition {{ $activeMode === 'pns_to_dinas' ? 'bg-blue-700 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Mode 1: PNS ➔ Dinas (5 Kriteria)</span>
+        </a>
+        <a href="{{ route('topsis.index', ['mode' => 'dinas_to_pns']) }}"
+           class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition {{ $activeMode === 'dinas_to_pns' ? 'bg-indigo-700 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
+            <i data-lucide="building-2" class="w-4 h-4"></i>
+            <span>Mode 2: Dinas ➔ PNS (4 Kriteria)</span>
+        </a>
     </div>
 
-</div>
-
-<!-- Hidden Standalone Forms for Toggle and Delete Criteria -->
-@foreach ($kriteria as $k)
-    <form id="toggle_form_{{ $k->id }}" action="{{ route('topsis.kriteria.toggle', $k->id) }}" method="POST" class="hidden">
-        @csrf
-    </form>
-    @if ($k->kode_kriteria !== 'C1')
-        <form id="delete_form_{{ $k->id }}" action="{{ route('topsis.kriteria.destroy', $k->id) }}" method="POST" class="hidden">
-            @csrf
-            @method('DELETE')
-        </form>
+    <!-- Alert Notifikasi -->
+    @if (session('success'))
+        <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3">
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+            <div class="font-medium">{{ session('success') }}</div>
+        </div>
     @endif
-@endforeach
+    @if (session('error'))
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center gap-3">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600 shrink-0"></i>
+            <div class="font-medium">{{ session('error') }}</div>
+        </div>
+    @endif
 
-<!-- Modal Tambah Kriteria Baru -->
-<div id="addCriteriaModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-card-slide space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+    {{-- ===================================================================== --}}
+    {{-- MODE 1: PNS -> DINAS (5 KRITERIA)                                     --}}
+    {{-- ===================================================================== --}}
+    @if ($activeMode === 'pns_to_dinas')
+
+        <!-- Selector Pegawai PNS -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <form method="GET" action="{{ route('topsis.index') }}" class="space-y-4">
+                <input type="hidden" name="mode" value="pns_to_dinas">
+                <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Pilih Pegawai PNS (Target Pemohon Rotasi) <span class="text-rose-500">*</span>
+                        </label>
+                        <select name="asn_id" required class="searchable-select w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs" placeholder="-- Cari Nama / NIP Pegawai PNS --">
+                            <option value="">-- Pilih salah satu Pegawai PNS --</option>
+                            @foreach ($asnList as $a)
+                                <option value="{{ $a->id }}" {{ (string)$a->id === (string)request('asn_id') ? 'selected' : '' }}>
+                                    {{ $a->nama }} (NIP. {{ $a->nip }}) - {{ $a->jabatan }} [{{ $a->unitSaatIni->nama_unit ?? 'Unit Asal' }}]
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 shrink-0 h-[42px]">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i> Tampilkan Peta &amp; Ranking
+                    </button>
                 </div>
-                <h3 class="font-bold text-slate-900 text-base">Tambah Kriteria TOPSIS Baru</h3>
+            </form>
+
+            @if ($selectedAsn)
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Nama &amp; NIP Pegawai</span>
+                    <span class="font-bold text-slate-900 text-sm block mt-0.5">{{ $selectedAsn->nama }}</span>
+                    <span class="font-mono text-slate-500 text-[11px]">{{ $selectedAsn->nip }} &bull; Gol. {{ $selectedAsn->pangkat_golongan }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Jabatan, Jenis &amp; Kelas</span>
+                    <span class="font-semibold text-slate-800 block mt-0.5">{{ $selectedAsn->jabatan }}</span>
+                    <div class="flex flex-wrap items-center gap-1 mt-1">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $selectedAsn->jenis_jabatan === 'fungsional' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-700 border border-slate-200' }}">
+                            {{ $selectedAsn->jenis_jabatan }}
+                        </span>
+                        @if($selectedAsn->masterJabatan?->kelas_jabatan)
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            Kelas {{ $selectedAsn->masterJabatan->kelas_jabatan }}
+                        </span>
+                        @endif
+                    </div>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Unit Kerja Saat Ini (C5 &bull; Hak Prerogatif)</span>
+                    <span class="font-bold text-blue-900 block mt-0.5">{{ $selectedAsn->unitSaatIni->nama_unit ?? '-' }}</span>
+                    @if($unitAsalEval)
+                    <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <span class="px-1.5 py-0.5 rounded border font-bold text-[10px] {{ $unitAsalEval['badge_class'] }}">
+                            {{ $unitAsalEval['status'] }} ({{ $unitAsalEval['persentase'] }}%)
+                        </span>
+                        <span class="text-slate-500">Bez: <strong>{{ $unitAsalEval['bezetting'] }}</strong> / ABK: <strong>{{ $unitAsalEval['abk'] }}</strong> / Lowong: <strong>{{ $unitAsalEval['lowong'] }}</strong></span>
+                    </div>
+                    @endif
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Syarat Mutlak Masa Jabatan &amp; Masa Kerja</span>
+                    <div class="mt-0.5 flex items-center gap-1.5">
+                        <span class="font-semibold text-slate-800">Jabatan: <strong>{{ number_format($kelayakan['masa_jabatan_tahun'] ?? 0, 1) }} Thn</strong></span>
+                        @if($kelayakan && $kelayakan['masa_jabatan_ok'])
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Memenuhi (&ge;{{ $kelayakan['min_masa_jabatan_tahun'] }} Th)</span>
+                        @else
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Belum (&lt;{{ $kelayakan['min_masa_jabatan_tahun'] ?? 2 }} Th)</span>
+                        @endif
+                    </div>
+                    <span class="text-slate-500 text-[11px] block mt-0.5">Masa Kerja: <strong>{{ number_format($kelayakan['masa_kerja_tahun'] ?? 0, 1) }} Thn</strong> &bull; Jarak: {{ number_format($selectedAsn->jarak_ke_kantor_km, 1) }} km</span>
+                </div>
             </div>
-            <button type="button" onclick="closeAddCriteriaModal()" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+
+            @if($kelayakan && !$kelayakan['masa_jabatan_ok'])
+            <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></i>
+                <div>
+                    <div class="font-bold">Tidak Memenuhi Syarat Mutlak Sistem (Poin 3 — Masa Jabatan):</div>
+                    <div class="mt-0.5">{{ $kelayakan['alasan_tidak_layak'] }}</div>
+                </div>
+            </div>
+            @elseif($filterSummary && $filterSummary['unit_cocok_formasi'] === 0)
+            <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                <div>
+                    <div class="font-bold">Belum Ada Formasi Jabatan Cocok &amp; Tersedia di Unit Kerja Lain:</div>
+                    <div class="mt-0.5">Aturan matching aktif: <strong>{{ $filterSummary['aturan_match'] }}</strong> (kuota lowong &gt; 0).</div>
+                </div>
+            </div>
+            @elseif($filterSummary)
+            <div class="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4 text-blue-700 shrink-0"></i>
+                    <span><strong>Filter Mutlak Aktif:</strong> {{ $filterSummary['aturan_match'] }} &bull; Kuota Lowong &gt; 0 &bull; Masa Jabatan &ge; {{ $kelayakan['min_masa_jabatan_tahun'] ?? 2 }} Thn</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-blue-700 text-white font-bold text-[11px]">
+                    {{ $filterSummary['unit_cocok_formasi'] }} dari {{ $filterSummary['total_unit_lain'] }} Unit Lolos
+                </span>
+            </div>
+            @endif
+            @endif
         </div>
 
-        <form method="POST" action="{{ route('topsis.kriteria.store') }}" class="space-y-4">
-            @csrf
-
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nama Kriteria</label>
-                <input type="text" name="nama_kriteria" required placeholder="Contoh: Nilai Capaian Kinerja (SKP PNS)" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Sumber Data Parameter</label>
-                <select name="parameter_key" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
-                    <option value="nilai_skp">📋 Nilai Capaian Kinerja Pegawai (SKP PNS)</option>
-                    <option value="usia_pegawai">🎂 Usia Pegawai (Tahun - Dihitung dari NIP)</option>
-                    <option value="tanggungan_keluarga">👥 Jumlah Tanggungan Keluarga</option>
-                    <option value="masa_kerja">⏳ Masa Kerja Pegawai (Tahun)</option>
-                    <option value="pangkat_golongan">🎖️ Pangkat / Golongan Ruang</option>
-                    <option value="jarak_baru">📍 Jarak Domisili ke Unit Baru (Km)</option>
-                    <option value="hemat_jarak">📐 Selisih Penghematan Jarak (Km)</option>
-                </select>
-                <p class="text-[10px] text-slate-500 mt-1">Data numerik alternatif akan ditarik otomatis dari master pegawai.</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Sifat Atribut</label>
-                    <select name="atribut" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
-                        <option value="benefit">BENEFIT (Makin tinggi makin baik)</option>
-                        <option value="cost">COST (Makin rendah makin baik)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Bobot Awal</label>
-                    <input type="number" step="0.01" min="0" max="1" name="bobot" value="0.15" required class="w-full text-sm border border-slate-300 rounded-lg p-2.5 text-center font-bold focus:ring-2 focus:ring-indigo-500">
+        <!-- Panel 5 Kriteria Aktif Mode 1 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i> 5 Kriteria Penilaian SPK PNS ➔ Dinas (Total Bobot: {{ round($kriteriaModels->sum('bobot') * 100) }}%)
                 </div>
             </div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                @foreach ($kriteriaModels as $k)
+                    <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-bold text-xs text-blue-900">{{ $k->kode_kriteria }}</span>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase {{ $k->atribut === 'cost' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
+                                {{ $k->atribut }}
+                            </span>
+                        </div>
+                        <div class="font-semibold text-slate-800 text-[11px] mt-1 truncate" title="{{ $k->nama_kriteria }}">{{ $k->nama_kriteria }}</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Bobot: <strong>{{ round($k->bobot * 100) }}%</strong></div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
 
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Keterangan Singkat</label>
-                <textarea name="keterangan" rows="2" placeholder="Deskripsi pertimbangan kriteria..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500"></textarea>
+        @if ($selectedAsn && count($ranked) > 0)
+        <!-- Peta Spasial Rekomendasi PNS -> Dinas -->
+        <div id="mapSection" class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="map" class="w-4 h-4 text-blue-700"></i>
+                    <h3 class="font-bold text-slate-900 text-sm">Peta Rekomendasi Penempatan — {{ $selectedAsn->nama }}</h3>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-600 inline-block"></span> Domisili PNS</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span> Kantor Asal</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> Top 10 Dinas Rekomendasi</span>
+                </div>
+            </div>
+            <div id="spkMapPnsToDinas" style="height: 400px;" class="w-full relative z-0"></div>
+        </div>
+
+        <!-- Tabel Hasil Ranking Mode 1 -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <i data-lucide="award" class="w-4 h-4 text-amber-500"></i> Matriks Rekomendasi Penempatan Terbaik untuk {{ $selectedAsn->nama }}
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Hasil pemeringkatan Euclidean TOPSIS terhadap <strong>{{ count($ranked) }}</strong> alternatif Unit Kerja yang lolos syarat mutlak.
+                    </p>
+                </div>
+                <div class="text-xs text-slate-500">
+                    Peringkat Tertinggi: Nilai Preferensi <strong>V<sub>i</sub> Terbesar</strong>
+                </div>
             </div>
 
-            <div class="pt-2 flex items-center justify-end gap-2">
-                <button type="button" onclick="closeAddCriteriaModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
-                    Batal
-                </button>
-                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
-                    <i data-lucide="check" class="w-4 h-4"></i> Tambahkan Kriteria
-                </button>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600 datatable-custom">
+                    <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3.5 text-center w-12 no-sort">Rank</th>
+                            <th class="px-4 py-3.5">Unit Kerja Tujuan</th>
+                            <th class="px-4 py-3.5 text-right">C1: Jarak</th>
+                            <th class="px-4 py-3.5 text-center">C2: Masa Jabatan</th>
+                            <th class="px-4 py-3.5 text-center">C3: Masa Kerja</th>
+                            <th class="px-4 py-3.5 text-center">C4: Formasi Jabatan</th>
+                            <th class="px-4 py-3.5 text-center">C5: Unit Saat Ini</th>
+                            <th class="px-4 py-3.5 text-center font-mono font-bold text-blue-900">Nilai V<sub>i</sub></th>
+                            <th class="px-4 py-3.5 text-center no-sort">Peta</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach ($ranked as $item)
+                            <tr class="table-row-standard group">
+                                <td class="px-4 py-3.5 text-center font-bold">
+                                    @if ($item['rank'] === 1)
+                                        <span class="w-6 h-6 rounded-full bg-amber-500 text-white inline-flex items-center justify-center font-extrabold text-xs shadow-xs">1</span>
+                                    @elseif ($item['rank'] === 2)
+                                        <span class="w-6 h-6 rounded-full bg-slate-400 text-white inline-flex items-center justify-center font-bold text-xs">2</span>
+                                    @elseif ($item['rank'] === 3)
+                                        <span class="w-6 h-6 rounded-full bg-amber-700 text-white inline-flex items-center justify-center font-bold text-xs">3</span>
+                                    @else
+                                        <span class="text-xs text-slate-500 font-mono">{{ $item['rank'] }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <div class="font-bold text-slate-900 group-hover:text-blue-700 transition">{{ $item['unit']->nama_unit ?? 'Unit Kerja' }}</div>
+                                    <span class="inline-block mt-0.5 px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[10px] font-medium">{{ $item['unit']->kategori ?? 'OPD' }}</span>
+                                </td>
+                                <td class="px-4 py-3.5 text-right whitespace-nowrap text-xs">
+                                    <div class="font-bold text-slate-800">{{ number_format($item['jarak_baru_km'], 2) }} km</div>
+                                    @if ($item['hemat_jarak_km'] > 0)
+                                        <div class="text-[10px] font-bold text-emerald-600">+{{ number_format($item['hemat_jarak_km'], 2) }} km hemat</div>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                    <div class="font-bold text-slate-800">{{ number_format($item['masa_jabatan_tahun'] ?? 0, 1) }} Thn</div>
+                                    <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">&ge; {{ $item['min_masa_jabatan_tahun'] ?? 2 }} Thn</span>
+                                </td>
+                                <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                    <div class="font-bold text-slate-800">{{ number_format($item['masa_kerja_tahun'] ?? 0, 1) }} Thn</div>
+                                    <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold {{ !empty($item['masa_kerja_keluar_ok']) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                        {{ !empty($item['masa_kerja_keluar_ok']) ? 'Bisa Keluar (>'.$item['min_masa_kerja_keluar_tahun'].' Th)' : 'Dalam Daerah' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5 text-center text-xs">
+                                    @if (!empty($item['formasi_cocok']))
+                                        <div class="flex flex-wrap justify-center gap-1">
+                                            @foreach ($item['formasi_cocok'] as $fl)
+                                                <span class="px-2 py-0.5 rounded font-semibold bg-blue-50 text-blue-700 border border-blue-200 text-[10px]">{{ $fl }}</span>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-slate-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3.5 text-center text-xs">
+                                    @php $ue = $item['unit_asal_eval'] ?? null; @endphp
+                                    @if ($ue)
+                                        <span class="px-2 py-0.5 rounded-full font-bold border text-[10px] {{ $ue['badge_class'] }}">{{ $ue['status'] }} ({{ $ue['persentase'] }}%)</span>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">Bez {{ $ue['bezetting'] }} / ABK {{ $ue['abk'] }} ({{ $ue['lowong'] }})</div>
+                                    @else
+                                        <span class="text-slate-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3.5 text-center font-mono font-bold text-xs text-blue-900">{{ number_format($item['vi'], 4) }}</td>
+                                <td class="px-4 py-3.5 text-center">
+                                    <button type="button"
+                                        onclick="focusUnitOnMap({{ $item['unit']->kantor_lat ?? 0 }}, {{ $item['unit']->kantor_lng ?? 0 }}, {{ json_encode($item['unit']->nama_unit ?? 'Unit Kerja') }}, {{ $item['rank'] }}, '{{ number_format($item['jarak_baru_km'], 2) }}', '{{ number_format($item['vi'], 4) }}')"
+                                        class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Lihat Peta
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        </form>
-    </div>
+        </div>
+
+        <!-- Tombol & Panel Rincian Perhitungan TOPSIS -->
+        @include('topsis._perhitungan-topsis')
+
+        @endif
+
+    {{-- ===================================================================== --}}
+    {{-- MODE 2: DINAS -> PNS (4 KRITERIA)                                     --}}
+    {{-- ===================================================================== --}}
+    @else
+
+        <!-- Selector Dinas / Unit Kerja -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <form method="GET" action="{{ route('topsis.index') }}" class="space-y-4">
+                <input type="hidden" name="mode" value="dinas_to_pns">
+                <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Pilih Dinas / Unit Kerja (Menampilkan PNS pada Unit Tersebut) <span class="text-rose-500">*</span>
+                        </label>
+                        <select name="unit_id" required class="searchable-select w-full text-sm rounded-xl border-slate-300 focus:border-blue-600 focus:ring-blue-600 p-2.5 border bg-white shadow-2xs" placeholder="-- Cari Nama Dinas / Unit Kerja --">
+                            <option value="">-- Pilih salah satu Unit Kerja / Instansi --</option>
+                            @foreach ($unitList as $u)
+                                <option value="{{ $u->id }}" {{ (string)$u->id === (string)request('unit_id') ? 'selected' : '' }}>
+                                    {{ $u->nama_unit }} [{{ $u->kategori }}]
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 shrink-0 h-[42px]">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i> Tampilkan Peta &amp; Ranking PNS
+                    </button>
+                </div>
+            </form>
+
+            @if ($selectedUnit)
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Nama Unit Kerja</span>
+                    <span class="font-bold text-slate-900 text-sm block mt-0.5">{{ $selectedUnit->nama_unit }}</span>
+                    <span class="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-bold bg-slate-200 text-slate-800">{{ $selectedUnit->kategori }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Bezetting vs ABK (Agregat Formasi)</span>
+                    <span class="font-semibold text-slate-800 block mt-0.5">Bezetting: <strong>{{ $unitTujuanEval['bezetting'] ?? 0 }}</strong> &bull; ABK: <strong>{{ $unitTujuanEval['abk'] ?? 0 }}</strong></span>
+                    <span class="text-slate-500 text-[11px]">Lowong: <strong>{{ $unitTujuanEval['lowong'] ?? 0 }}</strong> ({{ $unitTujuanEval['persentase'] ?? 0 }}%)</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Status Kebutuhan Pegawai (C4)</span>
+                    @if($unitTujuanEval)
+                    <span class="inline-block px-2 py-0.5 mt-0.5 rounded border font-bold text-[10px] {{ $unitTujuanEval['badge_class'] }}">
+                        {{ $unitTujuanEval['status'] }} ({{ $unitTujuanEval['persentase'] }}%)
+                    </span>
+                    @endif
+                    <span class="text-[11px] text-slate-500 block mt-1">Formasi Lowong: <strong>{{ $openFormasiUnit->count() }} Jabatan</strong> ({{ $openFormasiUnit->sum('kuota_lowong') }} kursi)</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-semibold text-[10px] uppercase">Titik Koordinat Kantor</span>
+                    <span class="font-mono text-slate-700 block mt-0.5">Lat: {{ number_format($selectedUnit->kantor_lat, 5) }}</span>
+                    <span class="font-mono text-slate-700 block">Lng: {{ number_format($selectedUnit->kantor_lng, 5) }}</span>
+                </div>
+            </div>
+
+            @if($filterSummary)
+            <div class="p-3 rounded-xl {{ $filterSummary['lolos_syarat_mutlak'] > 0 ? 'bg-indigo-50/70 border-indigo-200 text-indigo-900' : 'bg-amber-50 border-amber-200 text-amber-900' }} border text-xs flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4 shrink-0"></i>
+                    <span>
+                        <strong>Pegawai PNS di {{ $selectedUnit->nama_unit }}:</strong>
+                        Total <strong>{{ $filterSummary['total_pns_unit'] }} PNS</strong> &rarr;
+                        <strong>{{ $filterSummary['lolos_syarat_mutlak'] }} PNS lolos</strong> syarat mutlak Masa Jabatan &ge; {{ $filterSummary['min_masa_jabatan_tahun'] }} Thn
+                        (Belum memenuhi &lt; {{ $filterSummary['min_masa_jabatan_tahun'] }} Thn: {{ $filterSummary['gugur_masa_jabatan'] }} PNS).
+                    </span>
+                </div>
+            </div>
+            @endif
+            @endif
+        </div>
+
+        <!-- Panel 4 Kriteria Aktif Mode 2 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <i data-lucide="check-square" class="w-4 h-4 text-indigo-600"></i> 4 Kriteria Penilaian SPK Dinas ➔ PNS (Total Bobot: {{ round($kriteriaModels->sum('bobot') * 100) }}%)
+                </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                @foreach ($kriteriaModels as $k)
+                    <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-bold text-xs text-indigo-900">{{ $k->kode_kriteria }}</span>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase {{ $k->atribut === 'cost' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
+                                {{ $k->atribut }}
+                            </span>
+                        </div>
+                        <div class="font-semibold text-slate-800 text-[11px] mt-1 truncate" title="{{ $k->nama_kriteria }}">{{ $k->nama_kriteria }}</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Bobot: <strong>{{ round($k->bobot * 100) }}%</strong></div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        @if ($selectedUnit && count($ranked) > 0)
+        <!-- Peta Spasial Rekomendasi Dinas -> PNS -->
+        <div id="mapSectionDinas" class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="map" class="w-4 h-4 text-indigo-700"></i>
+                    <h3 class="font-bold text-slate-900 text-sm">Peta Sebaran Domisili PNS — {{ $selectedUnit->nama_unit }}</h3>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-indigo-700 inline-block"></span> Lokasi Kantor Dinas</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> Domisili PNS Unit Ini</span>
+                </div>
+            </div>
+            <div id="spkMapDinasToPns" style="height: 400px;" class="w-full relative z-0"></div>
+        </div>
+
+        <!-- Tabel Hasil Ranking Mode 2 -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <i data-lucide="award" class="w-4 h-4 text-amber-500"></i> Pemeringkatan Pegawai PNS pada {{ $selectedUnit->nama_unit }}
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Pegawai PNS pada unit ini diurutkan menggunakan 4 kriteria TOPSIS: Jarak (C1), Masa Jabatan (C2), Masa Kerja (C3), dan Kebutuhan Pegawai Unit Saat Ini (C4).
+                    </p>
+                </div>
+                <div class="text-xs text-slate-500">
+                    Total PNS Lolos Syarat: <strong>{{ count($ranked) }}</strong> Pegawai
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600 datatable-custom">
+                    <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3.5 text-center w-12 no-sort">Rank</th>
+                            <th class="px-4 py-3.5">Pegawai PNS</th>
+                            <th class="px-4 py-3.5">Jabatan &amp; Kelas</th>
+                            <th class="px-4 py-3.5 text-right">C1: Jarak</th>
+                            <th class="px-4 py-3.5 text-center">C2: Masa Jabatan</th>
+                            <th class="px-4 py-3.5 text-center">C3: Masa Kerja</th>
+                            <th class="px-4 py-3.5 text-center">C4: Unit Saat Ini</th>
+                            <th class="px-4 py-3.5 text-center font-mono font-bold text-indigo-900">Nilai V<sub>i</sub></th>
+                            <th class="px-4 py-3.5 text-center no-sort">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach ($ranked as $item)
+                            <tr class="table-row-standard group">
+                                <td class="px-4 py-3.5 text-center font-bold">
+                                    @if ($item['rank'] === 1)
+                                        <span class="w-6 h-6 rounded-full bg-amber-500 text-white inline-flex items-center justify-center font-extrabold text-xs shadow-xs">1</span>
+                                    @elseif ($item['rank'] === 2)
+                                        <span class="w-6 h-6 rounded-full bg-slate-400 text-white inline-flex items-center justify-center font-bold text-xs">2</span>
+                                    @elseif ($item['rank'] === 3)
+                                        <span class="w-6 h-6 rounded-full bg-amber-700 text-white inline-flex items-center justify-center font-bold text-xs">3</span>
+                                    @else
+                                        <span class="text-xs text-slate-500 font-mono">{{ $item['rank'] }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <div class="font-bold text-slate-900 group-hover:text-blue-700 transition">{{ $item['asn']->nama ?? 'Pegawai PNS' }}</div>
+                                    <div class="text-xs text-slate-400 font-mono">NIP. {{ $item['asn']->nip ?? '-' }} &bull; Gol. {{ $item['asn']->pangkat_golongan ?? '-' }}</div>
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <div class="font-medium text-slate-800 text-xs">{{ $item['asn']->jabatan ?? '-' }}</div>
+                                    <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                                        <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold uppercase {{ ($item['asn']->jenis_jabatan ?? '') === 'fungsional' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-700' }}">
+                                            {{ $item['asn']->jenis_jabatan ?? 'Pelaksana' }}
+                                        </span>
+                                        @if ($item['asn']->masterJabatan?->kelas_jabatan)
+                                            <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                                Kls {{ $item['asn']->masterJabatan->kelas_jabatan }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-bold text-slate-800 text-xs whitespace-nowrap">{{ number_format($item['jarak_ke_dinas_km'], 2) }} km</td>
+                                <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                    <div class="font-bold text-slate-800">{{ number_format($item['masa_jabatan_tahun'], 1) }} Thn</div>
+                                    <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">&ge; {{ $item['min_masa_jabatan_tahun'] ?? 2 }} Thn</span>
+                                </td>
+                                <td class="px-4 py-3.5 text-center text-xs whitespace-nowrap">
+                                    <div class="font-bold text-slate-800">{{ number_format($item['masa_kerja_tahun'], 1) }} Thn</div>
+                                    <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold {{ !empty($item['masa_kerja_keluar_ok']) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                        {{ !empty($item['masa_kerja_keluar_ok']) ? 'Bisa Keluar (>'.$item['min_masa_kerja_keluar_tahun'].' Th)' : 'Dalam Daerah (<'.$item['min_masa_kerja_keluar_tahun'].' Th)' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5 text-center text-xs">
+                                    @php $ue = $item['unit_asal_eval'] ?? null; @endphp
+                                    @if ($ue)
+                                        <span class="px-2 py-0.5 rounded-full font-bold border text-[10px] {{ $ue['badge_class'] }}">{{ $ue['status'] }} ({{ $ue['persentase'] }}%)</span>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">Bez {{ $ue['bezetting'] }} / ABK {{ $ue['abk'] }} ({{ $ue['lowong'] }})</div>
+                                    @else
+                                        <span class="text-slate-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3.5 text-center font-mono font-bold text-xs text-indigo-900">{{ number_format($item['vi'], 4) }}</td>
+                                <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button type="button"
+                                            onclick="focusPnsOnMap({{ $item['asn']->domisili_lat ?? 0 }}, {{ $item['asn']->domisili_lng ?? 0 }}, {{ json_encode($item['asn']->nama ?? 'Pegawai PNS') }}, {{ $item['rank'] }}, '{{ number_format($item['jarak_ke_dinas_km'], 2) }}', '{{ number_format($item['vi'], 4) }}')"
+                                            class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs">
+                                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Peta
+                                        </button>
+                                        <a href="{{ route('topsis.index', ['mode' => 'pns_to_dinas', 'asn_id' => $item['id']]) }}"
+                                            class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-700 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-700 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 shadow-2xs"
+                                            title="Cari rekomendasi dinas tujuan untuk PNS ini (Mode 1)">
+                                            <i data-lucide="compass" class="w-3.5 h-3.5"></i> Cari Dinas
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tombol & Panel Rincian Perhitungan TOPSIS -->
+        @include('topsis._perhitungan-topsis')
+
+        @elseif (request()->filled('unit_id'))
+            <div class="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-400">
+                <i data-lucide="info" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                Tidak ada PNS pada unit ini yang memenuhi syarat mutlak Masa Jabatan minimal.
+            </div>
+        @endif
+
+    @endif
+
 </div>
 @endsection
 
+@if ($activeMode === 'pns_to_dinas' && $selectedAsn && count($ranked) > 0)
 @push('scripts')
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const inputs = document.querySelectorAll('.weight-input');
-        const badge = document.getElementById('totalWeightBadge');
-        const bar = document.getElementById('totalWeightBar');
-        const msg = document.getElementById('validationMessage');
-        const submitBtn = document.getElementById('submitWeightBtn');
+    let spkMap1, activeHighlightLine1, activeHighlightMarker1;
+    const pnsHomeLat = {{ $selectedAsn->domisili_lat ?? -6.32635 }};
+    const pnsHomeLng = {{ $selectedAsn->domisili_lng ?? 108.32042 }};
 
-        window.openAddCriteriaModal = function() {
-            document.getElementById('addCriteriaModal').classList.remove('hidden');
-        };
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!document.getElementById('spkMapPnsToDinas')) return;
+        spkMap1 = L.map('spkMapPnsToDinas').setView([pnsHomeLat, pnsHomeLng], 12);
+        window.attachGmapBasemap(spkMap1);
 
-        window.closeAddCriteriaModal = function() {
-            document.getElementById('addCriteriaModal').classList.add('hidden');
-        };
+        const bounds = [[pnsHomeLat, pnsHomeLng]];
+        L.marker([pnsHomeLat, pnsHomeLng], {
+            icon: window.createGmapPinIcon({ color: '#ea4335', type: 'home', size: 'lg' })
+        }).addTo(spkMap1).bindPopup(`<strong>Domisili PNS</strong><br/>{{ addslashes($selectedAsn->nama) }}`).openPopup();
 
-        function updateTotal() {
-            let sum = 0;
-            inputs.forEach(input => {
-                const val = parseFloat(input.value) || 0;
-                sum += val;
-                
-                // Update percent badge next to input
-                const id = input.id.replace('weight_', '');
-                const percentLabel = document.getElementById('percent_' + id);
-                if (percentLabel) {
-                    percentLabel.innerText = Math.round(val * 100) + '%';
-                }
-            });
+        @if($selectedAsn->unitSaatIni && $selectedAsn->unitSaatIni->kantor_lat)
+            const asalLat = {{ $selectedAsn->unitSaatIni->kantor_lat }};
+            const asalLng = {{ $selectedAsn->unitSaatIni->kantor_lng }};
+            L.marker([asalLat, asalLng], {
+                icon: window.createGmapPinIcon({ color: '#64748b', type: 'office', size: 'md' })
+            }).addTo(spkMap1).bindPopup(`<strong>Kantor Asal</strong><br/>{{ addslashes($selectedAsn->unitSaatIni->nama_unit) }}<br/>Jarak: {{ number_format($selectedAsn->jarak_ke_kantor_km, 2) }} km`);
+            L.polyline([[pnsHomeLat, pnsHomeLng], [asalLat, asalLng]], { color: '#94a3b8', weight: 2, dashArray: '5, 6', opacity: 0.7 }).addTo(spkMap1);
+            bounds.push([asalLat, asalLng]);
+        @endif
 
-            sum = Math.round(sum * 100) / 100;
-            const percent = Math.round(sum * 100);
+        @php
+            $topUnitsMap = collect($ranked)->take(10)->map(fn($item) => [
+                'rank' => $item['rank'],
+                'nama' => $item['unit']->nama_unit ?? 'Unit Kerja',
+                'lat' => (float)($item['unit']->kantor_lat ?? 0),
+                'lng' => (float)($item['unit']->kantor_lng ?? 0),
+                'jarak' => number_format($item['jarak_baru_km'], 2),
+                'vi' => number_format($item['vi'], 4),
+            ])->values();
+        @endphp
+        const topUnits = @json($topUnitsMap);
 
-            badge.innerText = percent + '% (' + sum.toFixed(2) + ')';
-            bar.style.width = Math.min(100, Math.max(0, percent)) + '%';
+        topUnits.forEach(u => {
+            if (!u.lat || !u.lng) return;
+            L.marker([u.lat, u.lng], {
+                icon: window.createGmapPinIcon({ color: u.rank === 1 ? '#059669' : '#10b981', type: 'rank', label: '#' + u.rank, size: u.rank === 1 ? 'lg' : 'md' })
+            }).addTo(spkMap1).bindPopup(`<span style="font-weight:700;color:#059669;">Rank #${u.rank}</span><br/><strong>${u.nama}</strong><br/>Jarak: <strong>${u.jarak} km</strong> &bull; V<sub>i</sub>: ${u.vi}`);
+            if (u.rank <= 3) bounds.push([u.lat, u.lng]);
+        });
 
-            if (sum >= 0.99 && sum <= 1.01) {
-                badge.className = 'font-extrabold text-sm text-emerald-600';
-                bar.className = 'h-full bg-emerald-500 transition-all duration-300 rounded-full';
-                msg.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span class="text-emerald-700 font-semibold">Total kriteria aktif tepat 100%. Sesuai kaidah ilmiah TOPSIS.</span>';
-                submitBtn.disabled = false;
-            } else {
-                badge.className = 'font-extrabold text-sm text-rose-600 animate-pulse';
-                bar.className = 'h-full bg-rose-500 transition-all duration-300 rounded-full';
-                const selisih = Math.round((1 - sum) * 100);
-                const ket = selisih > 0 ? `Kurang ${selisih}%` : `Kelebihan ${Math.abs(selisih)}%`;
-                msg.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i> <span class="text-rose-600 font-bold">${ket}! Total kriteria aktif wajib 100%. Klik 'Auto-Normalize'.</span>`;
-                submitBtn.disabled = true;
-            }
+        if (bounds.length > 1) spkMap1.fitBounds(bounds, { padding: [40, 40] });
+        if (topUnits.length > 0 && topUnits[0].lat && topUnits[0].lng) {
+            const first = topUnits[0];
+            drawOsrmTrack1(first.lat, first.lng, first.nama, first.rank, first.jarak, first.vi, false);
+        }
+    });
 
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+    function focusUnitOnMap(lat, lng, nama, rank, jarak, vi) {
+        if (!spkMap1 || !lat || !lng) return;
+        document.getElementById('mapSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        drawOsrmTrack1(lat, lng, nama, rank, jarak, vi, true);
+    }
+
+    function drawOsrmTrack1(lat, lng, nama, rank, jarak, vi, openPop) {
+        if (activeHighlightLine1) spkMap1.removeLayer(activeHighlightLine1);
+        if (activeHighlightMarker1) spkMap1.removeLayer(activeHighlightMarker1);
+
+        activeHighlightLine1 = L.polyline([[pnsHomeLat, pnsHomeLng], [lat, lng]], { color: '#2563eb', weight: 3, dashArray: '6, 6', opacity: 0.75 }).addTo(spkMap1);
+        activeHighlightMarker1 = L.marker([lat, lng], {
+            icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'rank', label: '#' + rank, size: 'lg' })
+        }).addTo(spkMap1).bindPopup(`<span style="font-weight:700;color:#1d4ed8;">Rank #${rank}</span><br/><strong>${nama}</strong><br/>Jarak: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}`);
+
+        if (openPop) {
+            activeHighlightMarker1.openPopup();
+            spkMap1.fitBounds([[pnsHomeLat, pnsHomeLng], [lat, lng]], { padding: [60, 60] });
         }
 
-        window.stepWeight = function (inputId, delta) {
-            const input = document.getElementById(inputId);
-            if (!input) return;
-            let current = parseFloat(input.value) || 0;
-            current = Math.max(0, Math.min(1, Math.round((current + delta) * 100) / 100));
-            input.value = current.toFixed(2);
-            updateTotal();
-        };
-
-        window.applyPreset = function (type) {
-            const presets = {
-                three: { C1: 0.50, C4: 0.30, C2: 0.20, C3: 0.00, C5: 0.00 },
-                four:  { C1: 0.35, C4: 0.25, C2: 0.25, C3: 0.15, C5: 0.00 },
-                five:  { C1: 0.30, C4: 0.20, C2: 0.20, C3: 0.15, C5: 0.15 }
-            };
-
-            const selected = presets[type];
-            if (!selected) return;
-
-            inputs.forEach(input => {
-                const kode = input.getAttribute('data-kode');
-                if (selected[kode] !== undefined) {
-                    input.value = selected[kode].toFixed(2);
-                }
-            });
-
-            updateTotal();
-        };
-
-        window.autoNormalize = function () {
-            let sum = 0;
-            inputs.forEach(i => sum += (parseFloat(i.value) || 0));
-
-            if (sum <= 0) {
-                const even = (1.0 / inputs.length);
-                inputs.forEach(i => i.value = even.toFixed(2));
-            } else {
-                let accumulated = 0;
-                const count = inputs.length;
-                inputs.forEach((input, index) => {
-                    const current = parseFloat(input.value) || 0;
-                    if (index === count - 1) {
-                        const remaining = Math.round((1.0 - accumulated) * 100) / 100;
-                        input.value = Math.max(0, remaining).toFixed(2);
-                    } else {
-                        const normalized = Math.round((current / sum) * 100) / 100;
-                        accumulated += normalized;
-                        input.value = normalized.toFixed(2);
+        fetch(`https://router.project-osrm.org/route/v1/driving/${pnsHomeLng},${pnsHomeLat};${lng},${lat}?overview=full&geometries=geojson`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    const km = (route.distance / 1000).toFixed(2);
+                    const menit = Math.round(route.duration / 60);
+                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                    if (activeHighlightLine1) spkMap1.removeLayer(activeHighlightLine1);
+                    activeHighlightLine1 = L.polyline(coords, { color: '#2563eb', weight: 4.5, opacity: 0.9 }).addTo(spkMap1);
+                    activeHighlightMarker1.setPopupContent(`<span style="font-weight:700;color:#1d4ed8;">Rank #${rank}</span><br/><strong>${nama}</strong><br/>Rute Jalan (OSRM): <strong>${km} km</strong> (~${menit} mnt)<br/>V<sub>i</sub>: <strong>${vi}</strong>`);
+                    if (openPop) {
+                        activeHighlightMarker1.openPopup();
+                        spkMap1.fitBounds(activeHighlightLine1.getBounds(), { padding: [50, 50] });
                     }
-                });
-            }
-
-            updateTotal();
-        };
-
-        inputs.forEach(i => i.addEventListener('input', updateTotal));
-        updateTotal(); // Initial run
-    });
+                }
+            }).catch(() => {});
+    }
 </script>
 @endpush
+@elseif ($activeMode === 'dinas_to_pns' && $selectedUnit && count($ranked) > 0)
+@push('scripts')
+<script>
+    let spkMap2, activeHighlightLine2, activeHighlightMarker2;
+    const dinasLat = {{ $selectedUnit->kantor_lat ?? -6.32635 }};
+    const dinasLng = {{ $selectedUnit->kantor_lng ?? 108.32042 }};
 
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!document.getElementById('spkMapDinasToPns')) return;
+        spkMap2 = L.map('spkMapDinasToPns').setView([dinasLat, dinasLng], 12);
+        window.attachGmapBasemap(spkMap2);
+
+        const bounds = [[dinasLat, dinasLng]];
+        L.marker([dinasLat, dinasLng], {
+            icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'office', size: 'lg' })
+        }).addTo(spkMap2).bindPopup(`<strong>Lokasi Kantor Dinas</strong><br/>{{ addslashes($selectedUnit->nama_unit) }}`).openPopup();
+
+        @php
+            $topPnsMap = collect($ranked)->take(10)->map(fn($item) => [
+                'rank' => $item['rank'],
+                'nama' => $item['asn']->nama ?? 'Pegawai PNS',
+                'lat' => (float)($item['asn']->domisili_lat ?? 0),
+                'lng' => (float)($item['asn']->domisili_lng ?? 0),
+                'jarak' => number_format($item['jarak_ke_dinas_km'], 2),
+                'vi' => number_format($item['vi'], 4),
+            ])->values();
+        @endphp
+        const topPns = @json($topPnsMap);
+
+        topPns.forEach(p => {
+            if (!p.lat || !p.lng) return;
+            L.marker([p.lat, p.lng], {
+                icon: window.createGmapPinIcon({ color: p.rank === 1 ? '#059669' : '#10b981', type: 'rank', label: '#' + p.rank, size: p.rank === 1 ? 'lg' : 'md' })
+            }).addTo(spkMap2).bindPopup(`<span style="font-weight:700;color:#059669;">Rank #${p.rank}</span><br/><strong>${p.nama}</strong><br/>Jarak ke Dinas: <strong>${p.jarak} km</strong> &bull; V<sub>i</sub>: ${p.vi}`);
+            if (p.rank <= 3) bounds.push([p.lat, p.lng]);
+        });
+
+        if (bounds.length > 1) spkMap2.fitBounds(bounds, { padding: [40, 40] });
+        if (topPns.length > 0 && topPns[0].lat && topPns[0].lng) {
+            const first = topPns[0];
+            drawOsrmTrack2(first.lat, first.lng, first.nama, first.rank, first.jarak, first.vi, false);
+        }
+    });
+
+    function focusPnsOnMap(lat, lng, nama, rank, jarak, vi) {
+        if (!spkMap2 || !lat || !lng) return;
+        document.getElementById('mapSectionDinas').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        drawOsrmTrack2(lat, lng, nama, rank, jarak, vi, true);
+    }
+
+    function drawOsrmTrack2(lat, lng, nama, rank, jarak, vi, openPop) {
+        if (activeHighlightLine2) spkMap2.removeLayer(activeHighlightLine2);
+        if (activeHighlightMarker2) spkMap2.removeLayer(activeHighlightMarker2);
+
+        activeHighlightLine2 = L.polyline([[dinasLat, dinasLng], [lat, lng]], { color: '#4338ca', weight: 3, dashArray: '6, 6', opacity: 0.75 }).addTo(spkMap2);
+        activeHighlightMarker2 = L.marker([lat, lng], {
+            icon: window.createGmapPinIcon({ color: '#ea4335', type: 'rank', label: '#' + rank, size: 'lg' })
+        }).addTo(spkMap2).bindPopup(`<span style="font-weight:700;color:#4338ca;">Rank #${rank}</span><br/><strong>${nama}</strong><br/>Jarak: <strong>${jarak} km</strong> &bull; V<sub>i</sub>: ${vi}`);
+
+        if (openPop) {
+            activeHighlightMarker2.openPopup();
+            spkMap2.fitBounds([[dinasLat, dinasLng], [lat, lng]], { padding: [60, 60] });
+        }
+
+        fetch(`https://router.project-osrm.org/route/v1/driving/${lng},${lat};${dinasLng},${dinasLat}?overview=full&geometries=geojson`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    const km = (route.distance / 1000).toFixed(2);
+                    const menit = Math.round(route.duration / 60);
+                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                    if (activeHighlightLine2) spkMap2.removeLayer(activeHighlightLine2);
+                    activeHighlightLine2 = L.polyline(coords, { color: '#4338ca', weight: 4.5, opacity: 0.9 }).addTo(spkMap2);
+                    activeHighlightMarker2.setPopupContent(`<span style="font-weight:700;color:#4338ca;">Rank #${rank}</span><br/><strong>${nama}</strong><br/>Rute Jalan (OSRM): <strong>${km} km</strong> (~${menit} mnt)<br/>V<sub>i</sub>: <strong>${vi}</strong>`);
+                    if (openPop) {
+                        activeHighlightMarker2.openPopup();
+                        spkMap2.fitBounds(activeHighlightLine2.getBounds(), { padding: [50, 50] });
+                    }
+                }
+            }).catch(() => {});
+    }
+</script>
+@endpush
+@endif

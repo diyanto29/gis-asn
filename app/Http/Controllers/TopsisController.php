@@ -23,32 +23,46 @@ class TopsisController extends Controller
     ) {}
 
     /**
-     * Halaman Utama Menu TOPSIS: Redirect ke Mode 1 (PNS to Dinas).
+     * Halaman Utama 1-Pintu Menu SPK TOPSIS (Mode 1: PNS -> Dinas & Mode 2: Dinas -> PNS).
      */
-    public function index(): RedirectResponse
+    public function index(Request $request): View
     {
-        return redirect()->route('topsis.pns-to-dinas');
+        $activeMode = $request->get('mode', 'pns_to_dinas');
+        if (!in_array($activeMode, ['pns_to_dinas', 'dinas_to_pns'], true)) {
+            $activeMode = 'pns_to_dinas';
+        }
+
+        $data = $activeMode === 'dinas_to_pns'
+            ? $this->buildDinasToPnsData($request)
+            : $this->buildPnsToDinasData($request);
+
+        return view('topsis.index', array_merge(['activeMode' => $activeMode], $data));
+    }
+
+    /**
+     * Backward-compatible route untuk Mode 1 (PNS to Dinas) -> render di halaman 1-pintu SPK.
+     */
+    public function pnsToDinas(Request $request): View
+    {
+        $request->merge(['mode' => 'pns_to_dinas']);
+        return $this->index($request);
+    }
+
+    /**
+     * Backward-compatible route untuk Mode 2 (Dinas to PNS) -> render di halaman 1-pintu SPK.
+     */
+    public function dinasToPns(Request $request): View
+    {
+        $request->merge(['mode' => 'dinas_to_pns']);
+        return $this->index($request);
     }
 
     /**
      * =========================================================================
-     * MODE 1: REKOMENDASI SPK "PNS TO DINAS"
-     * Skenario: Pegawai ASN mencari penempatan dinas terbaik yang ideal baginya.
-     *
-     * ATURAN MUTLAK (BY SYSTEM — POIN 1 s/d 3):
-     * 1. Matching Jabatan: Fungsional = exact match nama/master jabatan; Pelaksana = sama kelas jabatan.
-     * 2. Formasi Tersedia: Kuota lowong formasi cocok wajib > 0 (ABK - Bezetting > 0).
-     * 3. Masa Jabatan    : Masa jabatan PNS saat ini wajib >= 2 tahun (dinamis).
-     *
-     * KRITERIA TOPSIS (5 KRITERIA):
-     * - C1: Jarak Domisili ke Unit Tujuan (Cost)
-     * - C2: Masa Jabatan PNS (Benefit)
-     * - C3: Masa Kerja PNS (Benefit)
-     * - C4: Formasi Jabatan Cocok / Kuota Lowong (Benefit)
-     * - C5: Kebutuhan Pegawai Unit Kerja Saat Ini / Unit Asal (Benefit: 3=Lengkap, 2=Cukup, 1=Kurang)
+     * BUILDER MODE 1: REKOMENDASI SPK "PNS TO DINAS" (5 KRITERIA)
      * =========================================================================
      */
-    public function pnsToDinas(Request $request): View
+    protected function buildPnsToDinasData(Request $request): array
     {
         $asnList = AsnMaster::with(['unitSaatIni', 'masterJabatan'])->orderBy('nama')->get();
         $selectedAsnId = $request->get('asn_id');
@@ -64,6 +78,7 @@ class TopsisController extends Controller
         $kelayakan = null;
         $unitAsalEval = null;
         $filterSummary = null;
+        $alternativesList = [];
 
         if ($selectedAsnId) {
             $selectedAsn = AsnMaster::with(['unitSaatIni', 'masterJabatan', 'formasiJabatan'])->findOrFail($selectedAsnId);
@@ -117,6 +132,7 @@ class TopsisController extends Controller
                     $unitKey = 'unit_' . $unit->id;
                     $alternatives[$unitKey] = [
                         'id' => $unit->id,
+                        'label_alt' => $unit->nama_unit,
                         'nama_unit' => $unit->nama_unit,
                         'jarak_baru_km' => $jarakBaru,
                         'hemat_jarak_km' => $hematJarak,
@@ -125,11 +141,11 @@ class TopsisController extends Controller
                         'unit_asal_eval' => $unitAsalEval,
 
                         // Matriks 5 Kriteria TOPSIS
-                        'C1' => (float)$jarakBaru,                     // Cost: Jarak
-                        'C2' => (float)$kelayakan['masa_jabatan_tahun'], // Benefit: Masa Jabatan
-                        'C3' => (float)$kelayakan['masa_kerja_tahun'],   // Benefit: Masa Kerja
-                        'C4' => (float)$kuotaCocok,                      // Benefit: Formasi Jabatan (Kuota Cocok)
-                        'C5' => (float)$unitAsalEval['skor'],            // Benefit: Kebutuhan Pegawai Unit Saat Ini
+                        'C1' => (float)$jarakBaru,
+                        'C2' => (float)$kelayakan['masa_jabatan_tahun'],
+                        'C3' => (float)$kelayakan['masa_kerja_tahun'],
+                        'C4' => (float)$kuotaCocok,
+                        'C5' => (float)$unitAsalEval['skor'],
                     ];
 
                     $unitDetails[$unit->id] = $unit;
@@ -145,7 +161,8 @@ class TopsisController extends Controller
                 }
 
                 if (!empty($alternatives) && !empty($criteriaWeights)) {
-                    $topsisResult = $this->topsis->calculate(array_values($alternatives), $criteriaWeights);
+                    $alternativesList = array_values($alternatives);
+                    $topsisResult = $this->topsis->calculate($alternativesList, $criteriaWeights);
                     $ranked = $topsisResult['ranked'];
 
                     foreach ($ranked as &$item) {
@@ -171,30 +188,25 @@ class TopsisController extends Controller
             }
         }
 
-        return view('topsis.pns-to-dinas', compact(
+        return compact(
             'asnList',
             'selectedAsn',
             'kriteriaModels',
             'ranked',
             'topsisResult',
+            'alternativesList',
             'kelayakan',
             'unitAsalEval',
             'filterSummary'
-        ));
+        );
     }
 
     /**
      * =========================================================================
-     * MODE 2: REKOMENDASI SPK "DINAS TO PNS" (4 KRITERIA TOPSIS)
-     * Skenario: Pilih Dinas A -> Menampilkan & merangking PNS yang bertugas di
-     *           Dinas A (id_unit_saat_ini = Dinas A) berdasarkan 4 kriteria:
-     *           C1: Jarak Domisili PNS A ke Kantor Dinas A
-     *           C2: Masa Jabatan (TMT Jabatan, syarat mutlak >= batas minimal)
-     *           C3: Masa Kerja (TMT CPNS, subkriteria batas keluar Kab. XYZ)
-     *           C4: Kebutuhan Pegawai Unit Kerja Saat Ini (Dinas A: Lengkap/Cukup/Kurang)
+     * BUILDER MODE 2: REKOMENDASI SPK "DINAS TO PNS" (4 KRITERIA)
      * =========================================================================
      */
-    public function dinasToPns(Request $request): View
+    protected function buildDinasToPnsData(Request $request): array
     {
         $unitList = UnitKerja::orderBy('nama_unit')->get();
         $selectedUnitId = $request->get('unit_id');
@@ -210,6 +222,7 @@ class TopsisController extends Controller
         $unitTujuanEval = null;
         $openFormasiUnit = collect();
         $filterSummary = null;
+        $alternativesList = [];
         $rules = MutasiRuleService::getRules();
 
         if ($selectedUnitId) {
@@ -217,13 +230,12 @@ class TopsisController extends Controller
             $unitStats = $this->mutasiRule->getAllUnitStats();
             $unitTujuanEval = $this->mutasiRule->evaluasiUnitAsal($selectedUnit, $unitStats);
 
-            // Formasi terbuka di Dinas ini (untuk informasi kapasitas unit)
             $openFormasiUnit = FormasiJabatan::with('masterJabatan')
                 ->where('id_unit_kerja', $selectedUnit->id)
                 ->where('kuota_lowong', '>', 0)
                 ->get();
 
-            // PERBAIKAN: Ambil PNS yang SAAT INI BERTUGAS DI DINAS TERPILIH (Dinas A -> PNS A)
+            // Ambil PNS yang saat ini bertugas di Dinas terpilih (Dinas A -> PNS A)
             $candidateAsns = AsnMaster::with(['unitSaatIni', 'masterJabatan'])
                 ->where('id_unit_saat_ini', $selectedUnit->id)
                 ->whereNotNull('domisili_lat')
@@ -236,14 +248,12 @@ class TopsisController extends Controller
             $skippedMasaJabatan = 0;
 
             foreach ($candidateAsns as $asn) {
-                // POIN 3 MUTLAK: Masa jabatan wajib >= batas minimal (default 2 tahun, dinamis)
                 $kelayakan = $this->mutasiRule->cekKelayakanAsn($asn);
                 if (!$kelayakan['masa_jabatan_ok']) {
                     $skippedMasaJabatan++;
                     continue;
                 }
 
-                // C1: Jarak domisili PNS A ke kantor Dinas A saat ini
                 $jarakKeDinas = ($selectedUnit->kantor_lat && $selectedUnit->kantor_lng)
                     ? $this->haversine->calculateDistance(
                         (float)$asn->domisili_lat,
@@ -256,6 +266,7 @@ class TopsisController extends Controller
                 $asnKey = 'asn_' . $asn->id;
                 $alternatives[$asnKey] = [
                     'id' => $asn->id,
+                    'label_alt' => $asn->nama . ' (' . $asn->nip . ')',
                     'nama' => $asn->nama,
                     'nip' => $asn->nip,
                     'jabatan' => $asn->jabatan,
@@ -270,10 +281,10 @@ class TopsisController extends Controller
                     'kondisi_unit_asal_skor' => $unitTujuanEval['skor'],
 
                     // Matriks 4 Kriteria TOPSIS Mode 2 (Dinas -> PNS):
-                    'C1' => (float)$jarakKeDinas,                    // C1: Jarak Domisili ke Dinas A
-                    'C2' => (float)$kelayakan['masa_jabatan_tahun'], // C2: Masa Jabatan (TMT Jabatan)
-                    'C3' => (float)$kelayakan['masa_kerja_tahun'],   // C3: Masa Kerja (TMT CPNS)
-                    'C4' => (float)$unitTujuanEval['skor'],          // C4: Kebutuhan Pegawai Unit Saat Ini (Dinas A)
+                    'C1' => (float)$jarakKeDinas,
+                    'C2' => (float)$kelayakan['masa_jabatan_tahun'],
+                    'C3' => (float)$kelayakan['masa_kerja_tahun'],
+                    'C4' => (float)$unitTujuanEval['skor'],
                 ];
 
                 $asnDetails[$asn->id] = $asn;
@@ -286,7 +297,6 @@ class TopsisController extends Controller
                 'min_masa_jabatan_tahun' => $rules['min_masa_jabatan_tahun'],
             ];
 
-            // Bobot 4 kriteria dinamis dari database
             $criteriaWeights = [];
             foreach ($kriteriaModels as $k) {
                 $criteriaWeights[$k->kode_kriteria] = [
@@ -296,7 +306,8 @@ class TopsisController extends Controller
             }
 
             if (!empty($alternatives) && !empty($criteriaWeights)) {
-                $topsisResult = $this->topsis->calculate(array_values($alternatives), $criteriaWeights);
+                $alternativesList = array_values($alternatives);
+                $topsisResult = $this->topsis->calculate($alternativesList, $criteriaWeights);
                 $ranked = $topsisResult['ranked'];
 
                 foreach ($ranked as &$item) {
@@ -319,16 +330,17 @@ class TopsisController extends Controller
             }
         }
 
-        return view('topsis.dinas-to-pns', compact(
+        return compact(
             'unitList',
             'selectedUnit',
             'kriteriaModels',
             'ranked',
             'topsisResult',
+            'alternativesList',
             'unitTujuanEval',
             'openFormasiUnit',
             'filterSummary'
-        ));
+        );
     }
 
     /**
