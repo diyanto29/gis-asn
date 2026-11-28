@@ -97,29 +97,38 @@ class TopsisController extends Controller
                 ->whereNotNull('kantor_lng')
                 ->get();
 
-            // Hitung jarak seluruh unit dari domisili PNS
-            $unitsWithDistance = $allCandidateUnits->map(function ($unit) use ($selectedAsn) {
+            // Hitung jarak & evaluasi formasi seluruh unit dari domisili PNS
+            $unitsEvaluated = $allCandidateUnits->map(function ($unit) use ($selectedAsn) {
                 $jarak = $this->haversine->calculateDistance(
                     (float)$selectedAsn->domisili_lat,
                     (float)$selectedAsn->domisili_lng,
                     (float)$unit->kantor_lat,
                     (float)$unit->kantor_lng
                 );
-                return ['unit' => $unit, 'jarak' => $jarak];
+                $formasiEval = $this->mutasiRule->evaluasiFormasiUnitTujuan($selectedAsn, $unit->formasiJabatan);
+                return [
+                    'unit' => $unit,
+                    'jarak' => $jarak,
+                    'formasi_eval' => $formasiEval,
+                ];
             })->sortBy('jarak')->values();
 
-            // Saring berdasarkan subkriteria Radius Terdekat (C1, default 10 km) — kecuali user memilih 'all'
+            // UNION: Selalu tampilkan (1) unit dengan formasi cocok & tersedia (berapapun jaraknya)
+            //        + (2) semua unit kerja terdekat dalam radius C1 (default <= 10 km) sebagai informasi tambahan.
             $isAllRadius = ($radiusParam === 'all');
             $activeRadiusKm = $isAllRadius ? null : max(1.0, (float)$radiusParam);
             $fallbackUsed = false;
 
             if ($isAllRadius) {
-                $filteredUnits = $unitsWithDistance;
+                $filteredUnits = $unitsEvaluated;
             } else {
-                $filteredUnits = $unitsWithDistance->filter(fn($row) => $row['jarak'] <= $activeRadiusKm)->values();
-                // Jika tidak ada satupun unit dalam radius tsb (misal PNS luar kota), fallback tampilkan semua unit terdekat
-                if ($filteredUnits->isEmpty() && $unitsWithDistance->isNotEmpty()) {
-                    $filteredUnits = $unitsWithDistance;
+                $filteredUnits = $unitsEvaluated->filter(function ($row) use ($activeRadiusKm) {
+                    return $row['formasi_eval']['status'] === 'Tersedia' || $row['jarak'] <= $activeRadiusKm;
+                })->values();
+
+                // Jika tidak ada satupun unit yang cocok maupun dalam radius, fallback tampilkan semua unit terdekat
+                if ($filteredUnits->isEmpty() && $unitsEvaluated->isNotEmpty()) {
+                    $filteredUnits = $unitsEvaluated;
                     $fallbackUsed = true;
                 }
             }
@@ -131,12 +140,11 @@ class TopsisController extends Controller
             foreach ($filteredUnits as $row) {
                 $unit = $row['unit'];
                 $jarakBaru = (float)$row['jarak'];
+                $formasiEval = $row['formasi_eval'];
 
                 $jarakLama = (float)($selectedAsn->jarak_ke_kantor_km ?: 15.0);
                 $hematJarak = round(max(0, $jarakLama - $jarakBaru), 2);
 
-                // Evaluasi Formasi Jabatan (C4) TANPA menyembunyikan unit yang penuh / tidak tersedia
-                $formasiEval = $this->mutasiRule->evaluasiFormasiUnitTujuan($selectedAsn, $unit->formasiJabatan);
                 if ($formasiEval['status'] === 'Tersedia') {
                     $unitTersediaCount++;
                 }
@@ -153,7 +161,7 @@ class TopsisController extends Controller
                     'formasi_eval' => $formasiEval,
                     'unit_asal_eval' => $unitAsalEval,
 
-                    // Matriks 5 Kriteria TOPSIS (semua unit dalam radius tetap dihitung!)
+                    // Matriks 5 Kriteria TOPSIS (unit berformasi cocok + unit terdekat dalam radius)
                     'C1' => (float)$jarakBaru,                       // Cost: Jarak
                     'C2' => (float)$kelayakan['masa_jabatan_tahun'], // Benefit: Masa Jabatan
                     'C3' => (float)$kelayakan['masa_kerja_tahun'],   // Benefit: Masa Kerja
@@ -168,9 +176,9 @@ class TopsisController extends Controller
                 'total_unit_lain' => $allCandidateUnits->count(),
                 'unit_dalam_radius' => count($alternatives),
                 'unit_cocok_formasi' => $unitTersediaCount,
-                'radius_label' => $isAllRadius ? 'Semua Unit Kerja' : "Radius ≤ {$activeRadiusKm} km",
+                'radius_label' => $isAllRadius ? 'Semua Unit Kerja' : "Formasi Cocok + Radius ≤ {$activeRadiusKm} km",
                 'fallback_used' => $fallbackUsed,
-                'nearest_km' => $unitsWithDistance->first()['jarak'] ?? null,
+                'nearest_km' => $unitsEvaluated->first()['jarak'] ?? null,
                 'aturan_match' => $this->mutasiRule->deskripsiAturanMatch($selectedAsn),
             ];
 

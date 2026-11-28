@@ -70,29 +70,33 @@ class SimulasiMandiriController extends Controller
             ->whereNotNull('kantor_lng')
             ->get();
 
-        $unitsWithDistance = $allCandidateUnits->map(function ($unit) use ($asn) {
+        $unitsEvaluated = $allCandidateUnits->map(function ($unit) use ($asn) {
             $jarak = $this->haversine->calculateDistance(
                 (float)$asn->domisili_lat,
                 (float)$asn->domisili_lng,
                 (float)$unit->kantor_lat,
                 (float)$unit->kantor_lng
             );
-            return ['unit' => $unit, 'jarak' => $jarak];
+            $formasiEval = $this->mutasiRule->evaluasiFormasiUnitTujuan($asn, $unit->formasiJabatan);
+            return ['unit' => $unit, 'jarak' => $jarak, 'formasi_eval' => $formasiEval];
         })->sortBy('jarak')->values();
 
-        $filteredUnits = $unitsWithDistance->filter(fn($row) => $row['jarak'] <= $radiusKm)->values();
+        // UNION: Unit berformasi cocok & tersedia (berapapun jaraknya) + semua unit terdekat dalam radius C1
+        $filteredUnits = $unitsEvaluated->filter(function ($row) use ($radiusKm) {
+            return $row['formasi_eval']['status'] === 'Tersedia' || $row['jarak'] <= $radiusKm;
+        })->values();
         if ($filteredUnits->isEmpty()) {
-            $filteredUnits = $unitsWithDistance;
+            $filteredUnits = $unitsEvaluated;
         }
 
-        // Bentuk matriks 5 kriteria TOPSIS (C1-C5) untuk seluruh unit terdekat
+        // Bentuk matriks 5 kriteria TOPSIS (C1-C5) untuk seluruh unit terpilih
         $alternatives = [];
         foreach ($filteredUnits as $row) {
             $unit = $row['unit'];
             $jarakBaru = (float)$row['jarak'];
 
             $hematJarak = round(max(0.0, (float)$asn->jarak_ke_kantor_km - $jarakBaru), 2);
-            $formasiEval = $this->mutasiRule->evaluasiFormasiUnitTujuan($asn, $unit->formasiJabatan);
+            $formasiEval = $row['formasi_eval'];
 
             $formasiTersedia = !empty($formasiEval['labels'])
                 ? $formasiEval['labels']
