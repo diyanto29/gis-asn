@@ -40,15 +40,21 @@ class MutasiRuleService
     private const SETTINGS_RELATIVE_PATH = 'app/mutasi_rules.json';
 
     /**
-     * Mengambil aturan mutasi dinamis (masa jabatan minimal & masa kerja keluar instansi).
-     *
-     * @return array{min_masa_jabatan_tahun: float, min_masa_kerja_keluar_tahun: int}
+     * Mengambil aturan mutasi & subkriteria dinamis TOPSIS (C1 Jarak, C2 Masa Jabatan,
+     * C3 Masa Kerja Keluar Daerah, C5/C4 Kebutuhan Pegawai Unit Saat Ini).
      */
     public static function getRules(): array
     {
         $defaults = [
             'min_masa_jabatan_tahun' => 2.0,
             'min_masa_kerja_keluar_tahun' => 5,
+            'jarak_dekat_max_km' => 5.0,
+            'jarak_jauh_min_km' => 20.0,
+            'unit_lengkap_min_pct' => 100.0,
+            'unit_cukup_min_pct' => 50.0,
+            'unit_lengkap_skor' => 3.0,
+            'unit_cukup_skor' => 2.0,
+            'unit_kurang_skor' => 1.0,
         ];
 
         $path = storage_path(self::SETTINGS_RELATIVE_PATH);
@@ -64,18 +70,26 @@ class MutasiRuleService
         return [
             'min_masa_jabatan_tahun' => max(0.0, (float)($decoded['min_masa_jabatan_tahun'] ?? $defaults['min_masa_jabatan_tahun'])),
             'min_masa_kerja_keluar_tahun' => max(1, (int)($decoded['min_masa_kerja_keluar_tahun'] ?? $defaults['min_masa_kerja_keluar_tahun'])),
+            'jarak_dekat_max_km' => max(0.5, (float)($decoded['jarak_dekat_max_km'] ?? $defaults['jarak_dekat_max_km'])),
+            'jarak_jauh_min_km' => max(1.0, (float)($decoded['jarak_jauh_min_km'] ?? $defaults['jarak_jauh_min_km'])),
+            'unit_lengkap_min_pct' => max(1.0, (float)($decoded['unit_lengkap_min_pct'] ?? $defaults['unit_lengkap_min_pct'])),
+            'unit_cukup_min_pct' => max(1.0, (float)($decoded['unit_cukup_min_pct'] ?? $defaults['unit_cukup_min_pct'])),
+            'unit_lengkap_skor' => max(0.1, (float)($decoded['unit_lengkap_skor'] ?? $defaults['unit_lengkap_skor'])),
+            'unit_cukup_skor' => max(0.1, (float)($decoded['unit_cukup_skor'] ?? $defaults['unit_cukup_skor'])),
+            'unit_kurang_skor' => max(0.1, (float)($decoded['unit_kurang_skor'] ?? $defaults['unit_kurang_skor'])),
         ];
     }
 
     /**
-     * Menyimpan perubahan aturan mutasi dinamis dari Admin BKPSDM.
+     * Menyimpan perubahan aturan & subkriteria dinamis dari Admin BKPSDM (mendukung partial update).
      */
-    public static function saveRules(float $minMasaJabatan, int $minMasaKerjaKeluar): array
+    public static function saveRules(float $minMasaJabatan, int $minMasaKerjaKeluar, array $extra = []): array
     {
-        $data = [
+        $current = self::getRules();
+        $data = array_merge($current, $extra, [
             'min_masa_jabatan_tahun' => round(max(0.0, $minMasaJabatan), 1),
             'min_masa_kerja_keluar_tahun' => max(1, $minMasaKerjaKeluar),
-        ];
+        ]);
 
         $path = storage_path(self::SETTINGS_RELATIVE_PATH);
         $dir = dirname($path);
@@ -167,20 +181,21 @@ class MutasiRuleService
         }
 
         // Lowong negatif menandakan kekurangan pegawai (contoh: Bezetting 10, ABK 12 -> Lowong -2)
+        $rules = self::getRules();
         $lowong = $bezetting - $abk;
         $persentase = $abk > 0 ? round(($bezetting / $abk) * 100, 1) : 100.0;
 
-        if ($persentase >= 100.0) {
+        if ($persentase >= $rules['unit_lengkap_min_pct']) {
             $status = 'Lengkap';
-            $skor = 3.0;
+            $skor = (float)$rules['unit_lengkap_skor'];
             $badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        } elseif ($persentase >= 50.0) {
+        } elseif ($persentase >= $rules['unit_cukup_min_pct']) {
             $status = 'Cukup';
-            $skor = 2.0;
+            $skor = (float)$rules['unit_cukup_skor'];
             $badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
         } else {
             $status = 'Kurang';
-            $skor = 1.0;
+            $skor = (float)$rules['unit_kurang_skor'];
             $badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
         }
 

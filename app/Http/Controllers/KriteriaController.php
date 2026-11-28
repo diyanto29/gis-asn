@@ -112,8 +112,15 @@ class KriteriaController extends Controller
             'atribut' => 'required|in:cost,benefit',
             'bobot' => 'required|numeric|min:0|max:1',
             'keterangan' => 'nullable|string|max:255',
+            'jarak_dekat_max_km' => 'nullable|numeric|min:0.5|max:200',
+            'jarak_jauh_min_km' => 'nullable|numeric|min:1|max:500',
             'min_masa_jabatan_tahun' => 'nullable|numeric|min:0|max:20',
             'min_masa_kerja_keluar_tahun' => 'nullable|integer|min:1|max:30',
+            'unit_lengkap_min_pct' => 'nullable|numeric|min:1|max:200',
+            'unit_cukup_min_pct' => 'nullable|numeric|min:1|max:100',
+            'unit_lengkap_skor' => 'nullable|numeric|min:0.1|max:100',
+            'unit_cukup_skor' => 'nullable|numeric|min:0.1|max:100',
+            'unit_kurang_skor' => 'nullable|numeric|min:0.1|max:100',
         ]);
 
         $k->update([
@@ -124,21 +131,44 @@ class KriteriaController extends Controller
             'keterangan' => $validated['keterangan'],
         ]);
 
-        // Simpan nilai subkriteria dinamis jika mengedit Masa Jabatan / Masa Kerja
+        // Simpan nilai subkriteria dinamis sesuai parameter kriteria yang diedit (C1, C2, C3, C5/C4)
         $rules = MutasiRuleService::getRules();
+        $extra = [];
         $updatedSub = false;
-        if ($request->filled('min_masa_jabatan_tahun') && str_contains($validated['parameter_key'], 'masa_jabatan')) {
+        $pKey = strtolower($validated['parameter_key']);
+
+        if (str_contains($pKey, 'jarak')) {
+            if ($request->filled('jarak_dekat_max_km')) {
+                $extra['jarak_dekat_max_km'] = round((float)$validated['jarak_dekat_max_km'], 1);
+                $updatedSub = true;
+            }
+            if ($request->filled('jarak_jauh_min_km')) {
+                $extra['jarak_jauh_min_km'] = round((float)$validated['jarak_jauh_min_km'], 1);
+                $updatedSub = true;
+            }
+        }
+        if ($request->filled('min_masa_jabatan_tahun') && str_contains($pKey, 'masa_jabatan')) {
             $rules['min_masa_jabatan_tahun'] = (float)$validated['min_masa_jabatan_tahun'];
             $updatedSub = true;
         }
-        if ($request->filled('min_masa_kerja_keluar_tahun') && str_contains($validated['parameter_key'], 'masa_kerja')) {
+        if ($request->filled('min_masa_kerja_keluar_tahun') && str_contains($pKey, 'masa_kerja')) {
             $rules['min_masa_kerja_keluar_tahun'] = (int)$validated['min_masa_kerja_keluar_tahun'];
             $updatedSub = true;
         }
+        if (str_contains($pKey, 'kebutuhan_unit_asal')) {
+            foreach (['unit_lengkap_min_pct', 'unit_cukup_min_pct', 'unit_lengkap_skor', 'unit_cukup_skor', 'unit_kurang_skor'] as $field) {
+                if ($request->filled($field)) {
+                    $extra[$field] = round((float)$validated[$field], 1);
+                    $updatedSub = true;
+                }
+            }
+        }
+
         if ($updatedSub) {
             MutasiRuleService::saveRules(
                 (float)$rules['min_masa_jabatan_tahun'],
-                (int)$rules['min_masa_kerja_keluar_tahun']
+                (int)$rules['min_masa_kerja_keluar_tahun'],
+                $extra
             );
         }
 

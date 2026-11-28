@@ -124,7 +124,20 @@
                                     <div class="font-bold text-slate-900">{{ $k->nama_kriteria }}</div>
                                     <div class="text-[11px] text-slate-400 font-mono">Parameter Key: <code>{{ $k->parameter_key ?? '-' }}</code></div>
                                     <div class="text-xs text-slate-500 mt-0.5">{{ $k->keterangan ?? '-' }}</div>
-                                    @if (str_contains((string)$k->parameter_key, 'masa_jabatan'))
+                                    @if (str_contains((string)$k->parameter_key, 'jarak'))
+                                        <div class="mt-2 p-2 rounded-lg bg-emerald-50/60 border border-emerald-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-700 shrink-0"></i>
+                                                <span class="font-bold text-emerald-900">Subkriteria Jarak:</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[10px]">Dekat (&lt; {{ $mutasiRules['jarak_dekat_max_km'] ?? 5 }} km)</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-semibold text-[10px]">Sedang ({{ $mutasiRules['jarak_dekat_max_km'] ?? 5 }}–{{ $mutasiRules['jarak_jauh_min_km'] ?? 20 }} km)</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 font-semibold text-[10px]">Terjauh (&gt; {{ $mutasiRules['jarak_jauh_min_km'] ?? 20 }} km)</span>
+                                            </div>
+                                            <button type="button" onclick='openEditCriteriaModal(@json($k))' class="px-2 py-0.5 rounded bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold transition inline-flex items-center gap-1">
+                                                <i data-lucide="edit-2" class="w-3 h-3"></i> Edit Subkriteria
+                                            </button>
+                                        </div>
+                                    @elseif (str_contains((string)$k->parameter_key, 'masa_jabatan'))
                                         <div class="mt-2 p-2 rounded-lg bg-blue-50/70 border border-blue-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                                             <div class="flex items-center gap-1.5 text-blue-900">
                                                 <i data-lucide="git-branch" class="w-3.5 h-3.5 text-blue-700 shrink-0"></i>
@@ -145,10 +158,15 @@
                                             </button>
                                         </div>
                                     @elseif (str_contains((string)$k->parameter_key, 'kebutuhan_unit_asal'))
-                                        <div class="mt-1.5 inline-flex flex-wrap items-center gap-1.5 text-[10px] font-semibold">
-                                            <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Lengkap (100% / Skor 3)</span>
-                                            <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">Cukup (&ge;50% / Skor 2)</span>
-                                            <span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">Kurang (&lt;50% / Skor 1)</span>
+                                        <div class="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                                            <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold">
+                                                <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Lengkap (&ge;{{ $mutasiRules['unit_lengkap_min_pct'] ?? 100 }}% / Skor {{ $mutasiRules['unit_lengkap_skor'] ?? 3 }})</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">Cukup (&ge;{{ $mutasiRules['unit_cukup_min_pct'] ?? 50 }}% / Skor {{ $mutasiRules['unit_cukup_skor'] ?? 2 }})</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">Kurang (&lt;{{ $mutasiRules['unit_cukup_min_pct'] ?? 50 }}% / Skor {{ $mutasiRules['unit_kurang_skor'] ?? 1 }})</span>
+                                            </div>
+                                            <button type="button" onclick='openEditCriteriaModal(@json($k))' class="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[10px] font-bold transition inline-flex items-center gap-1">
+                                                <i data-lucide="edit-2" class="w-3 h-3"></i> Edit Subkriteria
+                                            </button>
                                         </div>
                                     @endif
                                 </td>
@@ -357,6 +375,26 @@
                 <input type="number" name="bobot" id="edit_bobot" step="0.01" min="0" max="1" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
             </div>
 
+            <!-- Subkriteria Dinamis: C1 Jarak (Terdekat / Sedang / Terjauh) -->
+            <div id="editSubJarakWrap" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
+                <div class="text-xs font-bold text-emerald-900">Subkriteria C1: Batas Zona Jarak (Km)</div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-emerald-800 mb-1">Batas Jarak Terdekat (&lt; Km)</label>
+                        <input type="number" step="0.5" min="0.5" max="200" name="jarak_dekat_max_km"
+                            value="{{ $mutasiRules['jarak_dekat_max_km'] ?? 5 }}"
+                            class="w-full text-xs font-mono font-bold border border-emerald-300 rounded-lg p-2 bg-white focus:border-emerald-600 focus:ring-emerald-600">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-rose-800 mb-1">Batas Jarak Terjauh (&gt; Km)</label>
+                        <input type="number" step="0.5" min="1" max="500" name="jarak_jauh_min_km"
+                            value="{{ $mutasiRules['jarak_jauh_min_km'] ?? 20 }}"
+                            class="w-full text-xs font-mono font-bold border border-rose-300 rounded-lg p-2 bg-white focus:border-rose-600 focus:ring-rose-600">
+                    </div>
+                </div>
+                <p class="text-[10px] text-emerald-800">Zona Sedang otomatis berada di antara batas Terdekat s/d Terjauh.</p>
+            </div>
+
             <!-- Subkriteria Dinamis: Masa Jabatan -->
             <div id="editSubMasaJabatanWrap" class="hidden p-3 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
                 <label class="block text-xs font-bold text-blue-900">
@@ -377,6 +415,43 @@
                     value="{{ $mutasiRules['min_masa_kerja_keluar_tahun'] ?? 5 }}"
                     class="w-full text-xs font-mono font-bold border border-indigo-300 rounded-lg p-2 bg-white focus:border-indigo-600 focus:ring-indigo-600">
                 <p class="text-[10px] text-indigo-700">Batas minimal TMT CPNS jika mutasi keluar Kabupaten XYZ (contoh: 2, 3, 5 tahun).</p>
+            </div>
+
+            <!-- Subkriteria Dinamis: C5/C4 Kebutuhan Pegawai Unit Saat Ini -->
+            <div id="editSubUnitAsalWrap" class="hidden p-3 rounded-xl bg-amber-50/70 border border-amber-200 space-y-2">
+                <div class="text-xs font-bold text-slate-800">Subkriteria Kebutuhan Pegawai Unit Saat Ini (Persentase &amp; Skor)</div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-emerald-800 mb-1">Lengkap Min. (%)</label>
+                        <input type="number" step="1" min="1" max="200" name="unit_lengkap_min_pct"
+                            value="{{ $mutasiRules['unit_lengkap_min_pct'] ?? 100 }}"
+                            class="w-full text-xs font-mono font-bold border border-emerald-300 rounded-lg p-1.5 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-emerald-800 mb-1">Skor Lengkap</label>
+                        <input type="number" step="0.5" min="0.5" max="100" name="unit_lengkap_skor"
+                            value="{{ $mutasiRules['unit_lengkap_skor'] ?? 3 }}"
+                            class="w-full text-xs font-mono font-bold border border-emerald-300 rounded-lg p-1.5 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-amber-800 mb-1">Cukup Min. (%)</label>
+                        <input type="number" step="1" min="1" max="100" name="unit_cukup_min_pct"
+                            value="{{ $mutasiRules['unit_cukup_min_pct'] ?? 50 }}"
+                            class="w-full text-xs font-mono font-bold border border-amber-300 rounded-lg p-1.5 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-amber-800 mb-1">Skor Cukup</label>
+                        <input type="number" step="0.5" min="0.5" max="100" name="unit_cukup_skor"
+                            value="{{ $mutasiRules['unit_cukup_skor'] ?? 2 }}"
+                            class="w-full text-xs font-mono font-bold border border-amber-300 rounded-lg p-1.5 bg-white">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-rose-800 mb-1">Skor Kurang (&lt; batas Cukup %)</label>
+                        <input type="number" step="0.5" min="0.5" max="100" name="unit_kurang_skor"
+                            value="{{ $mutasiRules['unit_kurang_skor'] ?? 1 }}"
+                            class="w-full text-xs font-mono font-bold border border-rose-300 rounded-lg p-1.5 bg-white">
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -425,10 +500,14 @@
             document.getElementById('edit_keterangan').value = item.keterangan || '';
 
             const paramKey = (item.parameter_key || '').toLowerCase();
+            const subJarak = document.getElementById('editSubJarakWrap');
             const subJab = document.getElementById('editSubMasaJabatanWrap');
             const subKer = document.getElementById('editSubMasaKerjaWrap');
+            const subUnit = document.getElementById('editSubUnitAsalWrap');
+            if (subJarak) subJarak.classList.toggle('hidden', !paramKey.includes('jarak'));
             if (subJab) subJab.classList.toggle('hidden', !paramKey.includes('masa_jabatan'));
             if (subKer) subKer.classList.toggle('hidden', !paramKey.includes('masa_kerja'));
+            if (subUnit) subUnit.classList.toggle('hidden', !paramKey.includes('kebutuhan_unit_asal'));
 
             document.getElementById('editCriteriaModal').classList.remove('hidden');
             if (window.lucide) lucide.createIcons();

@@ -76,11 +76,15 @@ class HaversineService
      */
     public function classifyZone(float $distanceKm): string
     {
-        if ($distanceKm < 5.0) {
+        $rules = MutasiRuleService::getRules();
+        $dekatMax = (float)($rules['jarak_dekat_max_km'] ?? 5.0);
+        $jauhMin = (float)($rules['jarak_jauh_min_km'] ?? 20.0);
+
+        if ($distanceKm < $dekatMax) {
             return 'dekat';
         }
 
-        if ($distanceKm <= 20.0) {
+        if ($distanceKm <= $jauhMin) {
             return 'sedang';
         }
 
