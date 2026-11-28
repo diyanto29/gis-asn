@@ -48,6 +48,7 @@ class MutasiRuleService
         $defaults = [
             'min_masa_jabatan_tahun' => 2.0,
             'min_masa_kerja_keluar_tahun' => 5,
+            'radius_terdekat_km' => 10.0,
             'jarak_dekat_max_km' => 5.0,
             'jarak_jauh_min_km' => 20.0,
             'unit_lengkap_min_pct' => 100.0,
@@ -70,6 +71,7 @@ class MutasiRuleService
         return [
             'min_masa_jabatan_tahun' => max(0.0, (float)($decoded['min_masa_jabatan_tahun'] ?? $defaults['min_masa_jabatan_tahun'])),
             'min_masa_kerja_keluar_tahun' => max(1, (int)($decoded['min_masa_kerja_keluar_tahun'] ?? $defaults['min_masa_kerja_keluar_tahun'])),
+            'radius_terdekat_km' => max(1.0, (float)($decoded['radius_terdekat_km'] ?? $defaults['radius_terdekat_km'])),
             'jarak_dekat_max_km' => max(0.5, (float)($decoded['jarak_dekat_max_km'] ?? $defaults['jarak_dekat_max_km'])),
             'jarak_jauh_min_km' => max(1.0, (float)($decoded['jarak_jauh_min_km'] ?? $defaults['jarak_jauh_min_km'])),
             'unit_lengkap_min_pct' => max(1.0, (float)($decoded['unit_lengkap_min_pct'] ?? $defaults['unit_lengkap_min_pct'])),
@@ -382,6 +384,69 @@ class MutasiRuleService
 
             return $namaSama && $jenjangSama;
         })->values();
+    }
+
+    /**
+     * Mengevaluasi status & skor Formasi Jabatan (Kriteria C4) pada suatu unit kerja tujuan
+     * TANPA menyembunyikan unit yang formasinya penuh/tidak tersedia.
+     *
+     * Skor C4:
+     * - 2.0 : Formasi cocok ADA & TERSEDIA (kuota_lowong > 0)
+     * - 1.0 : Formasi cocok ADA namun PENUH (kuota_lowong = 0)
+     * - 0.0 : Tidak ada formasi yang cocok pada unit tersebut
+     *
+     * @return array{status:string, skor:float, kuota_cocok:int, labels:array<int,string>, badge_class:string}
+     */
+    public function evaluasiFormasiUnitTujuan(AsnMaster $asn, Collection $unitFormasis): array
+    {
+        // 1. Cek formasi yang cocok & tersedia (kuota_lowong > 0)
+        $openMatches = $this->cariFormasiCocok($asn, $unitFormasis);
+        if ($openMatches->isNotEmpty()) {
+            $kuota = (int)$openMatches->sum('kuota_lowong');
+            $labels = $openMatches->map(function ($f) {
+                $kls = $f->masterJabatan?->kelas_jabatan ? " [Kls {$f->masterJabatan->kelas_jabatan}]" : '';
+                return "{$f->nama_jabatan}{$kls} ({$f->kuota_lowong} lowong)";
+            })->values()->toArray();
+
+            return [
+                'status' => 'Tersedia',
+                'skor' => 2.0,
+                'kuota_cocok' => $kuota,
+                'labels' => $labels,
+                'badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            ];
+        }
+
+        // 2. Cek apakah jabatan cocok ada pada unit ini tetapi kuota sudah penuh (kuota_lowong == 0)
+        $simulatedOpen = $unitFormasis->map(function (FormasiJabatan $f) {
+            $clone = clone $f;
+            $clone->kuota_lowong = 1;
+            return $clone;
+        });
+        $fullMatches = $this->cariFormasiCocok($asn, $simulatedOpen);
+        if ($fullMatches->isNotEmpty()) {
+            $labels = $fullMatches->map(function ($f) {
+                $kls = $f->masterJabatan?->kelas_jabatan ? " [Kls {$f->masterJabatan->kelas_jabatan}]" : '';
+                return "{$f->nama_jabatan}{$kls} (Penuh)";
+            })->values()->toArray();
+
+            return [
+                'status' => 'Penuh',
+                'skor' => 1.0,
+                'kuota_cocok' => 0,
+                'labels' => $labels,
+                'badge_class' => 'bg-amber-50 text-amber-700 border-amber-200',
+            ];
+        }
+
+        // 3. Tidak ada formasi yang cocok pada unit ini
+        return [
+            'status' => 'Tidak Tersedia',
+            'skor' => 0.0,
+            'kuota_cocok' => 0,
+            'labels' => [],
+            'badge_class' => 'bg-slate-100 text-slate-600 border-slate-200',
+        ];
     }
 
     /**

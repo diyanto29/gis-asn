@@ -79,6 +79,9 @@ class TopsisController extends Controller
         $unitAsalEval = null;
         $filterSummary = null;
         $alternativesList = [];
+        $rules = MutasiRuleService::getRules();
+        $defaultRadiusKm = (float)($rules['radius_terdekat_km'] ?? 10.0);
+        $radiusParam = $request->get('radius', (string)$defaultRadiusKm);
 
         if ($selectedAsnId) {
             $selectedAsn = AsnMaster::with(['unitSaatIni', 'masterJabatan', 'formasiJabatan'])->findOrFail($selectedAsnId);
@@ -87,104 +90,124 @@ class TopsisController extends Controller
             $kelayakan = $this->mutasiRule->cekKelayakanAsn($selectedAsn);
             $unitAsalEval = $this->mutasiRule->evaluasiUnitAsal($selectedAsn->unitSaatIni, $unitStats);
 
-            // Ambil seluruh formasi terbuka (kuota_lowong > 0) pada unit tujuan selain unit asal
-            $openFormasiLain = FormasiJabatan::with(['masterJabatan', 'unitKerja'])
-                ->where('kuota_lowong', '>', 0)
-                ->where('id_unit_kerja', '!=', $selectedAsn->id_unit_saat_ini)
+            // Ambil SEMUA Unit Kerja tujuan selain unit saat ini beserta seluruh formasinya
+            $allCandidateUnits = UnitKerja::with(['formasiJabatan.masterJabatan'])
+                ->where('id', '!=', $selectedAsn->id_unit_saat_ini)
+                ->whereNotNull('kantor_lat')
+                ->whereNotNull('kantor_lng')
                 ->get();
 
-            // POIN 1 & 2 MUTLAK: Saring hanya formasi yang cocok dengan jabatan / kelas jabatan PNS
-            $matchingFormasis = $this->mutasiRule->cariFormasiCocok($selectedAsn, $openFormasiLain);
-            $matchingByUnit = $matchingFormasis->groupBy('id_unit_kerja');
+            // Hitung jarak seluruh unit dari domisili PNS
+            $unitsWithDistance = $allCandidateUnits->map(function ($unit) use ($selectedAsn) {
+                $jarak = $this->haversine->calculateDistance(
+                    (float)$selectedAsn->domisili_lat,
+                    (float)$selectedAsn->domisili_lng,
+                    (float)$unit->kantor_lat,
+                    (float)$unit->kantor_lng
+                );
+                return ['unit' => $unit, 'jarak' => $jarak];
+            })->sortBy('jarak')->values();
+
+            // Saring berdasarkan subkriteria Radius Terdekat (C1, default 10 km) — kecuali user memilih 'all'
+            $isAllRadius = ($radiusParam === 'all');
+            $activeRadiusKm = $isAllRadius ? null : max(1.0, (float)$radiusParam);
+            $fallbackUsed = false;
+
+            if ($isAllRadius) {
+                $filteredUnits = $unitsWithDistance;
+            } else {
+                $filteredUnits = $unitsWithDistance->filter(fn($row) => $row['jarak'] <= $activeRadiusKm)->values();
+                // Jika tidak ada satupun unit dalam radius tsb (misal PNS luar kota), fallback tampilkan semua unit terdekat
+                if ($filteredUnits->isEmpty() && $unitsWithDistance->isNotEmpty()) {
+                    $filteredUnits = $unitsWithDistance;
+                    $fallbackUsed = true;
+                }
+            }
+
+            $alternatives = [];
+            $unitDetails = [];
+            $unitTersediaCount = 0;
+
+            foreach ($filteredUnits as $row) {
+                $unit = $row['unit'];
+                $jarakBaru = (float)$row['jarak'];
+
+                $jarakLama = (float)($selectedAsn->jarak_ke_kantor_km ?: 15.0);
+                $hematJarak = round(max(0, $jarakLama - $jarakBaru), 2);
+
+                // Evaluasi Formasi Jabatan (C4) TANPA menyembunyikan unit yang penuh / tidak tersedia
+                $formasiEval = $this->mutasiRule->evaluasiFormasiUnitTujuan($selectedAsn, $unit->formasiJabatan);
+                if ($formasiEval['status'] === 'Tersedia') {
+                    $unitTersediaCount++;
+                }
+
+                $unitKey = 'unit_' . $unit->id;
+                $alternatives[$unitKey] = [
+                    'id' => $unit->id,
+                    'label_alt' => $unit->nama_unit,
+                    'nama_unit' => $unit->nama_unit,
+                    'jarak_baru_km' => $jarakBaru,
+                    'hemat_jarak_km' => $hematJarak,
+                    'kuota_cocok' => $formasiEval['kuota_cocok'],
+                    'formasi_cocok' => $formasiEval['labels'],
+                    'formasi_eval' => $formasiEval,
+                    'unit_asal_eval' => $unitAsalEval,
+
+                    // Matriks 5 Kriteria TOPSIS (semua unit dalam radius tetap dihitung!)
+                    'C1' => (float)$jarakBaru,                       // Cost: Jarak
+                    'C2' => (float)$kelayakan['masa_jabatan_tahun'], // Benefit: Masa Jabatan
+                    'C3' => (float)$kelayakan['masa_kerja_tahun'],   // Benefit: Masa Kerja
+                    'C4' => (float)$formasiEval['skor'],             // Benefit: Formasi (2=Tersedia, 1=Penuh, 0=Tidak Tersedia)
+                    'C5' => (float)$unitAsalEval['skor'],            // Benefit: Kebutuhan Pegawai Unit Saat Ini
+                ];
+
+                $unitDetails[$unit->id] = $unit;
+            }
 
             $filterSummary = [
-                'total_unit_lain' => UnitKerja::where('id', '!=', $selectedAsn->id_unit_saat_ini)->count(),
-                'unit_cocok_formasi' => $matchingByUnit->count(),
+                'total_unit_lain' => $allCandidateUnits->count(),
+                'unit_dalam_radius' => count($alternatives),
+                'unit_cocok_formasi' => $unitTersediaCount,
+                'radius_label' => $isAllRadius ? 'Semua Unit Kerja' : "Radius ≤ {$activeRadiusKm} km",
+                'fallback_used' => $fallbackUsed,
+                'nearest_km' => $unitsWithDistance->first()['jarak'] ?? null,
                 'aturan_match' => $this->mutasiRule->deskripsiAturanMatch($selectedAsn),
             ];
 
-            // POIN 3 MUTLAK: Hanya hitung peringkat jika masa jabatan >= batas minimal (default 2 tahun)
-            if ($kelayakan['masa_jabatan_ok'] && $matchingByUnit->isNotEmpty()) {
-                $alternatives = [];
-                $unitDetails = [];
+            // Bobot kriteria dinamis dari database
+            $criteriaWeights = [];
+            foreach ($kriteriaModels as $k) {
+                $criteriaWeights[$k->kode_kriteria] = [
+                    'bobot' => $k->bobot,
+                    'atribut' => $k->atribut,
+                ];
+            }
 
-                foreach ($matchingByUnit as $unitId => $formasiList) {
-                    $unit = $formasiList->first()->unitKerja;
-                    if (!$unit || !$unit->kantor_lat || !$unit->kantor_lng) {
-                        continue;
-                    }
+            if (!empty($alternatives) && !empty($criteriaWeights)) {
+                $alternativesList = array_values($alternatives);
+                $topsisResult = $this->topsis->calculate($alternativesList, $criteriaWeights);
+                $ranked = $topsisResult['ranked'];
 
-                    $jarakBaru = $this->haversine->calculateDistance(
-                        (float)$selectedAsn->domisili_lat,
-                        (float)$selectedAsn->domisili_lng,
-                        (float)$unit->kantor_lat,
-                        (float)$unit->kantor_lng
-                    );
-
-                    $jarakLama = (float)($selectedAsn->jarak_ke_kantor_km ?: 15.0);
-                    $hematJarak = round(max(0, $jarakLama - $jarakBaru), 2);
-                    $kuotaCocok = (int)$formasiList->sum('kuota_lowong');
-                    $formasiLabels = $formasiList->map(function ($f) {
-                        $kls = $f->masterJabatan?->kelas_jabatan ? " [Kls {$f->masterJabatan->kelas_jabatan}]" : '';
-                        return "{$f->nama_jabatan}{$kls} ({$f->kuota_lowong} lowong)";
-                    })->values()->toArray();
-
-                    $unitKey = 'unit_' . $unit->id;
-                    $alternatives[$unitKey] = [
-                        'id' => $unit->id,
-                        'label_alt' => $unit->nama_unit,
-                        'nama_unit' => $unit->nama_unit,
-                        'jarak_baru_km' => $jarakBaru,
-                        'hemat_jarak_km' => $hematJarak,
-                        'kuota_cocok' => $kuotaCocok,
-                        'formasi_cocok' => $formasiLabels,
-                        'unit_asal_eval' => $unitAsalEval,
-
-                        // Matriks 5 Kriteria TOPSIS
-                        'C1' => (float)$jarakBaru,
-                        'C2' => (float)$kelayakan['masa_jabatan_tahun'],
-                        'C3' => (float)$kelayakan['masa_kerja_tahun'],
-                        'C4' => (float)$kuotaCocok,
-                        'C5' => (float)$unitAsalEval['skor'],
-                    ];
-
-                    $unitDetails[$unit->id] = $unit;
+                foreach ($ranked as &$item) {
+                    $altId = $item['alternative']['id'] ?? null;
+                    $item['id'] = $altId;
+                    $item['vi'] = $item['v_value'];
+                    $item['unit'] = $unitDetails[$altId] ?? null;
+                    $altInfo = $alternatives['unit_' . $altId] ?? null;
+                    $item['jarak_baru_km'] = $altInfo['jarak_baru_km'] ?? 0;
+                    $item['hemat_jarak_km'] = $altInfo['hemat_jarak_km'] ?? 0;
+                    $item['masa_jabatan_tahun'] = $kelayakan['masa_jabatan_tahun'];
+                    $item['masa_kerja_tahun'] = $kelayakan['masa_kerja_tahun'];
+                    $item['masa_kerja_keluar_ok'] = $kelayakan['masa_kerja_keluar_ok'];
+                    $item['min_masa_jabatan_tahun'] = $kelayakan['min_masa_jabatan_tahun'];
+                    $item['min_masa_kerja_keluar_tahun'] = $kelayakan['min_masa_kerja_keluar_tahun'];
+                    $item['kebutuhan_staf'] = $altInfo['kuota_cocok'] ?? 0;
+                    $item['has_formasi'] = ($altInfo['kuota_cocok'] ?? 0) > 0 ? 1 : 0;
+                    $item['formasi_cocok'] = $altInfo['formasi_cocok'] ?? [];
+                    $item['formasi_eval'] = $altInfo['formasi_eval'] ?? null;
+                    $item['unit_asal_eval'] = $altInfo['unit_asal_eval'] ?? $unitAsalEval;
                 }
-
-                // Bobot kriteria dinamis dari database
-                $criteriaWeights = [];
-                foreach ($kriteriaModels as $k) {
-                    $criteriaWeights[$k->kode_kriteria] = [
-                        'bobot' => $k->bobot,
-                        'atribut' => $k->atribut,
-                    ];
-                }
-
-                if (!empty($alternatives) && !empty($criteriaWeights)) {
-                    $alternativesList = array_values($alternatives);
-                    $topsisResult = $this->topsis->calculate($alternativesList, $criteriaWeights);
-                    $ranked = $topsisResult['ranked'];
-
-                    foreach ($ranked as &$item) {
-                        $altId = $item['alternative']['id'] ?? null;
-                        $item['id'] = $altId;
-                        $item['vi'] = $item['v_value'];
-                        $item['unit'] = $unitDetails[$altId] ?? null;
-                        $altInfo = $alternatives['unit_' . $altId] ?? null;
-                        $item['jarak_baru_km'] = $altInfo['jarak_baru_km'] ?? 0;
-                        $item['hemat_jarak_km'] = $altInfo['hemat_jarak_km'] ?? 0;
-                        $item['masa_jabatan_tahun'] = $kelayakan['masa_jabatan_tahun'];
-                        $item['masa_kerja_tahun'] = $kelayakan['masa_kerja_tahun'];
-                        $item['masa_kerja_keluar_ok'] = $kelayakan['masa_kerja_keluar_ok'];
-                        $item['min_masa_jabatan_tahun'] = $kelayakan['min_masa_jabatan_tahun'];
-                        $item['min_masa_kerja_keluar_tahun'] = $kelayakan['min_masa_kerja_keluar_tahun'];
-                        $item['kebutuhan_staf'] = $altInfo['kuota_cocok'] ?? 0;
-                        $item['has_formasi'] = ($altInfo['kuota_cocok'] ?? 0) > 0 ? 1 : 0;
-                        $item['formasi_cocok'] = $altInfo['formasi_cocok'] ?? [];
-                        $item['unit_asal_eval'] = $altInfo['unit_asal_eval'] ?? $unitAsalEval;
-                    }
-                    unset($item);
-                }
+                unset($item);
             }
         }
 
@@ -197,7 +220,9 @@ class TopsisController extends Controller
             'alternativesList',
             'kelayakan',
             'unitAsalEval',
-            'filterSummary'
+            'filterSummary',
+            'defaultRadiusKm',
+            'radiusParam'
         );
     }
 

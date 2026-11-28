@@ -60,67 +60,43 @@ class SimulasiMandiriController extends Controller
         $unitStats = $this->mutasiRule->getAllUnitStats();
         $kelayakan = $this->mutasiRule->cekKelayakanAsn($asn);
         $unitAsalEval = $this->mutasiRule->evaluasiUnitAsal($asn->unitSaatIni, $unitStats);
+        $rules = MutasiRuleService::getRules();
+        $radiusKm = (float)($rules['radius_terdekat_km'] ?? 10.0);
 
-        // POIN 3 MUTLAK: Masa jabatan wajib >= batas minimal (default 2 tahun)
-        if (!$kelayakan['masa_jabatan_ok']) {
-            return view('asn.simulasi-mandiri', [
-                'asn' => $asn,
-                'asnList' => $asnList,
-                'ranked' => [],
-                'details' => [],
-                'statusKomitmen' => $asn->status_komitmen_10_tahun,
-                'kelayakan' => $kelayakan,
-                'unitAsalEval' => $unitAsalEval,
-                'message' => $kelayakan['alasan_tidak_layak'],
-            ]);
-        }
-
-        // POIN 1 & 2 MUTLAK: Ambil formasi terbuka (kuota_lowong > 0) di unit lain yang cocok
-        $openFormasiLain = FormasiJabatan::with(['masterJabatan', 'unitKerja'])
-            ->where('kuota_lowong', '>', 0)
-            ->where('id_unit_kerja', '!=', $asn->id_unit_saat_ini)
+        // Ambil SEMUA Unit Kerja tujuan selain unit saat ini beserta formasinya
+        $allCandidateUnits = UnitKerja::with(['formasiJabatan.masterJabatan'])
+            ->where('id', '!=', $asn->id_unit_saat_ini)
+            ->whereNotNull('kantor_lat')
+            ->whereNotNull('kantor_lng')
             ->get();
 
-        $matchingFormasis = $this->mutasiRule->cariFormasiCocok($asn, $openFormasiLain);
-        $matchingByUnit = $matchingFormasis->groupBy('id_unit_kerja');
-
-        if ($matchingByUnit->isEmpty()) {
-            $aturanMatch = $this->mutasiRule->deskripsiAturanMatch($asn);
-
-            return view('asn.simulasi-mandiri', [
-                'asn' => $asn,
-                'asnList' => $asnList,
-                'ranked' => [],
-                'details' => [],
-                'statusKomitmen' => $asn->status_komitmen_10_tahun,
-                'kelayakan' => $kelayakan,
-                'unitAsalEval' => $unitAsalEval,
-                'message' => "Saat ini belum ada Unit Kerja tujuan yang memiliki formasi lowong yang cocok untuk {$aturanMatch}.",
-            ]);
-        }
-
-        // Bentuk matriks 5 kriteria TOPSIS (C1-C5)
-        $alternatives = [];
-        foreach ($matchingByUnit as $unitId => $formasiList) {
-            $unit = $formasiList->first()->unitKerja;
-            if (!$unit || !$unit->kantor_lat || !$unit->kantor_lng) {
-                continue;
-            }
-
-            $jarakBaru = $this->haversine->calculateDistance(
+        $unitsWithDistance = $allCandidateUnits->map(function ($unit) use ($asn) {
+            $jarak = $this->haversine->calculateDistance(
                 (float)$asn->domisili_lat,
                 (float)$asn->domisili_lng,
                 (float)$unit->kantor_lat,
                 (float)$unit->kantor_lng
             );
+            return ['unit' => $unit, 'jarak' => $jarak];
+        })->sortBy('jarak')->values();
+
+        $filteredUnits = $unitsWithDistance->filter(fn($row) => $row['jarak'] <= $radiusKm)->values();
+        if ($filteredUnits->isEmpty()) {
+            $filteredUnits = $unitsWithDistance;
+        }
+
+        // Bentuk matriks 5 kriteria TOPSIS (C1-C5) untuk seluruh unit terdekat
+        $alternatives = [];
+        foreach ($filteredUnits as $row) {
+            $unit = $row['unit'];
+            $jarakBaru = (float)$row['jarak'];
 
             $hematJarak = round(max(0.0, (float)$asn->jarak_ke_kantor_km - $jarakBaru), 2);
-            $kuotaCocok = (int)$formasiList->sum('kuota_lowong');
+            $formasiEval = $this->mutasiRule->evaluasiFormasiUnitTujuan($asn, $unit->formasiJabatan);
 
-            $formasiTersedia = $formasiList->map(function ($f) {
-                $kls = $f->masterJabatan?->kelas_jabatan ? " [Kls {$f->masterJabatan->kelas_jabatan}]" : '';
-                return "{$f->nama_jabatan}{$kls} ({$f->kuota_lowong} kursi)";
-            })->values()->toArray();
+            $formasiTersedia = !empty($formasiEval['labels'])
+                ? $formasiEval['labels']
+                : [$formasiEval['status']];
 
             $alternatives[] = [
                 'id' => $unit->id,
@@ -128,7 +104,7 @@ class SimulasiMandiriController extends Controller
                 'kategori' => $unit->kategori,
                 'kantor_lat' => (float)$unit->kantor_lat,
                 'kantor_lng' => (float)$unit->kantor_lng,
-                'kuota' => $kuotaCocok,
+                'kuota' => $formasiEval['kuota_cocok'],
                 'c1_jarak' => (float)$jarakBaru,
                 'c3_hemat' => (float)$hematJarak,
                 'formasi_tersedia' => $formasiTersedia,
@@ -137,7 +113,7 @@ class SimulasiMandiriController extends Controller
                 'C1' => (float)$jarakBaru,
                 'C2' => (float)$kelayakan['masa_jabatan_tahun'],
                 'C3' => (float)$kelayakan['masa_kerja_tahun'],
-                'C4' => (float)$kuotaCocok,
+                'C4' => (float)$formasiEval['skor'],
                 'C5' => (float)$unitAsalEval['skor'],
             ];
         }

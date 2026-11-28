@@ -112,6 +112,7 @@ class KriteriaController extends Controller
             'atribut' => 'required|in:cost,benefit',
             'bobot' => 'required|numeric|min:0|max:1',
             'keterangan' => 'nullable|string|max:255',
+            'radius_terdekat_km' => 'nullable|numeric|min:1|max:500',
             'jarak_dekat_max_km' => 'nullable|numeric|min:0.5|max:200',
             'jarak_jauh_min_km' => 'nullable|numeric|min:1|max:500',
             'min_masa_jabatan_tahun' => 'nullable|numeric|min:0|max:20',
@@ -138,6 +139,10 @@ class KriteriaController extends Controller
         $pKey = strtolower($validated['parameter_key']);
 
         if (str_contains($pKey, 'jarak')) {
+            if ($request->filled('radius_terdekat_km')) {
+                $extra['radius_terdekat_km'] = round((float)$validated['radius_terdekat_km'], 1);
+                $updatedSub = true;
+            }
             if ($request->filled('jarak_dekat_max_km')) {
                 $extra['jarak_dekat_max_km'] = round((float)$validated['jarak_dekat_max_km'], 1);
                 $updatedSub = true;

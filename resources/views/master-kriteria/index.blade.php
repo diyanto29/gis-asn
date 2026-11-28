@@ -129,6 +129,7 @@
                                             <div class="flex flex-wrap items-center gap-1.5">
                                                 <i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-700 shrink-0"></i>
                                                 <span class="font-bold text-emerald-900">Subkriteria Jarak:</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300 font-bold text-[10px]">Radius Cari &le; {{ $mutasiRules['radius_terdekat_km'] ?? 10 }} km</span>
                                                 <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[10px]">Dekat (&lt; {{ $mutasiRules['jarak_dekat_max_km'] ?? 5 }} km)</span>
                                                 <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-semibold text-[10px]">Sedang ({{ $mutasiRules['jarak_dekat_max_km'] ?? 5 }}–{{ $mutasiRules['jarak_jauh_min_km'] ?? 20 }} km)</span>
                                                 <span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 font-semibold text-[10px]">Terjauh (&gt; {{ $mutasiRules['jarak_jauh_min_km'] ?? 20 }} km)</span>
@@ -375,9 +376,16 @@
                 <input type="number" name="bobot" id="edit_bobot" step="0.01" min="0" max="1" required class="w-full text-xs font-mono border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">
             </div>
 
-            <!-- Subkriteria Dinamis: C1 Jarak (Terdekat / Sedang / Terjauh) -->
+            <!-- Subkriteria Dinamis: C1 Jarak (Radius Pencarian + Terdekat / Sedang / Terjauh) -->
             <div id="editSubJarakWrap" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
-                <div class="text-xs font-bold text-emerald-900">Subkriteria C1: Batas Zona Jarak (Km)</div>
+                <div class="text-xs font-bold text-emerald-900">Subkriteria C1: Radius Pencarian &amp; Batas Zona Jarak (Km)</div>
+                <div>
+                    <label class="block text-[10px] font-bold text-blue-800 mb-1">Radius Unit Kerja Terdekat Mode 1 (&le; Km)</label>
+                    <input type="number" step="1" min="1" max="500" name="radius_terdekat_km"
+                        value="{{ $mutasiRules['radius_terdekat_km'] ?? 10 }}"
+                        class="w-full text-xs font-mono font-bold border border-blue-300 rounded-lg p-2 bg-white focus:border-blue-600 focus:ring-blue-600">
+                    <p class="text-[10px] text-blue-700 mt-0.5">Menampilkan semua unit kerja dalam radius ini dari domisili PNS (misal: 10 km).</p>
+                </div>
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-[10px] font-bold text-emerald-800 mb-1">Batas Jarak Terdekat (&lt; Km)</label>
