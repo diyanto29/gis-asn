@@ -772,6 +772,187 @@
 
             return { gmapRoadmap, gmapHybrid, osmLayer };
         };
+
+        /**
+         * Global Cascading Dropdown Wilayah.id (Provinsi -> Kabupaten/Kota -> Kecamatan -> Desa/Kelurahan).
+         * Menggunakan plain JS Map (tanpa jQuery .data() cache bug), in-memory cache, request sequence guard,
+         * disabled loading state, dan retry otomatis agar 1x klik langsung memuat pilihan dengan stabil.
+         */
+        window._wilayahMemCache = window._wilayahMemCache || {};
+        window.initWilayahCascade = function (cfg) {
+            const $prov = $(cfg.provSelector);
+            const $kab  = $(cfg.kabSelector);
+            const $kec  = $(cfg.kecSelector);
+            const $desa = $(cfg.desaSelector);
+            const baseUrl = (cfg.baseUrl || '{{ url('/api/wilayah') }}').replace(/\/$/, '');
+
+            const provMap = new Map();
+            const kabMap  = new Map();
+            const kecMap  = new Map();
+            const seq = { reg: 0, dist: 0, vil: 0 };
+
+            function norm(s) {
+                return (s || '').toLowerCase().replace(/^kab(\.|upaten)?\s+/i, '').replace(/^kota\s+/i, '').trim();
+            }
+
+            async function fetchCached(key, url) {
+                if (window._wilayahMemCache[key] && window._wilayahMemCache[key].length > 0) {
+                    return window._wilayahMemCache[key];
+                }
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        if (!r.ok) continue;
+                        const json = await r.json();
+                        if (Array.isArray(json.data) && json.data.length > 0) {
+                            window._wilayahMemCache[key] = json.data;
+                            return json.data;
+                        }
+                    } catch (_) {}
+                }
+                return [];
+            }
+
+            function resetSelect($el, placeholder, disabled = false) {
+                $el.empty().append(new Option(placeholder, '', false, false));
+                $el.prop('disabled', disabled);
+                $el.trigger('change.select2');
+            }
+
+            async function loadVillages(distCode, preDesa) {
+                const mySeq = ++seq.vil;
+                if (!distCode) {
+                    resetSelect($desa, '-- Pilih Kecamatan Terlebih Dahulu --', false);
+                    return;
+                }
+                resetSelect($desa, '⏳ Memuat Desa / Kelurahan...', true);
+                const list = await fetchCached('vil:' + distCode, `${baseUrl}/villages/${encodeURIComponent(distCode)}`);
+                if (mySeq !== seq.vil) return;
+
+                $desa.empty().append(new Option('-- Pilih Desa / Kelurahan --', '', false, false));
+                let matched = false;
+                list.forEach(v => {
+                    const sel = Boolean(preDesa && v.name.toLowerCase() === preDesa.toLowerCase());
+                    if (sel) matched = true;
+                    $desa.append(new Option(v.name, v.name, sel, sel));
+                });
+                if (preDesa && !matched) {
+                    $desa.append(new Option(preDesa, preDesa, true, true));
+                }
+                $desa.prop('disabled', false).trigger('change.select2');
+            }
+
+            async function loadDistricts(regCode, preKec, preDesa) {
+                const mySeq = ++seq.dist;
+                kecMap.clear();
+                resetSelect($desa, '-- Pilih Kecamatan Terlebih Dahulu --', false);
+                if (!regCode) {
+                    resetSelect($kec, '-- Pilih Kabupaten / Kota Terlebih Dahulu --', false);
+                    return;
+                }
+                resetSelect($kec, '⏳ Memuat Kecamatan...', true);
+                const list = await fetchCached('dist:' + regCode, `${baseUrl}/districts/${encodeURIComponent(regCode)}`);
+                if (mySeq !== seq.dist) return;
+
+                $kec.empty().append(new Option('-- Pilih Kecamatan --', '', false, false));
+                let matchedCode = null;
+                list.forEach(d => {
+                    kecMap.set(d.name, d.code);
+                    const sel = Boolean(preKec && d.name.toLowerCase() === preKec.toLowerCase());
+                    if (sel) matchedCode = d.code;
+                    const label = cfg.prefixKec === false ? d.name : `Kec. ${d.name}`;
+                    $kec.append(new Option(label, d.name, sel, sel));
+                });
+                if (preKec && !matchedCode) {
+                    const label = cfg.prefixKec === false ? preKec : `Kec. ${preKec}`;
+                    $kec.append(new Option(label, preKec, true, true));
+                }
+                $kec.prop('disabled', false).trigger('change.select2');
+                if (matchedCode) {
+                    await loadVillages(matchedCode, preDesa);
+                }
+            }
+
+            async function loadRegencies(provCode, preKab, preKec, preDesa) {
+                const mySeq = ++seq.reg;
+                kabMap.clear();
+                kecMap.clear();
+                resetSelect($kec, '-- Pilih Kabupaten / Kota Terlebih Dahulu --', false);
+                resetSelect($desa, '-- Pilih Kecamatan Terlebih Dahulu --', false);
+                if (!provCode) {
+                    resetSelect($kab, '-- Pilih Provinsi Terlebih Dahulu --', false);
+                    return;
+                }
+                resetSelect($kab, '⏳ Memuat Kabupaten / Kota...', true);
+                const list = await fetchCached('reg:' + provCode, `${baseUrl}/regencies/${encodeURIComponent(provCode)}`);
+                if (mySeq !== seq.reg) return;
+
+                $kab.empty().append(new Option('-- Pilih Kabupaten / Kota --', '', false, false));
+                let matchedCode = null;
+                list.forEach(reg => {
+                    kabMap.set(reg.name, reg.code);
+                    const sel = Boolean(preKab && (
+                        reg.name.toLowerCase() === preKab.toLowerCase() ||
+                        norm(reg.name) === norm(preKab)
+                    ));
+                    if (sel) matchedCode = reg.code;
+                    $kab.append(new Option(reg.name, reg.name, sel, sel));
+                });
+                if (preKab && !matchedCode) {
+                    $kab.append(new Option(preKab, preKab, true, true));
+                }
+                $kab.prop('disabled', false).trigger('change.select2');
+                if (matchedCode) {
+                    await loadDistricts(matchedCode, preKec, preDesa);
+                }
+            }
+
+            $prov.off('change.wilayah').on('change.wilayah', function () {
+                const val = $(this).val() || '';
+                const code = provMap.get(val) || null;
+                loadRegencies(code, null, null, null);
+                if (typeof cfg.onProvinceChange === 'function') cfg.onProvinceChange(val, code);
+            });
+
+            $kab.off('change.wilayah').on('change.wilayah', function () {
+                const val = $(this).val() || '';
+                const code = kabMap.get(val) || null;
+                loadDistricts(code, null, null);
+                if (typeof cfg.onRegencyChange === 'function') cfg.onRegencyChange(val, $prov.val() || '', code);
+            });
+
+            $kec.off('change.wilayah').on('change.wilayah', function () {
+                const val = $(this).val() || '';
+                const code = kecMap.get(val) || null;
+                loadVillages(code, null);
+                if (typeof cfg.onDistrictChange === 'function') cfg.onDistrictChange(val, $kab.val() || '', $prov.val() || '', code);
+            });
+
+            $desa.off('change.wilayah').on('change.wilayah', function () {
+                const val = $(this).val() || '';
+                if (typeof cfg.onVillageChange === 'function') cfg.onVillageChange(val, $kec.val() || '', $kab.val() || '', $prov.val() || '');
+            });
+
+            (async function initProvinces() {
+                resetSelect($prov, '⏳ Memuat Provinsi...', true);
+                const list = await fetchCached('provinces', `${baseUrl}/provinces`);
+                $prov.empty().append(new Option('-- Pilih Provinsi --', '', false, false));
+                let matchedCode = null;
+                list.forEach(p => {
+                    provMap.set(p.name, p.code);
+                    const sel = Boolean(cfg.initProv && p.name.toLowerCase() === cfg.initProv.toLowerCase());
+                    if (sel) matchedCode = p.code;
+                    $prov.append(new Option(p.name, p.name, sel, sel));
+                });
+                if (cfg.initProv && !matchedCode) {
+                    $prov.append(new Option(cfg.initProv, cfg.initProv, true, true));
+                }
+                $prov.prop('disabled', false).trigger('change.select2');
+                if (matchedCode) {
+                    await loadRegencies(matchedCode, cfg.initKab || null, cfg.initKec || null, cfg.initDesa || null);
+                }
+            })();
+        };
     </script>
     @stack('scripts')
 </body>

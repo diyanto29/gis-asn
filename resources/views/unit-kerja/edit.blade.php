@@ -176,72 +176,27 @@
                 }).catch(() => {});
         }
 
-        fetch(`{{ url('/api/wilayah/provinces') }}`).then(r => r.json()).then(res => {
-            const $p = $('#ukProvinsi');
-            $p.empty().append('<option value="">-- Pilih Provinsi --</option>');
-            (res.data || []).forEach(p => {
-                const opt = new Option(p.name, p.name, false, false);
-                opt.dataset.code = p.code;
-                $p.append(opt);
-            });
-            $p.trigger('change.select2');
-        });
-
-        $('#ukProvinsi').on('change', function () {
-            const code = $(this).find(':selected').data('code') || '';
-            const $k = $('#ukKabupaten');
-            $k.empty().append('<option value="">-- Memuat Kabupaten / Kota... --</option>').trigger('change.select2');
-            $('#ukKecamatan').empty().append('<option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>').trigger('change.select2');
-            $('#ukDesa').empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
-            if (!code) return;
-            fetch(`{{ url('/api/wilayah/regencies') }}/${encodeURIComponent(code)}`).then(r => r.json()).then(res => {
-                $k.empty().append('<option value="">-- Pilih Kabupaten / Kota --</option>');
-                (res.data || []).forEach(r => {
-                    const opt = new Option(r.name, r.name, false, false);
-                    opt.dataset.code = r.code;
-                    $k.append(opt);
-                });
-                $k.trigger('change.select2');
-            });
-        });
-
-        $('#ukKabupaten').on('change', function () {
-            const code = $(this).find(':selected').data('code') || '';
-            const $c = $('#ukKecamatan');
-            $c.empty().append('<option value="">-- Memuat Kecamatan... --</option>').trigger('change.select2');
-            $('#ukDesa').empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
-            if (!code) return;
-            syncAlamatFromWilayah();
-            flyToWilayah(`${$(this).val()}, ${$('#ukProvinsi').val()}, Indonesia`, 11);
-            fetch(`{{ url('/api/wilayah/districts') }}/${encodeURIComponent(code)}`).then(r => r.json()).then(res => {
-                $c.empty().append('<option value="">-- Pilih Kecamatan --</option>');
-                (res.data || []).forEach(d => {
-                    const opt = new Option(d.name, d.name, false, false);
-                    opt.dataset.code = d.code;
-                    $c.append(opt);
-                });
-                $c.trigger('change.select2');
-            });
-        });
-
-        $('#ukKecamatan').on('change', function () {
-            const code = $(this).find(':selected').data('code') || '';
-            const $d = $('#ukDesa');
-            $d.empty().append('<option value="">-- Memuat Desa / Kelurahan... --</option>').trigger('change.select2');
-            if (!code) return;
-            syncAlamatFromWilayah();
-            flyToWilayah(`Kecamatan ${$(this).val()}, ${$('#ukKabupaten').val()}, ${$('#ukProvinsi').val()}, Indonesia`, 13);
-            fetch(`{{ url('/api/wilayah/villages') }}/${encodeURIComponent(code)}`).then(r => r.json()).then(res => {
-                $d.empty().append('<option value="">-- Pilih Desa / Kelurahan --</option>');
-                (res.data || []).forEach(v => $d.append(new Option(v.name, v.name, false, false)));
-                $d.trigger('change.select2');
-            });
-        });
-
-        $('#ukDesa').on('change', function () {
-            if (!$(this).val()) return;
-            syncAlamatFromWilayah();
-            flyToWilayah(`${$(this).val()}, Kecamatan ${$('#ukKecamatan').val()}, ${$('#ukKabupaten').val()}, Indonesia`, 15);
+        window.initWilayahCascade({
+            provSelector: '#ukProvinsi',
+            kabSelector: '#ukKabupaten',
+            kecSelector: '#ukKecamatan',
+            desaSelector: '#ukDesa',
+            prefixKec: false,
+            onRegencyChange: function (kabName, provName) {
+                if (!kabName) return;
+                syncAlamatFromWilayah();
+                flyToWilayah(`${kabName}, ${provName}, Indonesia`, 11);
+            },
+            onDistrictChange: function (kecName, kabName, provName) {
+                if (!kecName) return;
+                syncAlamatFromWilayah();
+                flyToWilayah(`Kecamatan ${kecName}, ${kabName}, ${provName}, Indonesia`, 13);
+            },
+            onVillageChange: function (desaName, kecName, kabName, provName) {
+                if (!desaName) return;
+                syncAlamatFromWilayah();
+                flyToWilayah(`${desaName}, Kecamatan ${kecName}, ${kabName}, Indonesia`, 15);
+            }
         });
     });
 </script>

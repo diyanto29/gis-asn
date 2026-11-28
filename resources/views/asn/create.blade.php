@@ -359,106 +359,24 @@
                 .catch(() => {});
         }
 
-        function loadVillages(distCode, preselectName) {
-            const $desa = $('#desaSelect');
-            $desa.empty().append('<option value="">-- Memuat Desa / Kelurahan... --</option>').trigger('change.select2');
-            if (!distCode) {
-                $desa.empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
-                return;
+        window.initWilayahCascade({
+            provSelector: '#provinsiSelect',
+            kabSelector: '#kabupatenSelect',
+            kecSelector: '#kecamatanSelect',
+            desaSelector: '#desaSelect',
+            initProv: initProv,
+            initKab: initKab,
+            initKec: initKec,
+            initDesa: initDesa,
+            onRegencyChange: function (kabName, provName) {
+                if (kabName) geocodeAndFly(`${kabName}, ${provName || 'Indonesia'}`, 11);
+            },
+            onDistrictChange: function (kecName, kabName, provName) {
+                if (kecName) geocodeAndFly(`Kecamatan ${kecName}, ${kabName || ''}, ${provName || 'Indonesia'}`, 13);
+            },
+            onVillageChange: function (desaName, kecName, kabName, provName) {
+                if (desaName) geocodeAndFly(`${desaName}, Kecamatan ${kecName || ''}, ${kabName || ''}, ${provName || 'Indonesia'}`, 15);
             }
-            fetch(`{{ url('/api/wilayah/villages') }}/${encodeURIComponent(distCode)}`)
-                .then(r => r.json())
-                .then(res => {
-                    $desa.empty().append('<option value="">-- Pilih Desa / Kelurahan --</option>');
-                    (res.data || []).forEach(v => {
-                        const sel = preselectName && v.name.toLowerCase() === preselectName.toLowerCase();
-                        $desa.append(new Option(v.name, v.name, sel, sel));
-                    });
-                    $desa.trigger('change.select2');
-                });
-        }
-
-        function loadDistricts(regCode, preselectKec, preselectDesa) {
-            const $kec = $('#kecamatanSelect');
-            $kec.empty().append('<option value="">-- Memuat Kecamatan... --</option>').trigger('change.select2');
-            $('#desaSelect').empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
-            if (!regCode) {
-                $kec.empty().append('<option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>').trigger('change.select2');
-                return;
-            }
-            fetch(`{{ url('/api/wilayah/districts') }}/${encodeURIComponent(regCode)}`)
-                .then(r => r.json())
-                .then(res => {
-                    $kec.empty().append('<option value="">-- Pilih Kecamatan --</option>');
-                    let matchedCode = null;
-                    (res.data || []).forEach(d => {
-                        const sel = preselectKec && d.name.toLowerCase() === preselectKec.toLowerCase();
-                        const opt = $(`<option value="${d.name}" data-code="${d.code}" ${sel ? 'selected' : ''}>Kec. ${d.name}</option>`);
-                        $kec.append(opt);
-                        if (sel) matchedCode = d.code;
-                    });
-                    $kec.trigger('change.select2');
-                    if (matchedCode) loadVillages(matchedCode, preselectDesa);
-                });
-        }
-
-        function loadRegencies(provCode, preselectKab, preselectKec, preselectDesa) {
-            const $kab = $('#kabupatenSelect');
-            $kab.empty().append('<option value="">-- Memuat Kabupaten / Kota... --</option>').trigger('change.select2');
-            $('#kecamatanSelect').empty().append('<option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>').trigger('change.select2');
-            $('#desaSelect').empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
-            if (!provCode) {
-                $kab.empty().append('<option value="">-- Pilih Provinsi Terlebih Dahulu --</option>').trigger('change.select2');
-                return;
-            }
-            fetch(`{{ url('/api/wilayah/regencies') }}/${encodeURIComponent(provCode)}`)
-                .then(r => r.json())
-                .then(res => {
-                    $kab.empty().append('<option value="">-- Pilih Kabupaten / Kota --</option>');
-                    let matchedCode = null;
-                    (res.data || []).forEach(reg => {
-                        const sel = preselectKab && (
-                            reg.name.toLowerCase() === preselectKab.toLowerCase() ||
-                            normalizeWilayah(reg.name) === normalizeWilayah(preselectKab)
-                        );
-                        const opt = $(`<option value="${reg.name}" data-code="${reg.code}" ${sel ? 'selected' : ''}>${reg.name}</option>`);
-                        $kab.append(opt);
-                        if (sel) matchedCode = reg.code;
-                    });
-                    $kab.trigger('change.select2');
-                    if (matchedCode) loadDistricts(matchedCode, preselectKec, preselectDesa);
-                });
-        }
-
-        // Load semua Provinsi Indonesia saat halaman siap
-        fetch(`{{ route('api.wilayah.provinces') }}`)
-            .then(r => r.json())
-            .then(res => {
-                const $prov = $('#provinsiSelect');
-                $prov.empty().append('<option value="">-- Pilih Provinsi --</option>');
-                let matchedCode = null;
-                (res.data || []).forEach(p => {
-                    const sel = initProv && p.name.toLowerCase() === initProv.toLowerCase();
-                    const opt = $(`<option value="${p.name}" data-code="${p.code}" ${sel ? 'selected' : ''}>${p.name}</option>`);
-                    $prov.append(opt);
-                    if (sel) matchedCode = p.code;
-                });
-                $prov.trigger('change.select2');
-                if (matchedCode) loadRegencies(matchedCode, initKab, initKec, initDesa);
-            })
-            .catch(err => console.warn('Gagal memuat daftar provinsi:', err));
-
-        $('#provinsiSelect').on('change', function () {
-            const code = $(this).find('option:selected').data('code');
-            loadRegencies(code, null, null, null);
-        });
-
-        $('#kabupatenSelect').on('change', function () {
-            const code = $(this).find('option:selected').data('code');
-            const kabName = $(this).val();
-            const provName = $('#provinsiSelect').val();
-            loadDistricts(code, null, null);
-            if (kabName) geocodeAndFly(`${kabName}, ${provName || 'Indonesia'}`, 11);
         });
 
         // Peta Leaflet & Draggable Marker
@@ -621,29 +539,6 @@
         if ($('#unitSaatIniSelect').val()) {
             populateFormasiByUnit($('#unitSaatIniSelect').val(), oldFormasiId);
         }
-
-        // Event saat Kecamatan berubah: Muat Desa dari Wilayah.id & Geser Peta
-        $('#kecamatanSelect').on('change', function () {
-            const kecName = $(this).val();
-            const distCode = $(this).find('option:selected').data('code');
-            const kabName = $('#kabupatenSelect').val();
-            const provName = $('#provinsiSelect').val();
-
-            loadVillages(distCode, null);
-            if (kecName) {
-                geocodeAndFly(`Kecamatan ${kecName}, ${kabName || ''}, ${provName || 'Indonesia'}`, 13);
-            }
-        });
-
-        // Event saat Desa berubah: Geser Peta ke Desa/Kelurahan
-        $('#desaSelect').on('change', function () {
-            const desaName = $(this).val();
-            const kecName = $('#kecamatanSelect').val();
-            const kabName = $('#kabupatenSelect').val();
-            if (desaName && kecName) {
-                geocodeAndFly(`${desaName}, ${kecName}, ${kabName || 'Indonesia'}`, 15);
-            }
-        });
 
         // Fitur Pencarian Alamat / Patokan (Search Bar seperti Satpol PP)
         function searchLocation() {
