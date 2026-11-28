@@ -84,9 +84,40 @@
                         </div>
                     </div>
 
+                    <!-- Wilayah Kantor (Wilayah.id: Provinsi -> Kabupaten/Kota -> Kecamatan -> Desa) -->
+                    <div class="pt-2 border-t border-slate-100 space-y-3">
+                        <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-600"></i> Wilayah Kantor (Wilayah.id)
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Provinsi</label>
+                            <select id="ukProvinsi" class="searchable-select w-full" data-placeholder="-- Pilih Provinsi --">
+                                <option value="">-- Memuat Provinsi... --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Kabupaten / Kota</label>
+                            <select id="ukKabupaten" class="searchable-select w-full" data-placeholder="-- Pilih Kabupaten / Kota --">
+                                <option value="">-- Pilih Provinsi Terlebih Dahulu --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Kecamatan</label>
+                            <select id="ukKecamatan" class="searchable-select w-full" data-placeholder="-- Pilih Kecamatan --">
+                                <option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Desa / Kelurahan</label>
+                            <select id="ukDesa" class="searchable-select w-full" data-placeholder="-- Pilih Desa / Kelurahan --">
+                                <option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Kantor Lengkap</label>
-                        <textarea name="alamat_kantor" rows="2" placeholder="Jl. Mayor Oking No. 1, Kabupaten XYZ..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('alamat_kantor') }}</textarea>
+                        <textarea id="alamatKantorInput" name="alamat_kantor" rows="2" placeholder="Jl. Mayor Oking No. 1, Indramayu, Jawa Barat..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-blue-500">{{ old('alamat_kantor') }}</textarea>
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -117,6 +148,105 @@
             draggable: true,
             icon: window.createGmapPinIcon({ color: '#1d4ed8', type: 'office', size: 'lg' })
         }).addTo(map);
+
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('.searchable-select').select2({ width: '100%', allowClear: true });
+        }
+
+        function syncAlamatFromWilayah() {
+            const parts = [
+                $('#ukDesa').val(),
+                $('#ukKecamatan').val() ? 'Kec. ' + $('#ukKecamatan').val() : '',
+                $('#ukKabupaten').val(),
+                $('#ukProvinsi').val()
+            ].filter(Boolean);
+            if (parts.length > 0) {
+                document.getElementById('alamatKantorInput').value = parts.join(', ');
+            }
+        }
+
+        function flyToWilayah(q, zoom) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=id&limit=1`)
+                .then(r => r.json())
+                .then(res => {
+                    if (res && res.length > 0) {
+                        const lat = parseFloat(res[0].lat), lng = parseFloat(res[0].lon);
+                        map.flyTo([lat, lng], zoom, { duration: 1.0 });
+                        marker.setLatLng([lat, lng]);
+                        document.getElementById('kantor_lat').value = lat.toFixed(6);
+                        document.getElementById('kantor_lng').value = lng.toFixed(6);
+                        document.getElementById('coordBadge').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    }
+                }).catch(() => {});
+        }
+
+        fetch(`{{ url('/api/wilayah/provinces') }}`).then(r => r.json()).then(res => {
+            const $p = $('#ukProvinsi');
+            $p.empty().append('<option value="">-- Pilih Provinsi --</option>');
+            (res.data || []).forEach(p => {
+                const opt = new Option(p.name, p.name, false, false);
+                opt.dataset.code = p.code;
+                $p.append(opt);
+            });
+            $p.trigger('change.select2');
+        });
+
+        $('#ukProvinsi').on('change', function () {
+            const code = $(this).find(':selected').data('code') || '';
+            const $k = $('#ukKabupaten');
+            $k.empty().append('<option value="">-- Memuat Kabupaten / Kota... --</option>').trigger('change.select2');
+            $('#ukKecamatan').empty().append('<option value="">-- Pilih Kabupaten / Kota Terlebih Dahulu --</option>').trigger('change.select2');
+            $('#ukDesa').empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
+            if (!code) return;
+            fetch(`{{ url('/api/wilayah/regencies') }}/${encodeURIComponent(code)}`).then(r => r.json()).then(res => {
+                $k.empty().append('<option value="">-- Pilih Kabupaten / Kota --</option>');
+                (res.data || []).forEach(r => {
+                    const opt = new Option(r.name, r.name, false, false);
+                    opt.dataset.code = r.code;
+                    $k.append(opt);
+                });
+                $k.trigger('change.select2');
+            });
+        });
+
+        $('#ukKabupaten').on('change', function () {
+            const code = $(this).find(':selected').data('code') || '';
+            const $c = $('#ukKecamatan');
+            $c.empty().append('<option value="">-- Memuat Kecamatan... --</option>').trigger('change.select2');
+            $('#ukDesa').empty().append('<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>').trigger('change.select2');
+            if (!code) return;
+            syncAlamatFromWilayah();
+            flyToWilayah(`${$(this).val()}, ${$('#ukProvinsi').val()}, Indonesia`, 11);
+            fetch(`{{ url('/api/wilayah/districts') }}/${encodeURIComponent(code)}`).then(r => r.json()).then(res => {
+                $c.empty().append('<option value="">-- Pilih Kecamatan --</option>');
+                (res.data || []).forEach(d => {
+                    const opt = new Option(d.name, d.name, false, false);
+                    opt.dataset.code = d.code;
+                    $c.append(opt);
+                });
+                $c.trigger('change.select2');
+            });
+        });
+
+        $('#ukKecamatan').on('change', function () {
+            const code = $(this).find(':selected').data('code') || '';
+            const $d = $('#ukDesa');
+            $d.empty().append('<option value="">-- Memuat Desa / Kelurahan... --</option>').trigger('change.select2');
+            if (!code) return;
+            syncAlamatFromWilayah();
+            flyToWilayah(`Kecamatan ${$(this).val()}, ${$('#ukKabupaten').val()}, ${$('#ukProvinsi').val()}, Indonesia`, 13);
+            fetch(`{{ url('/api/wilayah/villages') }}/${encodeURIComponent(code)}`).then(r => r.json()).then(res => {
+                $d.empty().append('<option value="">-- Pilih Desa / Kelurahan --</option>');
+                (res.data || []).forEach(v => $d.append(new Option(v.name, v.name, false, false)));
+                $d.trigger('change.select2');
+            });
+        });
+
+        $('#ukDesa').on('change', function () {
+            if (!$(this).val()) return;
+            syncAlamatFromWilayah();
+            flyToWilayah(`${$(this).val()}, Kecamatan ${$('#ukKecamatan').val()}, ${$('#ukKabupaten').val()}, Indonesia`, 15);
+        });
 
         function updateCoords(lat, lng) {
             document.getElementById('kantor_lat').value = lat.toFixed(6);
